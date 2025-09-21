@@ -10,6 +10,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { AppProvider } from './contexts/AppContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { NavigationProvider, useNavigation } from './contexts/NavigationContext';
+import LoginScreen from './components/auth/LoginScreen';
 import { initFinancialApi } from './services/financialApi';
 import { featureFlags, FeatureGate } from './utils/featureFlags';
 import Notifications from './components/common/Notifications';
@@ -46,7 +47,7 @@ const FeatureFlagsDebug = React.lazy(() => import('./components/dev/FeatureFlags
 // Composant principal de l'app qui utilise NavigationContext et AuthContext
 function AppContent() {
   const { currentScreen, setCurrentScreen } = useNavigation();
-  const { apiCall } = useAuth();
+  const { apiCall, isAuthenticated, isLoading, authState, AUTH_STATES } = useAuth();
   const [darkMode, setDarkMode] = useState(true);
   const [currentCategory, setCurrentCategory] = useState(null);
   const [showRecipeDetail, setShowRecipeDetail] = useState(null);
@@ -362,11 +363,20 @@ function AppContent() {
     }
   }, [currentScreen, setCurrentScreen, darkMode, currentCategory, categoryConfig, userData, notificationSystem, aiSuggestionsHook, usePlan, addTransaction, removeTransaction, showRecipeDetail, suggestionsCache, answers, transactions, progress, setUserData, setDarkMode, setCurrentCategory, setShowRecipeDetail, setSuggestionsCache]);
 
-  // Loading pendant l'initialisation
-  if (!isInitialized) {
+  // Loading pendant l'initialisation ou la vérification d'authentification
+  if (!isInitialized || authState === AUTH_STATES.LOADING) {
     return (
       <div className="max-w-md mx-auto bg-white min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" message="Initialisation..." />
+      </div>
+    );
+  }
+
+  // Afficher l'écran de login si l'utilisateur n'est pas authentifié
+  if (!isAuthenticated) {
+    return (
+      <div className="max-w-md mx-auto bg-white dark:bg-black min-h-screen">
+        <LoginScreen darkMode={darkMode} />
       </div>
     );
   }

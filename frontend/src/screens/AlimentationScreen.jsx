@@ -110,22 +110,19 @@ const AlimentationScreen = ({ userData, setUserData, usePlan, showNotification, 
   const categories = [
     {
       id: 'recettes',
-      label: 'Recettes',
-      shortLabel: 'Recettes',
+      name: 'Recettes Éco',
       icon: '👨‍🍳',
       description: 'Découvrez des recettes savoureuses'
     },
     {
       id: 'courses',
-      label: 'Courses',
-      shortLabel: 'Courses',
+      name: 'Liste Courses',
       icon: '🛒',
       description: 'Liste de courses intelligente'
     },
     {
       id: 'nutrition',
-      label: 'Nutrition',
-      shortLabel: 'Nutrition',
+      name: 'Nutrition IA',
       icon: '🥗',
       description: 'Conseils nutrition et régimes IA'
     }
@@ -420,7 +417,7 @@ const AlimentationScreen = ({ userData, setUserData, usePlan, showNotification, 
                     ? 'bg-green-900/30 text-green-300 border border-green-700/50'
                     : 'bg-green-100/80 text-green-700 border border-green-200/60'
                 }`}>
-                  {categories.find(cat => cat.id === activeCategory)?.description}
+                  {categories.find(cat => cat.id === activeCategory)?.name}
                 </div>
               </div>
 
@@ -447,8 +444,7 @@ const AlimentationScreen = ({ userData, setUserData, usePlan, showNotification, 
                       >
                         <span className="text-lg">{category.icon}</span>
                         <span className="text-sm">
-                          <span className="md:hidden">{category.shortLabel}</span>
-                          <span className="hidden md:inline">{category.label}</span>
+                          <span className="whitespace-nowrap">{category.name}</span>
                         </span>
 
                         {/* Active Indicator */}

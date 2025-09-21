@@ -16,7 +16,7 @@ const CategoryGrid = ({ darkMode }) => {
           <span className="text-xl">🎭</span>
         </div>
         <p className={`font-semibold text-sm ${darkMode ? 'text-white' : 'text-black'}`}>Activité</p>
-        <p className={`text-[10px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Nouveautés IA</p>
+        <p className={`text-[10px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Sorties & loisirs</p>
       </button>
 
       <button
@@ -26,8 +26,8 @@ const CategoryGrid = ({ darkMode }) => {
         <div className={`w-10 h-10 ${darkMode ? 'bg-pink-900/30' : 'bg-pink-100'} rounded-xl flex items-center justify-center mb-2`}>
           <span className="text-xl">👕</span>
         </div>
-        <p className={`font-semibold text-sm ${darkMode ? 'text-white' : 'text-black'}`}>Habits</p>
-        <p className={`text-[10px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Mode durable</p>
+        <p className={`font-semibold text-sm ${darkMode ? 'text-white' : 'text-black'}`}>Vêtements</p>
+        <p className={`text-[10px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Mode & style</p>
       </button>
 
       <button
@@ -37,8 +37,8 @@ const CategoryGrid = ({ darkMode }) => {
         <div className={`w-10 h-10 ${darkMode ? 'bg-blue-900/30' : 'bg-blue-100'} rounded-xl flex items-center justify-center mb-2`}>
           <span className="text-xl">🚗</span>
         </div>
-        <p className={`font-semibold text-sm ${darkMode ? 'text-white' : 'text-black'}`}>Déplacement</p>
-        <p className={`text-[10px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Trajets éco</p>
+        <p className={`font-semibold text-sm ${darkMode ? 'text-white' : 'text-black'}`}>Transport</p>
+        <p className={`text-[10px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Trajets & mobilité</p>
       </button>
 
       <button
@@ -52,7 +52,7 @@ const CategoryGrid = ({ darkMode }) => {
           <span className="text-xl">🍕</span>
         </div>
         <p className={`font-semibold text-sm ${darkMode ? 'text-white' : 'text-black'}`}>Alimentation</p>
-        <p className={`text-[10px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Batch cooking</p>
+        <p className={`text-[10px] ${darkMode ? 'text-gray-500' : 'text-gray-400'}`}>Repas & courses</p>
       </button>
     </div>
   );

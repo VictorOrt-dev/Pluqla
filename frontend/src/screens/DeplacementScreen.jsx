@@ -54,10 +54,15 @@ const DeplacementScreen = ({ userData, setUserData, usePlan, showNotification, a
   const categories = [
     {
       id: 'suivi',
-      label: 'Suivi',
-      shortLabel: 'Suivi',
+      name: 'Suivi Transport',
       icon: '🚗',
       description: 'Trajets en temps réel et optimisations'
+    },
+    {
+      id: 'optimisation',
+      name: 'Optimisation',
+      icon: '🗺️',
+      description: 'Routes et économies intelligentes'
     }
   ];
 
@@ -71,8 +76,27 @@ const DeplacementScreen = ({ userData, setUserData, usePlan, showNotification, a
               <TransportTracker darkMode={darkMode} />
             </div>
 
-            {/* Optimiseur de Routes */}
+            {/* Historique */}
             <div className="animate-slide-up animation-delay-200">
+              <div className={`glass-effect p-6 rounded-2xl ${
+                darkMode ? 'glass-effect-dark' : ''
+              }`}>
+                <h3 className={`text-lg font-semibold mb-4 ${
+                  darkMode ? 'text-white' : 'text-gray-900'
+                }`}>
+                  📋 Historique des Trajets
+                </h3>
+                <TripHistory darkMode={darkMode} />
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'optimisation':
+        return (
+          <div className="space-y-8">
+            {/* Optimiseur de Routes */}
+            <div className="animate-fade-in animation-delay-100">
               <div className={`glass-effect p-6 rounded-2xl ${
                 darkMode ? 'glass-effect-dark' : ''
               }`}>
@@ -86,7 +110,7 @@ const DeplacementScreen = ({ userData, setUserData, usePlan, showNotification, a
             </div>
 
             {/* Suggestions IA Éco-Mobilité */}
-            <div className="animate-slide-up animation-delay-300">
+            <div className="animate-slide-up animation-delay-200">
               <ActivityRecommendations
                 title="Éco-Mobilité IA"
                 subtitle="Conseils personnalisés pour optimiser vos déplacements"
@@ -101,20 +125,6 @@ const DeplacementScreen = ({ userData, setUserData, usePlan, showNotification, a
                 showNotification={showNotification}
                 addTransaction={addTransaction}
               />
-            </div>
-
-            {/* Historique */}
-            <div className="animate-slide-up animation-delay-400">
-              <div className={`glass-effect p-6 rounded-2xl ${
-                darkMode ? 'glass-effect-dark' : ''
-              }`}>
-                <h3 className={`text-lg font-semibold mb-4 ${
-                  darkMode ? 'text-white' : 'text-gray-900'
-                }`}>
-                  📋 Historique des Trajets
-                </h3>
-                <TripHistory darkMode={darkMode} />
-              </div>
             </div>
           </div>
         );
@@ -205,7 +215,7 @@ const DeplacementScreen = ({ userData, setUserData, usePlan, showNotification, a
                     ? 'bg-blue-900/30 text-blue-300 border border-blue-700/50'
                     : 'bg-blue-100/80 text-blue-700 border border-blue-200/60'
                 }`}>
-                  {categories.find(cat => cat.id === activeCategory)?.description}
+                  {categories.find(cat => cat.id === activeCategory)?.name}
                 </div>
               </div>
 
@@ -232,8 +242,7 @@ const DeplacementScreen = ({ userData, setUserData, usePlan, showNotification, a
                       >
                         <span className="text-lg">{category.icon}</span>
                         <span className="text-sm">
-                          <span className="md:hidden">{category.shortLabel}</span>
-                          <span className="hidden md:inline">{category.label}</span>
+                          <span className="whitespace-nowrap">{category.name}</span>
                         </span>
 
                         {/* Active Indicator */}

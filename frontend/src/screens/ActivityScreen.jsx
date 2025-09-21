@@ -1,146 +1,98 @@
 import React, { useState, useEffect } from 'react';
-import './ActivityScreen.css'; // Pour les animations personnalisées
-import { useTranslation } from 'react-i18next';
-import { useAuth } from '../contexts/AuthContext';
-import { useNavigation } from '../contexts/NavigationContext';
-import { useAISuggestions } from '../hooks/useAISuggestions';
-import ActivityTracker from '../components/features/activity/ActivityTracker';
 import ActivityRecommendations from '../components/features/activity/ActivityRecommendations';
 import GeographicActivities from '../components/features/activity/GeographicActivities';
-import AIWorkoutPrograms from '../components/features/activity/AIWorkoutPrograms';
-import LoadingSpinner from '../components/common/LoadingSpinner';
+import { useAISuggestions } from '../hooks/useAISuggestions';
+import { useNavigation } from '../contexts/NavigationContext';
+import { useTranslation } from 'react-i18next';
+import './ActivityScreen.css';
 
-const ActivityScreen = ({ darkMode }) => {
+const ActivityScreen = ({ userData, setUserData, usePlan, showNotification, addTransaction, darkMode }) => {
   const { t } = useTranslation();
-  const { isAuthenticated } = useAuth();
   const { navigateToHome } = useNavigation();
-  const { getAISuggestions, isLoading: aiLoading } = useAISuggestions();
-  const [aiSuggestions, setAISuggestions] = useState([]);
-  const [sportSuggestions, setSportSuggestions] = useState([]);
-  const [sortiesSuggestions, setSortiesSuggestions] = useState([]);
   const [activeCategory, setActiveCategory] = useState('sport');
+  const [isVisible, setIsVisible] = useState(false);
 
+  const { getAISuggestions, isLoading: isLoadingAI } = useAISuggestions();
+  const [aiSuggestions, setAiSuggestions] = useState([]);
+
+  // Animation d'entrée
+  useEffect(() => {
+    const timer = setTimeout(() => setIsVisible(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Charger les suggestions IA pour les activités
   useEffect(() => {
     let isMounted = true;
 
-    const loadAISuggestions = async () => {
-      if (!isAuthenticated || !isMounted) return;
-
-      try {
-        // Charger suggestions sport/fitness
-        const sportRes = await getAISuggestions('sport');
-        if (!isMounted) return;
-        setSportSuggestions(Array.isArray(sportRes) ? sportRes : []);
-
-        // Charger suggestions activités géographiques
-        const activitesRes = await getAISuggestions('activites_locales');
-        if (!isMounted) return;
-        setSortiesSuggestions(Array.isArray(activitesRes) ? activitesRes : []);
-
-        // Combiner pour compatibilité
-        const allSuggestions = [
-          ...(Array.isArray(sportRes) ? sportRes.map(s => ({...s, category: 'sport'})) : []),
-          ...(Array.isArray(activitesRes) ? activitesRes.map(s => ({...s, category: 'activite'})) : [])
-        ];
-        if (isMounted) {
-          setAISuggestions(allSuggestions);
-        }
-      } catch (error) {
-        if (isMounted) {
-          console.error('Erreur chargement suggestions IA:', error);
-          setAISuggestions([]);
-          setSportSuggestions([]);
-          setSortiesSuggestions([]);
+    const loadSuggestions = async () => {
+      if (isMounted) {
+        try {
+          const suggestions = await getAISuggestions('activites');
+          if (isMounted) {
+            setAiSuggestions(Array.isArray(suggestions) ? suggestions : []);
+          }
+        } catch (error) {
+          if (isMounted) {
+            console.error('Erreur chargement suggestions activités:', error);
+            setAiSuggestions([]);
+          }
         }
       }
     };
 
-    loadAISuggestions();
+    loadSuggestions();
 
     return () => {
       isMounted = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAuthenticated]); // getAISuggestions supprimé volontairement pour éviter les boucles infinies
+  }, [activeCategory, getAISuggestions]);
 
-  // Categories with their data
   const categories = [
-    {
-      id: 'sport',
-      label: 'Sport',
-      shortLabel: 'Sport',
-      icon: '💪',
-      description: 'Suivi sportif et programmes d\'entraînement'
-    },
-    {
-      id: 'activites',
-      label: 'Activités',
-      shortLabel: 'Activités',
-      icon: '📍',
-      description: 'Activités et événements près de vous'
-    }
+    { id: 'sport', name: 'Sport & Fitness', icon: '🏃‍♂️' },
+    { id: 'sorties', name: 'Sorties & Loisirs', icon: '🎭' }
   ];
 
-  const renderCategoryContent = () => {
-    switch (activeCategory) {
+  const renderTabContent = () => {
+    switch(activeCategory) {
       case 'sport':
         return (
-          <div className="space-y-8">
-            {/* Profil Sportif */}
-            <div className="animate-fade-in animation-delay-100">
-              <ActivityRecommendations
-                darkMode={darkMode}
-                aiSuggestions={sportSuggestions}
-                isLoading={aiLoading}
-                title="Profil et Suggestions Sport"
-                subtitle="Programmes d'entraînement personnalisés par IA"
-                icon="🏋️"
-              />
-            </div>
-
-            {/* Mon Suivi */}
-            <div className="animate-slide-up animation-delay-200">
-              <ActivityTracker darkMode={darkMode} />
-            </div>
-
-            {/* Programmes d'entraînement personnalisés IA */}
-            <div className="animate-slide-up animation-delay-300">
-              <AIWorkoutPrograms
-                darkMode={darkMode}
-                aiSuggestions={sportSuggestions}
-                isLoading={aiLoading}
-              />
-            </div>
-          </div>
+          <ActivityRecommendations
+            category="sport"
+            userData={userData}
+            darkMode={darkMode}
+            usePlan={usePlan}
+            showNotification={showNotification}
+            addTransaction={addTransaction}
+            aiSuggestions={aiSuggestions}
+            isLoading={isLoadingAI}
+          />
         );
-
-      case 'activites':
+      case 'sorties':
         return (
-          <div className="space-y-8">
-            {/* Activités Géographiques suggérées par IA */}
-            <div className="animate-fade-in animation-delay-100">
-              <GeographicActivities
-                darkMode={darkMode}
-                aiSuggestions={sortiesSuggestions}
-                isLoading={aiLoading}
-              />
-            </div>
-          </div>
+          <GeographicActivities
+            userData={userData}
+            darkMode={darkMode}
+            usePlan={usePlan}
+            showNotification={showNotification}
+            addTransaction={addTransaction}
+          />
         );
-
       default:
         return (
-          <div className={`text-center py-12 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-            <div className="text-4xl mb-4">🔍</div>
-            <p>Catégorie non trouvée</p>
-          </div>
+          <ActivityRecommendations
+            category={activeCategory}
+            userData={userData}
+            darkMode={darkMode}
+            usePlan={usePlan}
+            showNotification={showNotification}
+            addTransaction={addTransaction}
+            aiSuggestions={aiSuggestions}
+            isLoading={isLoadingAI}
+          />
         );
     }
   };
-
-  if (aiLoading && aiSuggestions.length === 0) {
-    return <LoadingSpinner />;
-  }
 
   return (
     <div className={`min-h-screen relative ${
@@ -187,17 +139,17 @@ const ActivityScreen = ({ darkMode }) => {
                 <p className={`text-sm ${
                   darkMode ? 'text-gray-400' : 'text-gray-600'
                 } font-medium`}>
-                  {t('activity.subtitle', 'Découvre de nouvelles activités')}
+                  {t('activity.subtitle', 'Sport et sorties à prix réduits')}
                 </p>
               </div>
             </div>
 
             {/* Loading Indicator */}
-            {aiLoading && (
+            {isLoadingAI && (
               <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 animate-pulse"></div>
+                <div className="w-4 h-4 rounded-full bg-gradient-to-r from-orange-500 to-red-500 animate-pulse"></div>
                 <span className={`text-xs font-medium ${
-                  darkMode ? 'text-purple-400' : 'text-purple-600'
+                  darkMode ? 'text-orange-400' : 'text-orange-600'
                 }`}>IA en cours...</span>
               </div>
             )}
@@ -215,10 +167,10 @@ const ActivityScreen = ({ darkMode }) => {
                 </h2>
                 <div className={`px-3 py-1 rounded-full text-xs font-medium ${
                   darkMode
-                    ? 'bg-purple-900/30 text-purple-300 border border-purple-700/50'
-                    : 'bg-purple-100/80 text-purple-700 border border-purple-200/60'
+                    ? 'bg-orange-900/30 text-orange-300 border border-orange-700/50'
+                    : 'bg-orange-100/80 text-orange-700 border border-orange-200/60'
                 }`}>
-                  {categories.find(cat => cat.id === activeCategory)?.description}
+                  {categories.find(cat => cat.id === activeCategory)?.name}
                 </div>
               </div>
 
@@ -229,45 +181,23 @@ const ActivityScreen = ({ darkMode }) => {
                     ? 'bg-gray-800/60 border border-gray-700/50'
                     : 'bg-gray-100/60 border border-gray-200/50'
                 } backdrop-blur-sm shadow-inner`}>
-                  <div
-                    className="flex space-x-2 overflow-x-auto pb-1 scrollbar-hide"
-                    role="tablist"
-                    aria-label="Catégories d'activités"
-                  >
+                  <div className="flex space-x-2 overflow-x-auto pb-1 scrollbar-hide">
                     {categories.map((category, index) => (
                       <button
                         key={category.id}
                         onClick={() => setActiveCategory(category.id)}
-                        onKeyDown={(e) => {
-                          // Navigation clavier avec flèches
-                          if (e.key === 'ArrowRight') {
-                            e.preventDefault();
-                            const nextIndex = (index + 1) % categories.length;
-                            setActiveCategory(categories[nextIndex].id);
-                          } else if (e.key === 'ArrowLeft') {
-                            e.preventDefault();
-                            const prevIndex = index === 0 ? categories.length - 1 : index - 1;
-                            setActiveCategory(categories[prevIndex].id);
-                          }
-                        }}
-                        className={`category-pill group relative flex items-center space-x-2 px-4 py-3 rounded-xl whitespace-nowrap text-sm font-semibold transition-all duration-300 min-w-fit transform hover:scale-105 ${
+                        className={`group relative flex items-center space-x-2 px-4 py-3 rounded-xl whitespace-nowrap text-sm font-semibold transition-all duration-300 min-w-fit transform hover:scale-105 ${
                           activeCategory === category.id
-                            ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg shadow-purple-500/25 scale-105'
+                            ? 'bg-gradient-to-r from-orange-600 to-red-600 text-white shadow-lg shadow-orange-500/25 scale-105'
                             : darkMode
                               ? 'text-gray-400 hover:text-gray-200 hover:bg-gray-700/50 border border-gray-600/30'
                               : 'text-gray-600 hover:text-gray-800 hover:bg-white/70 border border-gray-200/50'
                         } shadow-md hover:shadow-lg`}
                         style={{ animationDelay: `${index * 50}ms` }}
-                        role="tab"
-                        aria-selected={activeCategory === category.id}
-                        aria-controls={`panel-${category.id}`}
-                        tabIndex={activeCategory === category.id ? 0 : -1}
-                        aria-label={`${category.label}: ${category.description}`}
                       >
                         <span className="text-lg">{category.icon}</span>
                         <span className="text-sm">
-                          <span className="md:hidden">{category.shortLabel}</span>
-                          <span className="hidden md:inline">{category.label}</span>
+                          <span className="whitespace-nowrap">{category.name}</span>
                         </span>
 
                         {/* Active Indicator */}
@@ -276,7 +206,7 @@ const ActivityScreen = ({ darkMode }) => {
                         )}
 
                         {/* Hover gradient */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-indigo-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-orange-500/5 to-red-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                       </button>
                     ))}
                   </div>
@@ -302,23 +232,18 @@ const ActivityScreen = ({ darkMode }) => {
       {/* Main Content Container */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-6">
         {/* Category Content */}
-        <div
-          className="animate-slide-up"
-          role="tabpanel"
-          id={`panel-${activeCategory}`}
-          aria-labelledby={`tab-${activeCategory}`}
-        >
-          {renderCategoryContent()}
+        <div className="animate-slide-up">
+          {renderTabContent()}
         </div>
       </div>
 
       {/* Decorative Elements */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className={`absolute top-20 right-10 w-32 h-32 rounded-full ${
-          darkMode ? 'bg-purple-600/5' : 'bg-purple-600/3'
+          darkMode ? 'bg-orange-600/5' : 'bg-orange-600/3'
         } blur-3xl animate-pulse`}></div>
         <div className={`absolute bottom-20 left-10 w-40 h-40 rounded-full ${
-          darkMode ? 'bg-indigo-600/5' : 'bg-indigo-600/3'
+          darkMode ? 'bg-red-600/5' : 'bg-red-600/3'
         } blur-3xl animate-pulse delay-1000`}></div>
       </div>
     </div>

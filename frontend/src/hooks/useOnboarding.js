@@ -16,17 +16,25 @@ const ONBOARDING_STEPS = [
 export const useOnboarding = (setUserData, showNotification) => {
   const { navigateToHome } = useNavigation();
 
-  const [currentStep, setCurrentStep] = useState(0);
-  const [onboardingData, setOnboardingData] = useState(() =>
-    loadFromLocalStorage('onboardingProgress', {
-      stepId: 'welcome',
-      stepIndex: 0,
-      completedSteps: [],
+  const [currentStep, setCurrentStep] = useState(() => {
+    // Si c'est un nouvel utilisateur, commencer par la personnalisation (index 2)
+    const isNewUser = localStorage.getItem('isNewUser') === 'true';
+    return isNewUser ? 2 : 0;
+  });
+  const [onboardingData, setOnboardingData] = useState(() => {
+    const isNewUser = localStorage.getItem('isNewUser') === 'true';
+    const defaultStep = isNewUser ? 'personalization' : 'welcome';
+    const defaultIndex = isNewUser ? 2 : 0;
+
+    return loadFromLocalStorage('onboardingProgress', {
+      stepId: defaultStep,
+      stepIndex: defaultIndex,
+      completedSteps: isNewUser ? ['welcome', 'auth'] : [],
       userData: {},
       preferences: {},
       timestamp: Date.now()
-    })
-  );
+    });
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [hasStarted, setHasStarted] = useState(false);
 
@@ -111,6 +119,7 @@ export const useOnboarding = (setUserData, showNotification) => {
 
       // Nettoyer le localStorage de l'onboarding
       localStorage.removeItem('onboardingProgress');
+      localStorage.removeItem('isNewUser');
 
       // Définir l'utilisateur comme onboardé
       if (typeof setUserData === 'function') {

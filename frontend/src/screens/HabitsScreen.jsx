@@ -56,15 +56,13 @@ const HabitsScreen = ({ userData, setUserData, usePlan, showNotification, addTra
   const categories = [
     {
       id: 'analyse',
-      label: 'Analyse',
-      shortLabel: 'Analyse',
+      name: 'Analyse Mode',
       icon: '📸',
       description: 'Analysez vos vêtements avec l\'IA'
     },
     {
       id: 'tendances',
-      label: 'Tendances',
-      shortLabel: 'Tendances',
+      name: 'Tendances',
       icon: '✨',
       description: 'Découvrez des styles personnalisés'
     }
@@ -221,7 +219,7 @@ const HabitsScreen = ({ userData, setUserData, usePlan, showNotification, addTra
                     ? 'bg-purple-900/30 text-purple-300 border border-purple-700/50'
                     : 'bg-purple-100/80 text-purple-700 border border-purple-200/60'
                 }`}>
-                  {categories.find(cat => cat.id === activeCategory)?.description}
+                  {categories.find(cat => cat.id === activeCategory)?.name}
                 </div>
               </div>
 
@@ -248,8 +246,7 @@ const HabitsScreen = ({ userData, setUserData, usePlan, showNotification, addTra
                       >
                         <span className="text-lg">{category.icon}</span>
                         <span className="text-sm">
-                          <span className="md:hidden">{category.shortLabel}</span>
-                          <span className="hidden md:inline">{category.label}</span>
+                          <span className="whitespace-nowrap">{category.name}</span>
                         </span>
 
                         {/* Active Indicator */}

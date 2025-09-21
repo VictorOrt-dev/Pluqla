@@ -38,40 +38,85 @@
     "change_language": "Cambiar idioma"
   },
   "auth": {
-    "login": "Iniciar sesión",
-    "register": "Registrarse",
-    "email": "Dirección de email",
-    "password": "Contraseña",
-    "confirm_password": "Confirmar contraseña",
-    "name": "Nombre",
-    "remember_me": "Recordarme",
-    "forgot_password": "¿Olvidaste tu contraseña?",
-    "no_account": "¿No tienes cuenta?",
-    "already_account": "¿Ya tienes cuenta?",
-    "sign_in": "Iniciar sesión",
-    "sign_up": "Registrarse",
-    "create_account": "Crear mi cuenta",
-    "welcome_back": "¡Bienvenido de vuelta!",
-    "join_us": "Únete a nosotros",
-    "secure_login": "Inicio de sesión seguro",
-    "email_verification": "Verificación de email",
-    "verify_email": "Verificar email",
-    "verification_sent": "Email de verificación enviado",
-    "resend_verification": "Reenviar verificación",
-    "verification_code": "Código de verificación"
+    "login": {
+      "title": "¡Bienvenido de vuelta!",
+      "subtitle": "Inicia sesión para acceder a tus ahorros personalizados",
+      "submit": "🚀 Iniciar sesión",
+      "loading": "Iniciando sesión...",
+      "switchToRegister": "¿No tienes cuenta? Registrarse"
+    },
+    "register": {
+      "title": "Creemos tu cuenta",
+      "subtitle": "Unos segundos para desbloquear tu potencial de ahorro",
+      "submit": "✨ Crear mi cuenta",
+      "loading": "Creando cuenta...",
+      "switchToLogin": "¿Ya tienes cuenta? Iniciar sesión"
+    },
+    "fields": {
+      "name": "Tu nombre",
+      "email": "Dirección de email",
+      "password": "Contraseña",
+      "confirmPassword": "Confirmar contraseña"
+    },
+    "placeholders": {
+      "name": "ej. María",
+      "email": "tu.email@ejemplo.com",
+      "password": "Mínimo 6 caracteres",
+      "confirmPassword": "Confirma tu contraseña"
+    },
+    "validation": {
+      "nameRequired": "El nombre es requerido",
+      "emailRequired": "El email es requerido",
+      "emailInvalid": "Formato de email inválido",
+      "passwordRequired": "La contraseña es requerida",
+      "passwordMinLength": "Mínimo 6 caracteres",
+      "passwordMismatch": "Las contraseñas no coinciden"
+    },
+    "security": {
+      "ssl": "Cifrado SSL",
+      "gdpr": "Cumple RGPD",
+      "secure": "Datos Seguros",
+      "dataProtection": "Tus datos personales están protegidos y nunca se comparten"
+    },
+    "errors": {
+      "loginError": "Error de inicio de sesión",
+      "registerError": "Error de registro",
+      "networkError": "Error de red, por favor intenta de nuevo"
+    },
+    "legacy": {
+      "email": "Dirección de email",
+      "password": "Contraseña",
+      "confirm_password": "Confirmar contraseña",
+      "name": "Nombre",
+      "remember_me": "Recordarme",
+      "forgot_password": "¿Olvidaste tu contraseña?",
+      "no_account": "¿No tienes cuenta?",
+      "already_account": "¿Ya tienes cuenta?",
+      "sign_in": "Iniciar sesión",
+      "sign_up": "Registrarse",
+      "create_account": "Crear mi cuenta",
+      "welcome_back": "¡Bienvenido de vuelta!",
+      "join_us": "Únete a nosotros",
+      "secure_login": "Inicio de sesión seguro",
+      "email_verification": "Verificación de email",
+      "verify_email": "Verificar email",
+      "verification_sent": "Email de verificación enviado",
+      "resend_verification": "Reenviar verificación",
+      "verification_code": "Código de verificación"
+    }
   },
   "onboarding": {
     "welcome": {
       "title": "+Clair",
-      "subtitle": "La IA que realmente impulsa tu poder adquisitivo",
+      "subtitle": "La app que realmente impulsa tu poder adquisitivo",
       "start_button": "🚀 Comenzar gratis",
       "stats": {
         "users": "usuarios activos",
         "saved": "Ahorrado este mes"
       },
       "features": {
-        "ai_personalized": "IA Personalizada",
-        "ai_description": "Aprende tus hábitos y encuentra ahorros únicos",
+        "smart_suggestions": "Sugerencias Inteligentes",
+        "smart_description": "Aprende tus hábitos y encuentra ahorros únicos",
         "savings_potential": "Hasta 800€/mes",
         "savings_description": "Ahorros promedio de nuestros usuarios activos",
         "immediate_results": "Resultados Inmediatos",

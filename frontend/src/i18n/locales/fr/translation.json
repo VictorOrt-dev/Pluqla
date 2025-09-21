@@ -42,42 +42,87 @@
     "change_language": "Changer de langue"
   },
   "auth": {
-    "login": "Connexion",
-    "register": "Inscription",
-    "email": "Adresse email",
-    "password": "Mot de passe",
-    "confirm_password": "Confirmer le mot de passe",
-    "name": "Prénom",
-    "remember_me": "Se souvenir de moi",
-    "forgot_password": "Mot de passe oublié ?",
-    "no_account": "Pas encore de compte ?",
-    "already_account": "Déjà un compte ?",
-    "sign_in": "Se connecter",
-    "sign_up": "S'inscrire",
-    "create_account": "Créer mon compte",
-    "welcome_back": "Bon retour !",
-    "join_us": "Rejoignez-nous",
-    "secure_login": "Connexion sécurisée",
-    "email_verification": "Vérification email",
-    "verify_email": "Vérifier l'email",
-    "verification_sent": "Email de vérification envoyé",
-    "resend_verification": "Renvoyer la vérification",
-    "verification_code": "Code de vérification",
-    "sessionExpired": "Votre session a expiré. Veuillez vous reconnecter.",
-    "noRefreshToken": "Aucun token de rafraîchissement trouvé"
+    "login": {
+      "title": "Bon retour !",
+      "subtitle": "Connecte-toi pour accéder à tes économies personnalisées",
+      "submit": "🚀 Se connecter",
+      "loading": "Connexion...",
+      "switchToRegister": "Pas encore de compte ? S'inscrire"
+    },
+    "register": {
+      "title": "Créons ton compte",
+      "subtitle": "Quelques secondes pour débloquer ton potentiel d'économies",
+      "submit": "✨ Créer mon compte",
+      "loading": "Création du compte...",
+      "switchToLogin": "Déjà un compte ? Se connecter"
+    },
+    "fields": {
+      "name": "Ton prénom",
+      "email": "Adresse email",
+      "password": "Mot de passe",
+      "confirmPassword": "Confirmer le mot de passe"
+    },
+    "placeholders": {
+      "name": "Ex: Marie",
+      "email": "ton.email@exemple.com",
+      "password": "Minimum 6 caractères",
+      "confirmPassword": "Confirme ton mot de passe"
+    },
+    "validation": {
+      "nameRequired": "Le nom est requis",
+      "emailRequired": "L'email est requis",
+      "emailInvalid": "Format d'email invalide",
+      "passwordRequired": "Le mot de passe est requis",
+      "passwordMinLength": "Minimum 6 caractères",
+      "passwordMismatch": "Les mots de passe ne correspondent pas"
+    },
+    "security": {
+      "ssl": "Chiffrement SSL",
+      "gdpr": "RGPD Conforme",
+      "secure": "Données sécurisées",
+      "dataProtection": "Tes données personnelles sont protégées et jamais partagées"
+    },
+    "errors": {
+      "loginError": "Erreur de connexion",
+      "registerError": "Erreur d'inscription",
+      "networkError": "Erreur de réseau, veuillez réessayer"
+    },
+    "legacy": {
+      "email": "Adresse email",
+      "password": "Mot de passe",
+      "confirm_password": "Confirmer le mot de passe",
+      "name": "Prénom",
+      "remember_me": "Se souvenir de moi",
+      "forgot_password": "Mot de passe oublié ?",
+      "no_account": "Pas encore de compte ?",
+      "already_account": "Déjà un compte ?",
+      "sign_in": "Se connecter",
+      "sign_up": "S'inscrire",
+      "create_account": "Créer mon compte",
+      "welcome_back": "Bon retour !",
+      "join_us": "Rejoignez-nous",
+      "secure_login": "Connexion sécurisée",
+      "email_verification": "Vérification email",
+      "verify_email": "Vérifier l'email",
+      "verification_sent": "Email de vérification envoyé",
+      "resend_verification": "Renvoyer la vérification",
+      "verification_code": "Code de vérification",
+      "sessionExpired": "Votre session a expiré. Veuillez vous reconnecter.",
+      "noRefreshToken": "Aucun token de rafraîchissement trouvé"
+    }
   },
   "onboarding": {
     "welcome": {
       "title": "+Clair",
-      "subtitle": "L'IA qui booste vraiment ton pouvoir d'achat",
+      "subtitle": "L'app qui booste vraiment ton pouvoir d'achat",
       "start_button": "🚀 Commencer gratuitement",
       "stats": {
         "users": "utilisateurs actifs",
         "saved": "Économisé ce mois"
       },
       "features": {
-        "ai_personalized": "IA Personnalisée",
-        "ai_description": "Analyse tes habitudes et trouve des économies uniques",
+        "smart_suggestions": "Suggestions Intelligentes",
+        "smart_description": "Analyse tes habitudes et trouve des économies uniques",
         "savings_potential": "Jusqu'à 800€/mois",
         "savings_description": "Économies moyennes de nos utilisateurs actifs",
         "immediate_results": "Résultats Immédiats",

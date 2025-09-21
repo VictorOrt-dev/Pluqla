@@ -42,40 +42,85 @@
     "change_language": "Change language"
   },
   "auth": {
-    "login": "Login",
-    "register": "Register",
-    "email": "Email address",
-    "password": "Password",
-    "confirm_password": "Confirm password",
-    "name": "First name",
-    "remember_me": "Remember me",
-    "forgot_password": "Forgot password?",
-    "no_account": "No account yet?",
-    "already_account": "Already have an account?",
-    "sign_in": "Sign in",
-    "sign_up": "Sign up",
-    "create_account": "Create my account",
-    "welcome_back": "Welcome back!",
-    "join_us": "Join us",
-    "secure_login": "Secure login",
-    "email_verification": "Email verification",
-    "verify_email": "Verify email",
-    "verification_sent": "Verification email sent",
-    "resend_verification": "Resend verification",
-    "verification_code": "Verification code"
+    "login": {
+      "title": "Welcome back!",
+      "subtitle": "Sign in to access your personalized savings",
+      "submit": "🚀 Sign in",
+      "loading": "Signing in...",
+      "switchToRegister": "No account yet? Sign up"
+    },
+    "register": {
+      "title": "Let's create your account",
+      "subtitle": "A few seconds to unlock your savings potential",
+      "submit": "✨ Create my account",
+      "loading": "Creating account...",
+      "switchToLogin": "Already have an account? Sign in"
+    },
+    "fields": {
+      "name": "Your first name",
+      "email": "Email address",
+      "password": "Password",
+      "confirmPassword": "Confirm password"
+    },
+    "placeholders": {
+      "name": "e.g. Marie",
+      "email": "your.email@example.com",
+      "password": "Minimum 6 characters",
+      "confirmPassword": "Confirm your password"
+    },
+    "validation": {
+      "nameRequired": "Name is required",
+      "emailRequired": "Email is required",
+      "emailInvalid": "Invalid email format",
+      "passwordRequired": "Password is required",
+      "passwordMinLength": "Minimum 6 characters",
+      "passwordMismatch": "Passwords don't match"
+    },
+    "security": {
+      "ssl": "SSL Encryption",
+      "gdpr": "GDPR Compliant",
+      "secure": "Secure Data",
+      "dataProtection": "Your personal data is protected and never shared"
+    },
+    "errors": {
+      "loginError": "Login error",
+      "registerError": "Registration error",
+      "networkError": "Network error, please try again"
+    },
+    "legacy": {
+      "email": "Email address",
+      "password": "Password",
+      "confirm_password": "Confirm password",
+      "name": "First name",
+      "remember_me": "Remember me",
+      "forgot_password": "Forgot password?",
+      "no_account": "No account yet?",
+      "already_account": "Already have an account?",
+      "sign_in": "Sign in",
+      "sign_up": "Sign up",
+      "create_account": "Create my account",
+      "welcome_back": "Welcome back!",
+      "join_us": "Join us",
+      "secure_login": "Secure login",
+      "email_verification": "Email verification",
+      "verify_email": "Verify email",
+      "verification_sent": "Verification email sent",
+      "resend_verification": "Resend verification",
+      "verification_code": "Verification code"
+    }
   },
   "onboarding": {
     "welcome": {
       "title": "+Clair",
-      "subtitle": "The AI that truly boosts your purchasing power",
+      "subtitle": "The app that truly boosts your purchasing power",
       "start_button": "🚀 Start for free",
       "stats": {
         "users": "active users",
         "saved": "Saved this month"
       },
       "features": {
-        "ai_personalized": "Personalized AI",
-        "ai_description": "Learns your habits and finds unique savings",
+        "smart_suggestions": "Smart Suggestions",
+        "smart_description": "Learns your habits and finds unique savings",
         "savings_potential": "Up to $800/month",
         "savings_description": "Average savings from our active users",
         "immediate_results": "Immediate Results",
