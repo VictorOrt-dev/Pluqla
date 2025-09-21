@@ -1,0 +1,173 @@
+[
+  {
+    "id": "pasta-carbonara",
+    "name": "Pâtes Carbonara Express",
+    "price": 4.50,
+    "servings": 4,
+    "prepTime": 15,
+    "difficulty": "Facile",
+    "category": "Italien",
+    "image": "🍝",
+    "tags": ["rapide", "pas cher"],
+    "ingredients": [
+      { "name": "Pâtes spaghetti", "quantity": "400g", "price": 1.20 },
+      { "name": "Lardons", "quantity": "200g", "price": 2.50 },
+      { "name": "Œufs", "quantity": "3 pièces", "price": 0.60 },
+      { "name": "Parmesan râpé", "quantity": "50g", "price": 0.80 },
+      { "name": "Poivre noir", "quantity": "1 pincée", "price": 0.05 }
+    ],
+    "instructions": [
+      "Faire cuire les pâtes dans une grande casserole d'eau salée selon les instructions du paquet.",
+      "Pendant ce temps, faire revenir les lardons dans une poêle sans matière grasse jusqu'à ce qu'ils soient dorés.",
+      "Dans un bol, battre les œufs avec le parmesan râpé et du poivre.",
+      "Égoutter les pâtes en réservant un peu d'eau de cuisson.",
+      "Mélanger immédiatement les pâtes chaudes avec le mélange œufs-parmesan, ajouter les lardons.",
+      "Servir aussitôt avec du parmesan supplémentaire."
+    ],
+    "tips": "Le secret : mélanger hors du feu pour éviter que les œufs cuisent trop.",
+    "nutrition": {
+      "calories": 520,
+      "protein": 25,
+      "carbs": 68,
+      "fat": 18
+    }
+  },
+  {
+    "id": "buddha-bowl",
+    "name": "Buddha Bowl Coloré",
+    "price": 6.80,
+    "servings": 2,
+    "prepTime": 25,
+    "difficulty": "Moyen",
+    "category": "Healthy",
+    "image": "🥗",
+    "tags": ["végétarien", "healthy", "complet"],
+    "ingredients": [
+      { "name": "Quinoa", "quantity": "150g", "price": 2.00 },
+      { "name": "Avocat", "quantity": "1 pièce", "price": 1.50 },
+      { "name": "Brocolis", "quantity": "200g", "price": 1.20 },
+      { "name": "Carottes", "quantity": "2 pièces", "price": 0.60 },
+      { "name": "Graines de tournesol", "quantity": "30g", "price": 0.80 },
+      { "name": "Sauce tahini", "quantity": "2 c.s.", "price": 0.70 }
+    ],
+    "instructions": [
+      "Rincer et cuire le quinoa selon les instructions du paquet (environ 15 min).",
+      "Couper les brocolis en bouquets et les faire cuire à la vapeur 8 minutes.",
+      "Râper les carottes ou les couper en julienne.",
+      "Couper l'avocat en tranches au moment de servir.",
+      "Disposer tous les ingrédients dans un bol, arroser de sauce tahini.",
+      "Parsemer de graines de tournesol et servir."
+    ],
+    "tips": "Préparez plusieurs portions à l'avance, ajoutez l'avocat au dernier moment.",
+    "nutrition": {
+      "calories": 420,
+      "protein": 15,
+      "carbs": 45,
+      "fat": 22
+    }
+  },
+  {
+    "id": "chicken-curry",
+    "name": "Curry de Poulet Maison",
+    "price": 8.20,
+    "servings": 4,
+    "prepTime": 30,
+    "difficulty": "Moyen",
+    "category": "Asiatique",
+    "image": "🍛",
+    "tags": ["épicé", "réconfortant"],
+    "ingredients": [
+      { "name": "Blanc de poulet", "quantity": "500g", "price": 4.50 },
+      { "name": "Lait de coco", "quantity": "400ml", "price": 1.20 },
+      { "name": "Pâte de curry rouge", "quantity": "2 c.s.", "price": 0.80 },
+      { "name": "Oignon", "quantity": "1 pièce", "price": 0.30 },
+      { "name": "Poivron rouge", "quantity": "1 pièce", "price": 1.00 },
+      { "name": "Riz basmati", "quantity": "250g", "price": 1.40 }
+    ],
+    "instructions": [
+      "Couper le poulet en morceaux et l'oignon en lamelles.",
+      "Faire revenir l'oignon dans un peu d'huile, ajouter la pâte de curry.",
+      "Ajouter le poulet et faire dorer 5 minutes.",
+      "Verser le lait de coco, laisser mijoter 15 minutes.",
+      "Ajouter le poivron coupé en lanières, cuire 5 minutes de plus.",
+      "Servir avec le riz basmati cuit à part."
+    ],
+    "tips": "Ajustez le piquant selon vos goûts avec plus ou moins de pâte de curry.",
+    "nutrition": {
+      "calories": 580,
+      "protein": 35,
+      "carbs": 52,
+      "fat": 24
+    }
+  },
+  {
+    "id": "veggie-sandwich",
+    "name": "Sandwich Veggie Gourmand",
+    "price": 3.20,
+    "servings": 1,
+    "prepTime": 10,
+    "difficulty": "Facile",
+    "category": "Végétarien",
+    "image": "🥪",
+    "tags": ["végétarien", "rapide", "lunch"],
+    "ingredients": [
+      { "name": "Pain complet", "quantity": "2 tranches", "price": 0.40 },
+      { "name": "Avocat", "quantity": "1/2 pièce", "price": 0.75 },
+      { "name": "Tomate", "quantity": "1 pièce", "price": 0.50 },
+      { "name": "Concombre", "quantity": "1/4 pièce", "price": 0.25 },
+      { "name": "Houmous", "quantity": "2 c.s.", "price": 0.60 },
+      { "name": "Salade", "quantity": "quelques feuilles", "price": 0.30 },
+      { "name": "Graines de tournesol", "quantity": "1 c.s.", "price": 0.40 }
+    ],
+    "instructions": [
+      "Toaster légèrement les tranches de pain.",
+      "Étaler le houmous sur une tranche.",
+      "Couper l'avocat en tranches et l'étaler sur le houmous.",
+      "Ajouter les rondelles de tomate et de concombre.",
+      "Disposer la salade et parsemer de graines de tournesol.",
+      "Fermer avec la seconde tranche et couper en deux."
+    ],
+    "tips": "Pressez un peu de citron sur l'avocat pour éviter qu'il noircisse.",
+    "nutrition": {
+      "calories": 380,
+      "protein": 12,
+      "carbs": 32,
+      "fat": 24
+    }
+  },
+  {
+    "id": "omelette-herbs",
+    "name": "Omelette aux Herbes",
+    "price": 2.80,
+    "servings": 1,
+    "prepTime": 8,
+    "difficulty": "Facile",
+    "category": "Français",
+    "image": "🍳",
+    "tags": ["rapide", "protéines", "petit-déjeuner"],
+    "ingredients": [
+      { "name": "Œufs", "quantity": "3 pièces", "price": 0.60 },
+      { "name": "Beurre", "quantity": "1 c.s.", "price": 0.20 },
+      { "name": "Ciboulette", "quantity": "1 c.s.", "price": 0.30 },
+      { "name": "Persil", "quantity": "1 c.s.", "price": 0.20 },
+      { "name": "Gruyère râpé", "quantity": "30g", "price": 0.80 },
+      { "name": "Sel et poivre", "quantity": "au goût", "price": 0.05 },
+      { "name": "Lait", "quantity": "2 c.s.", "price": 0.10 }
+    ],
+    "instructions": [
+      "Battre les œufs avec le lait, sel et poivre.",
+      "Hacher finement les herbes fraîches.",
+      "Faire chauffer le beurre dans une poêle antiadhésive.",
+      "Verser les œufs et laisser prendre en remuant délicatement.",
+      "Ajouter les herbes et le fromage sur une moitié.",
+      "Replier l'omelette et servir immédiatement."
+    ],
+    "tips": "Ne pas trop cuire pour garder l'omelette moelleuse à cœur.",
+    "nutrition": {
+      "calories": 320,
+      "protein": 22,
+      "carbs": 3,
+      "fat": 24
+    }
+  }
+]

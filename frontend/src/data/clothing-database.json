@@ -1,0 +1,92 @@
+[
+  {
+    "id": "jean-classic",
+    "category": "pantalon",
+    "name": "Jean classique",
+    "keywords": ["jean", "denim", "pantalon", "bleu"],
+    "colors": ["bleu", "noir", "gris"],
+    "prices": [
+      {
+        "store": "H&M",
+        "price": 29.99,
+        "url": "https://hm.com",
+        "availability": "En stock",
+        "rating": 4.2
+      },
+      {
+        "store": "Zara",
+        "price": 39.95,
+        "url": "https://zara.com",
+        "availability": "En stock",
+        "rating": 4.5
+      },
+      {
+        "store": "Uniqlo",
+        "price": 35.90,
+        "url": "https://uniqlo.com",
+        "availability": "Stock limité",
+        "rating": 4.7
+      }
+    ]
+  },
+  {
+    "id": "tshirt-basic",
+    "category": "haut",
+    "name": "T-shirt basique",
+    "keywords": ["tshirt", "t-shirt", "haut", "basique", "coton"],
+    "colors": ["blanc", "noir", "gris", "marine"],
+    "prices": [
+      {
+        "store": "H&M",
+        "price": 9.99,
+        "url": "https://hm.com",
+        "availability": "En stock",
+        "rating": 4.0
+      },
+      {
+        "store": "Decathlon",
+        "price": 7.99,
+        "url": "https://decathlon.fr",
+        "availability": "En stock",
+        "rating": 4.3
+      },
+      {
+        "store": "Kiabi",
+        "price": 5.99,
+        "url": "https://kiabi.com",
+        "availability": "En stock",
+        "rating": 3.8
+      }
+    ]
+  },
+  {
+    "id": "sneakers-sport",
+    "category": "chaussures",
+    "name": "Baskets sport",
+    "keywords": ["baskets", "sneakers", "sport", "chaussures"],
+    "colors": ["blanc", "noir", "rouge", "bleu"],
+    "prices": [
+      {
+        "store": "Nike",
+        "price": 89.99,
+        "url": "https://nike.com",
+        "availability": "En stock",
+        "rating": 4.8
+      },
+      {
+        "store": "Adidas",
+        "price": 79.95,
+        "url": "https://adidas.fr",
+        "availability": "En stock",
+        "rating": 4.6
+      },
+      {
+        "store": "Decathlon",
+        "price": 39.99,
+        "url": "https://decathlon.fr",
+        "availability": "En stock",
+        "rating": 4.1
+      }
+    ]
+  }
+]

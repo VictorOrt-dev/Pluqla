@@ -1,0 +1,49 @@
+{
+  "name": "plus-clair",
+  "version": "2.0.0",
+  "description": "Application d'économies intelligentes avec IA - Frontend React + Backend Node.js",
+  "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
+  "scripts": {
+    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
+    "start:frontend": "cd frontend && npm start",
+    "start:backend": "cd backend && npm run dev",
+    "build": "npm run build:frontend",
+    "build:frontend": "cd frontend && npm run build",
+    "test": "concurrently \"npm run test:frontend\" \"npm run test:backend\"",
+    "test:frontend": "cd frontend && npm test",
+    "test:backend": "cd backend && npm test",
+    "install:all": "npm install && npm run install:frontend && npm run install:backend",
+    "install:frontend": "cd frontend && npm install",
+    "install:backend": "cd backend && npm install",
+    "clean": "npm run clean:frontend && npm run clean:backend",
+    "clean:frontend": "cd frontend && rm -rf node_modules build",
+    "clean:backend": "cd backend && rm -rf node_modules coverage",
+    "db:setup": "cd backend && npm run db:generate && npm run db:migrate",
+    "db:seed": "cd backend && npm run db:seed",
+    "lint": "concurrently \"npm run lint:frontend\" \"npm run lint:backend\"",
+    "lint:frontend": "cd frontend && npm run lint",
+    "lint:backend": "cd backend && npm run lint"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "author": "Victor - +Clair Team",
+  "license": "MIT",
+  "keywords": [
+    "react",
+    "nodejs",
+    "express",
+    "prisma",
+    "ai",
+    "savings",
+    "monorepo"
+  ]
+}

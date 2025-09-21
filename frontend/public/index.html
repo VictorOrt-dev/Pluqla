@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#10B981" />
+    <meta name="description" content="L'IA qui booste vraiment ton pouvoir d'achat - Analyse de vêtements, recettes personnalisées, transport optimisé et suivi d'activités" />
+
+    <!-- PWA Configuration -->
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+
+    <!-- iOS Safari PWA -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="+Clair" />
+    <link rel="apple-touch-icon" sizes="192x192" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="%PUBLIC_URL%/logo512.png" />
+
+    <!-- Windows/Edge PWA -->
+    <meta name="msapplication-TileColor" content="#10B981" />
+    <meta name="msapplication-TileImage" content="%PUBLIC_URL%/logo192.png" />
+
+    <!-- SEO et Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="+Clair - Économies intelligentes avec IA" />
+    <meta property="og:description" content="L'IA qui booste vraiment ton pouvoir d'achat - Analyse de vêtements, recettes personnalisées, transport optimisé" />
+    <meta property="og:image" content="%PUBLIC_URL%/logo512.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="+Clair - Économies intelligentes" />
+    <meta name="twitter:description" content="L'IA qui booste vraiment ton pouvoir d'achat" />
+
+    <!-- Keywords for app stores -->
+    <meta name="keywords" content="économies,budget,IA,intelligence artificielle,vêtements,recettes,transport,activités,finance personnelle" />
+    <title>+Clair - Économies intelligentes avec IA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            animation: {
+              'slide-down': 'slide-down 0.3s ease-out',
+              'float': 'float 3s ease-in-out infinite',
+              'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+            }
+          }
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+  </body>
+</html>

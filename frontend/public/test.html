@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Simple</title>
+    <style>
+        body {
+            background: white;
+            color: black;
+            font-family: Arial;
+            padding: 20px;
+            margin: 0;
+        }
+        .test {
+            background: red;
+            color: white;
+            padding: 20px;
+            margin: 20px;
+            border: 2px solid blue;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔴 TEST AFFICHAGE</h1>
+    <div class="test">
+        <h2>Si vous voyez cette page, le serveur fonctionne</h2>
+        <p>Timestamp: <span id="time"></span></p>
+        <button onclick="goToApp()">Retour à l'app</button>
+        <button onclick="clearAndGo()">Clear + App</button>
+    </div>
+
+    <div style="background: yellow; padding: 10px; margin: 10px;">
+        <h3>Tests Console:</h3>
+        <button onclick="testConsole()">Test Console</button>
+        <button onclick="testLocalStorage()">Test localStorage</button>
+        <div id="console-output" style="background: black; color: lime; padding: 10px; font-family: monospace; height: 200px; overflow: auto; margin-top: 10px;"></div>
+    </div>
+
+    <script>
+        document.getElementById('time').textContent = new Date().toLocaleString();
+
+        function log(msg) {
+            const output = document.getElementById('console-output');
+            output.innerHTML += msg + '<br>';
+            output.scrollTop = output.scrollHeight;
+            console.log(msg);
+        }
+
+        function testConsole() {
+            log('=== TEST CONSOLE ===');
+            log('Date: ' + new Date());
+            log('UserAgent: ' + navigator.userAgent);
+            log('Location: ' + window.location.href);
+        }
+
+        function testLocalStorage() {
+            log('=== TEST LOCALSTORAGE ===');
+            try {
+                const keys = Object.keys(localStorage);
+                log('Keys count: ' + keys.length);
+                keys.forEach(key => {
+                    const value = localStorage.getItem(key);
+                    log(key + ': ' + (value ? value.substring(0, 50) + '...' : 'null'));
+                });
+            } catch(e) {
+                log('ERROR: ' + e.message);
+            }
+        }
+
+        function goToApp() {
+            window.location.href = '/';
+        }
+
+        function clearAndGo() {
+            log('Clearing localStorage...');
+            localStorage.clear();
+            localStorage.setItem('currentScreen', 'debug');
+            log('Going to app...');
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 1000);
+        }
+
+        // Auto-test au chargement
+        setTimeout(() => {
+            testConsole();
+            testLocalStorage();
+        }, 500);
+    </script>
+</body>
+</html>

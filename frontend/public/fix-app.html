@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>+Clair - Réparation App</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 500px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        h1 {
+            color: #10B981;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #10B981;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px;
+            transition: all 0.3s;
+        }
+        button:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+        }
+        .success {
+            background: #D1FAE5;
+            color: #065F46;
+            border: 1px solid #10B981;
+        }
+        .info {
+            background: #DBEAFE;
+            color: #1E40AF;
+            border: 1px solid #3B82F6;
+        }
+        .storage-item {
+            background: #F3F4F6;
+            margin: 5px 0;
+            padding: 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 +Clair - Réparation</h1>
+        <p>Outil de diagnostic et réparation pour l'écran noir</p>
+
+        <button onclick="diagnose()">🔍 Diagnostiquer</button>
+        <button onclick="fixApp()">🔧 Réparer App</button>
+        <button onclick="goToApp()">🚀 Retourner à l'App</button>
+
+        <div id="status"></div>
+        <div id="storage-content"></div>
+    </div>
+
+    <script>
+        function diagnose() {
+            const status = document.getElementById('status');
+            const storageContent = document.getElementById('storage-content');
+
+            status.innerHTML = '<div class="status info">📊 Diagnostic en cours...</div>';
+
+            // Analyser localStorage
+            const keys = Object.keys(localStorage);
+            let report = '<h3>État du localStorage:</h3>';
+
+            if (keys.length === 0) {
+                report += '<p>✅ localStorage vide</p>';
+            } else {
+                report += `<p>📦 ${keys.length} clés trouvées:</p>`;
+                keys.forEach(key => {
+                    const value = localStorage.getItem(key);
+                    report += `<div class="storage-item"><strong>${key}:</strong> ${value ? value.substring(0, 100) + '...' : 'null'}</div>`;
+                });
+            }
+
+            // Vérifier les valeurs problématiques
+            const currentScreen = localStorage.getItem('currentScreen');
+            if (!currentScreen || currentScreen === 'undefined' || currentScreen === 'null') {
+                report += '<p>⚠️ currentScreen invalide détecté</p>';
+            }
+
+            storageContent.innerHTML = report;
+            status.innerHTML = '<div class="status info">✅ Diagnostic terminé</div>';
+        }
+
+        function fixApp() {
+            const status = document.getElementById('status');
+            status.innerHTML = '<div class="status info">🔧 Réparation en cours...</div>';
+
+            // Nettoyer les données problématiques
+            const problematicKeys = [
+                'currentScreen',
+                'onboardingProgress',
+                'userAnswers',
+                'userData',
+                'navigationHistory',
+                'transactions',
+                'aiSuggestions'
+            ];
+
+            let removedCount = 0;
+            problematicKeys.forEach(key => {
+                if (localStorage.getItem(key)) {
+                    localStorage.removeItem(key);
+                    removedCount++;
+                }
+            });
+
+            // Forcer l'écran d'accueil
+            localStorage.setItem('currentScreen', 'home');
+
+            status.innerHTML = `
+                <div class="status success">
+                    ✅ Réparation terminée!<br>
+                    📦 ${removedCount} clés supprimées<br>
+                    🏠 Écran forcé vers 'home'<br>
+                    <br>
+                    <strong>➡️ Cliquez sur "Retourner à l'App"</strong>
+                </div>
+            `;
+
+            // Auto-diagnostic après réparation
+            setTimeout(() => {
+                diagnose();
+            }, 1000);
+        }
+
+        function goToApp() {
+            // Rediriger vers l'app principale
+            window.location.href = '/';
+        }
+
+        // Auto-diagnostic au chargement
+        window.onload = function() {
+            diagnose();
+        };
+    </script>
+</body>
+</html>

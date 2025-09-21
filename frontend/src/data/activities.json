@@ -1,0 +1,83 @@
+[
+  {
+    "id": "running",
+    "name": "Course à pied",
+    "category": "cardio",
+    "icon": "🏃",
+    "caloriesPerMinute": 12,
+    "equipment": [],
+    "locations": ["parc", "rue", "tapis"],
+    "difficultyLevels": ["débutant", "intermédiaire", "avancé"],
+    "recommendations": {
+      "beginner": {
+        "duration": 20,
+        "frequency": 3,
+        "intensity": "faible"
+      },
+      "intermediate": {
+        "duration": 35,
+        "frequency": 4,
+        "intensity": "modérée"
+      },
+      "advanced": {
+        "duration": 60,
+        "frequency": 5,
+        "intensity": "élevée"
+      }
+    }
+  },
+  {
+    "id": "yoga",
+    "name": "Yoga",
+    "category": "flexibility",
+    "icon": "🧘",
+    "caloriesPerMinute": 4,
+    "equipment": ["tapis"],
+    "locations": ["maison", "studio", "parc"],
+    "difficultyLevels": ["débutant", "intermédiaire", "avancé"],
+    "recommendations": {
+      "beginner": {
+        "duration": 30,
+        "frequency": 3,
+        "intensity": "douce"
+      },
+      "intermediate": {
+        "duration": 45,
+        "frequency": 4,
+        "intensity": "modérée"
+      },
+      "advanced": {
+        "duration": 75,
+        "frequency": 5,
+        "intensity": "intensive"
+      }
+    }
+  },
+  {
+    "id": "cycling",
+    "name": "Vélo",
+    "category": "cardio",
+    "icon": "🚴",
+    "caloriesPerMinute": 10,
+    "equipment": ["vélo", "casque"],
+    "locations": ["rue", "piste cyclable", "montagne"],
+    "difficultyLevels": ["débutant", "intermédiaire", "avancé"],
+    "recommendations": {
+      "beginner": {
+        "duration": 30,
+        "frequency": 3,
+        "intensity": "faible"
+      },
+      "intermediate": {
+        "duration": 60,
+        "frequency": 4,
+        "intensity": "modérée"
+      },
+      "advanced": {
+        "duration": 90,
+        "frequency": 5,
+        "intensity": "élevée"
+      }
+    }
+  }
+]
