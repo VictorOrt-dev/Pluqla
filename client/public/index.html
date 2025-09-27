@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#E53E3E" />
+    <meta name="description" content="Pluqla - Votre chat économe ! L'IA qui vous aide à économiser jusqu'à 500€/mois avec votre adorable compagnon rouge" />
+
+    <!-- PWA Configuration -->
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+
+    <!-- iOS Safari PWA -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="Pluqla" />
+    <link rel="apple-touch-icon" sizes="192x192" href="%PUBLIC_URL%/logo192.png" />
+    <link rel="apple-touch-icon" sizes="512x512" href="%PUBLIC_URL%/logo512.png" />
+
+    <!-- Windows/Edge PWA -->
+    <meta name="msapplication-TileColor" content="#E53E3E" />
+    <meta name="msapplication-TileImage" content="%PUBLIC_URL%/logo192.png" />
+
+    <!-- SEO et Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Pluqla - Votre chat économe 🐱" />
+    <meta property="og:description" content="Découvrez Pluqla, votre adorable chat rouge qui vous aide à économiser jusqu'à 500€/mois grâce à l'IA !" />
+    <meta property="og:image" content="%PUBLIC_URL%/pluqla-logo.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Pluqla - Votre chat économe 🐱" />
+    <meta name="twitter:description" content="Économisez jusqu'à 500€/mois avec votre chat malin !" />
+
+    <!-- Keywords for app stores -->
+    <meta name="keywords" content="Pluqla,chat économe,économies,budget,IA,intelligence artificielle,chat rouge,mascotte,finance personnelle,épargne" />
+    <title>Pluqla - Votre chat économe 🐱</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            animation: {
+              'slide-down': 'slide-down 0.3s ease-out',
+              'float': 'float 3s ease-in-out infinite',
+              'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+            }
+          }
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div id="root"></div>
+  </body>
+</html>

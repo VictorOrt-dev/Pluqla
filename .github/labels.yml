@@ -1,0 +1,270 @@
+# 🏷️ Pluqla GitHub Labels Configuration
+# Used for PR categorization and automated workflows
+# Sync with: github-label-sync --config .github/labels.yml VictorOrt-dev/plus-clair
+
+# ==============================================================================
+# 🎯 TYPE LABELS - What kind of change
+# ==============================================================================
+
+- name: "type: bug"
+  color: "d73a4a"
+  description: "Something isn't working correctly"
+
+- name: "type: feature"
+  color: "0075ca"
+  description: "New functionality or enhancement"
+
+- name: "type: security"
+  color: "b60205"
+  description: "Security-related changes or fixes"
+
+- name: "type: performance"
+  color: "0e8a16"
+  description: "Performance improvements"
+
+- name: "type: refactor"
+  color: "5319e7"
+  description: "Code refactoring without functional changes"
+
+- name: "type: docs"
+  color: "0052cc"
+  description: "Documentation changes only"
+
+- name: "type: test"
+  color: "1d76db"
+  description: "Test coverage improvements"
+
+- name: "type: chore"
+  color: "fef2c0"
+  description: "Maintenance tasks and tooling"
+
+- name: "type: breaking"
+  color: "b60205"
+  description: "Breaking changes that affect existing functionality"
+
+# ==============================================================================
+# 🎨 AREA LABELS - Which part of the application
+# ==============================================================================
+
+- name: "area: frontend"
+  color: "61dafb"
+  description: "React frontend changes"
+
+- name: "area: backend"
+  color: "68217a"
+  description: "Node.js backend changes"
+
+- name: "area: database"
+  color: "336791"
+  description: "Database schema or migration changes"
+
+- name: "area: auth"
+  color: "ff6b00"
+  description: "Authentication and authorization"
+
+- name: "area: financial"
+  color: "f1c40f"
+  description: "Financial calculations and data handling"
+
+- name: "area: ai"
+  color: "e91e63"
+  description: "AI features and integrations"
+
+- name: "area: i18n"
+  color: "4caf50"
+  description: "Internationalization and translations"
+
+- name: "area: pwa"
+  color: "673ab7"
+  description: "Progressive Web App features"
+
+- name: "area: ci/cd"
+  color: "2e7d32"
+  description: "CI/CD pipeline and automation"
+
+# ==============================================================================
+# 📊 PRIORITY LABELS - How urgent
+# ==============================================================================
+
+- name: "priority: critical"
+  color: "b60205"
+  description: "Must be fixed immediately - security or data loss risk"
+
+- name: "priority: high"
+  color: "d93f0b"
+  description: "Should be fixed soon - significant impact"
+
+- name: "priority: medium"
+  color: "fbca04"
+  description: "Normal priority - fix in current sprint"
+
+- name: "priority: low"
+  color: "0e8a16"
+  description: "Nice to have - fix when time permits"
+
+# ==============================================================================
+# 📏 SIZE LABELS - How big the PR is
+# ==============================================================================
+
+- name: "size: XS"
+  color: "c2e0c6"
+  description: "Extra small PR (< 10 lines changed)"
+
+- name: "size: S"
+  color: "7ae98c"
+  description: "Small PR (10-50 lines changed)"
+
+- name: "size: M"
+  color: "a2eeef"
+  description: "Medium PR (50-200 lines changed)"
+
+- name: "size: L"
+  color: "d4c5f9"
+  description: "Large PR (200-400 lines changed)"
+
+- name: "size: XL"
+  color: "f9d0c4"
+  description: "Extra large PR (> 400 lines changed) - consider splitting"
+
+# ==============================================================================
+# 🚦 STATUS LABELS - Current state
+# ==============================================================================
+
+- name: "status: needs review"
+  color: "fbca04"
+  description: "PR is ready for review"
+
+- name: "status: in review"
+  color: "0075ca"
+  description: "Currently being reviewed"
+
+- name: "status: changes requested"
+  color: "d93f0b"
+  description: "Changes requested by reviewers"
+
+- name: "status: approved"
+  color: "0e8a16"
+  description: "Approved and ready to merge"
+
+- name: "status: blocked"
+  color: "b60205"
+  description: "Blocked by external dependency or issue"
+
+- name: "status: wip"
+  color: "6f42c1"
+  description: "Work in progress - not ready for review"
+
+# ==============================================================================
+# 🔒 SECURITY LABELS - Security-specific categorization
+# ==============================================================================
+
+- name: "security: audit required"
+  color: "b60205"
+  description: "Requires security audit before merge"
+
+- name: "security: low impact"
+  color: "0e8a16"
+  description: "Low security impact changes"
+
+- name: "security: dependency"
+  color: "d93f0b"
+  description: "Security-related dependency updates"
+
+- name: "security: vulnerability"
+  color: "b60205"
+  description: "Fixes security vulnerability"
+
+# ==============================================================================
+# 🎯 WORKFLOW LABELS - Automation triggers
+# ==============================================================================
+
+- name: "auto-merge"
+  color: "ededed"
+  description: "Can be automatically merged when checks pass"
+
+- name: "skip-ci"
+  color: "cccccc"
+  description: "Skip CI checks (use sparingly)"
+
+- name: "hotfix"
+  color: "b60205"
+  description: "Emergency hotfix - fast-track review"
+
+- name: "dependencies"
+  color: "0366d6"
+  description: "Dependency updates"
+
+# ==============================================================================
+# 👥 TEAM LABELS - Assignment and coordination
+# ==============================================================================
+
+- name: "team: backend"
+  color: "68217a"
+  description: "Requires backend team review"
+
+- name: "team: frontend"
+  color: "61dafb"
+  description: "Requires frontend team review"
+
+- name: "team: devops"
+  color: "2e7d32"
+  description: "Requires DevOps team review"
+
+- name: "team: qa"
+  color: "1d76db"
+  description: "Requires QA team review"
+
+# ==============================================================================
+# 🎉 SPECIAL LABELS - Notable changes
+# ==============================================================================
+
+- name: "first contribution"
+  color: "7057ff"
+  description: "First-time contributor"
+
+- name: "good first issue"
+  color: "7057ff"
+  description: "Good for newcomers"
+
+- name: "help wanted"
+  color: "008672"
+  description: "Extra attention is needed"
+
+- name: "duplicate"
+  color: "cfd3d7"
+  description: "This issue or PR already exists"
+
+- name: "invalid"
+  color: "e4e669"
+  description: "This doesn't seem right"
+
+- name: "question"
+  color: "d876e3"
+  description: "Further information is requested"
+
+- name: "wontfix"
+  color: "ffffff"
+  description: "This will not be worked on"
+
+# ==============================================================================
+# 📋 USAGE GUIDELINES
+# ==============================================================================
+
+# 🔴 REQUIRED: Every PR should have at least:
+# - One "type:" label
+# - One "area:" label
+# - One "size:" label
+# - One "priority:" label
+
+# 🟡 CONDITIONAL: Add when applicable:
+# - "security:" labels for security-related changes
+# - "team:" labels for specific team coordination
+# - "status:" labels to track PR lifecycle
+
+# 🟢 AUTOMATION: Some labels trigger automated actions:
+# - "auto-merge": Enables automatic merging
+# - "hotfix": Fast-tracks review process
+# - "skip-ci": Bypasses CI checks (use carefully)
+
+# To sync labels: npm install -g github-label-sync
+# github-label-sync --config .github/labels.yml VictorOrt-dev/plus-clair

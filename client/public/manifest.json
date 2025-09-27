@@ -1,0 +1,64 @@
+{
+  "short_name": "Pluqla",
+  "name": "Pluqla - Économies intelligentes avec IA",
+  "description": "Application d'économies avec analyse de vêtements, recettes, transport et activités. Suggestions IA personnalisées pour optimiser votre budget.",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "logo192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone"],
+  "orientation": "portrait-primary",
+  "theme_color": "#10B981",
+  "background_color": "#ffffff",
+  "categories": ["finance", "lifestyle", "shopping", "productivity"],
+  "lang": "fr",
+  "scope": "/",
+  "prefer_related_applications": false,
+  "shortcuts": [
+    {
+      "name": "Suggestions IA",
+      "short_name": "Suggestions",
+      "description": "Accéder directement aux suggestions IA",
+      "url": "/category/alimentation",
+      "icons": [{"src": "logo192.png", "sizes": "192x192"}]
+    },
+    {
+      "name": "Ajouter économie",
+      "short_name": "Économie",
+      "description": "Enregistrer une nouvelle économie",
+      "url": "/add-savings",
+      "icons": [{"src": "logo192.png", "sizes": "192x192"}]
+    },
+    {
+      "name": "Progression",
+      "short_name": "Progress",
+      "description": "Voir ma progression",
+      "url": "/progress",
+      "icons": [{"src": "logo192.png", "sizes": "192x192"}]
+    }
+  ],
+  "capture_links": "existing-client-navigate",
+  "protocol_handlers": [
+    {
+      "protocol": "web+savings",
+      "url": "/share?url=%s"
+    }
+  ]
+}

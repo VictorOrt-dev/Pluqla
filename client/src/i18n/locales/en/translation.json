@@ -1,0 +1,770 @@
+{
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "continue": "Continue",
+    "finish": "Finish",
+    "close": "Close",
+    "yes": "Yes",
+    "no": "No",
+    "or": "or",
+    "and": "and",
+    "skip": "Skip",
+    "restart": "Restart",
+    "retry": "Retry",
+    "notAvailable": "Not available",
+    "comingSoon": "Coming soon",
+    "locale": "en-US",
+    "currency": "$"
+  },
+  "navigation": {
+    "home": "Home",
+    "profile": "Profile",
+    "transactions": "Transactions",
+    "settings": "Settings",
+    "help": "Help",
+    "logout": "Logout"
+  },
+  "language": {
+    "selector": "Language",
+    "french": "French",
+    "english": "English",
+    "spanish": "Spanish",
+    "change_language": "Change language"
+  },
+  "auth": {
+    "login": {
+      "title": "Welcome back!",
+      "subtitle": "Sign in to access your personalized savings",
+      "submit": "🚀 Sign in",
+      "loading": "Signing in...",
+      "switchToRegister": "No account yet? Sign up"
+    },
+    "register": {
+      "title": "Let's create your account",
+      "subtitle": "A few seconds to unlock your savings potential",
+      "submit": "✨ Create my account",
+      "loading": "Creating account...",
+      "switchToLogin": "Already have an account? Sign in"
+    },
+    "fields": {
+      "name": "Your first name",
+      "email": "Email address",
+      "password": "Password",
+      "confirmPassword": "Confirm password"
+    },
+    "placeholders": {
+      "name": "e.g. Marie",
+      "email": "your.email@example.com",
+      "password": "Minimum 6 characters",
+      "confirmPassword": "Confirm your password"
+    },
+    "validation": {
+      "nameRequired": "Name is required",
+      "emailRequired": "Email is required",
+      "emailInvalid": "Invalid email format",
+      "passwordRequired": "Password is required",
+      "passwordMinLength": "Minimum 6 characters",
+      "passwordMismatch": "Passwords don't match"
+    },
+    "security": {
+      "ssl": "SSL Encryption",
+      "gdpr": "GDPR Compliant",
+      "secure": "Secure Data",
+      "dataProtection": "Your personal data is protected and never shared"
+    },
+    "errors": {
+      "loginError": "Login error",
+      "registerError": "Registration error",
+      "networkError": "Network error, please try again"
+    },
+    "legacy": {
+      "email": "Email address",
+      "password": "Password",
+      "confirm_password": "Confirm password",
+      "name": "First name",
+      "remember_me": "Remember me",
+      "forgot_password": "Forgot password?",
+      "no_account": "No account yet?",
+      "already_account": "Already have an account?",
+      "sign_in": "Sign in",
+      "sign_up": "Sign up",
+      "create_account": "Create my account",
+      "welcome_back": "Welcome back!",
+      "join_us": "Join us",
+      "secure_login": "Secure login",
+      "email_verification": "Email verification",
+      "verify_email": "Verify email",
+      "verification_sent": "Verification email sent",
+      "resend_verification": "Resend verification",
+      "verification_code": "Verification code"
+    }
+  },
+  "onboarding": {
+    "welcome": {
+      "title": "Pluqla",
+      "subtitle": "The app that truly boosts your purchasing power",
+      "start_button": "🚀 Start for free",
+      "stats": {
+        "users": "active users",
+        "saved": "Saved this month"
+      },
+      "features": {
+        "smart_suggestions": "Smart Suggestions",
+        "smart_description": "Learns your habits and finds unique savings",
+        "savings_potential": "Up to $800/month",
+        "savings_description": "Average savings from our active users",
+        "immediate_results": "Immediate Results",
+        "immediate_description": "First gains from the first week",
+        "gamification": "Gamification",
+        "gamification_description": "Earn points and unlock badges"
+      },
+      "testimonial": "I saved ${{amount}} in the first month!",
+      "benefits": "✨ 5 free suggestions • 🔒 Secure data • ⚡ Immediate results"
+    },
+    "auth": {
+      "title_register": "Let's create your account",
+      "title_login": "Welcome back!",
+      "subtitle_register": "A few seconds to unlock your savings potential",
+      "subtitle_login": "Sign in to access your personalized savings",
+      "switch_to_login": "Already have an account? Sign in",
+      "switch_to_register": "No account yet? Sign up",
+      "security_features": {
+        "ssl_encryption": "🔒 SSL Encryption",
+        "gdpr_compliant": "🇪🇺 GDPR Compliant",
+        "secure_data": "🛡️ Secure Data"
+      },
+      "privacy_notice": "Your personal data is protected and never shared"
+    },
+    "personalization": {
+      "title": "Let's personalize your experience",
+      "progress": "Question {{current}} of {{total}}",
+      "questions": {
+        "lifestyle": {
+          "question": "What's your lifestyle?",
+          "options": {
+            "student": "Student",
+            "young_professional": "Young professional",
+            "family": "Family",
+            "senior": "Senior"
+          }
+        },
+        "income": {
+          "question": "What's your monthly income range?",
+          "options": {
+            "under_1000": "Less than $1000",
+            "1000_2000": "$1000 - $2000",
+            "2000_3500": "$2000 - $3500",
+            "over_3500": "More than $3500"
+          }
+        },
+        "priorities": {
+          "question": "What are your spending priorities?",
+          "instruction": "Select up to {{max}} priorities",
+          "selected": "{{count}}/{{max}}",
+          "options": {
+            "food": "Food",
+            "housing": "Housing",
+            "transport": "Transport",
+            "clothing": "Clothing",
+            "leisure": "Leisure",
+            "technology": "Technology",
+            "travel": "Travel",
+            "health": "Health"
+          }
+        },
+        "savings_goal": {
+          "question": "What's your monthly savings goal?",
+          "unit": "$"
+        },
+        "ai_preferences": {
+          "question": "How do you prefer to receive your advice?",
+          "frequency": {
+            "label": "Suggestion frequency",
+            "daily": "Daily",
+            "weekly": "Weekly",
+            "monthly": "Monthly"
+          },
+          "style": {
+            "label": "Communication style",
+            "friendly": "Friendly and casual",
+            "professional": "Professional",
+            "motivational": "Motivating and energetic"
+          },
+          "risk": {
+            "label": "Risk tolerance",
+            "conservative": "Conservative",
+            "moderate": "Moderate",
+            "aggressive": "Bold"
+          }
+        }
+      }
+    },
+    "goals": {
+      "title": "What are your goals?",
+      "subtitle": "Setting your goals helps me personalize your savings advice",
+      "monthly_target": "Monthly savings target",
+      "priority_goals": "Choose your priority goals",
+      "custom_goal": "Custom goal (optional)",
+      "custom_placeholder": "Ex: Give a gift to my family...",
+      "goals_selected": "{{count}} goal{{count, plural, =0 {} =1 {} other {s}}} selected",
+      "personalization_notice": "I'll personalize your advice to help you reach these goals",
+      "predefined_goals": {
+        "emergency_fund": {
+          "title": "Emergency fund",
+          "description": "Build a safety savings account"
+        },
+        "vacation": {
+          "title": "Dream vacation",
+          "description": "Save for memorable holidays"
+        },
+        "major_purchase": {
+          "title": "Major purchase",
+          "description": "Car, appliances, etc."
+        },
+        "home_project": {
+          "title": "Home project",
+          "description": "Renovation or improvement"
+        },
+        "education": {
+          "title": "Education",
+          "description": "Invest in your skills"
+        },
+        "investment": {
+          "title": "Investment",
+          "description": "Long-term savings and investments"
+        }
+      }
+    },
+    "quick_wins": {
+      "title": "Your first savings",
+      "subtitle": "Discover simple tips to start saving today",
+      "progress": "Tip {{current}} of {{total}}",
+      "potential": "${{amount}}/month potential",
+      "reveal_tip": "🎁 Reveal the tip",
+      "how_to": "How to do it:",
+      "pro_tip": "Pro tip:",
+      "potential_revealed": "Savings potential revealed: ${{amount}}/month",
+      "yearly_potential": "That's ${{amount}} per year! 🎉"
+    },
+    "email_verification": {
+      "title": "Verify your email",
+      "subtitle": "A verification code has been sent to {{email}}",
+      "code_label": "Verification code (6 digits)",
+      "verify_button": "✅ Verify code",
+      "resend_code": "📮 Resend code",
+      "resend_countdown": "Resend code in {{seconds}}s",
+      "skip_for_now": "Skip for now",
+      "help": {
+        "title": "Not receiving the code?",
+        "check_spam": "📬 Check your spam/junk folder",
+        "wait_time": "⏰ The code may take 1-2 minutes to arrive",
+        "connection": "🔄 Make sure you have a stable internet connection"
+      },
+      "security_note": "🔒 This code expires in 10 minutes for your security",
+      "benefits": {
+        "title": "Why verify your email?",
+        "notifications": "🔔 Receive personalized savings tips",
+        "security": "🛡️ Secure your account and data",
+        "features": "🎁 Unlock exclusive features"
+      }
+    },
+    "completion": {
+      "title": "Congratulations!",
+      "subtitle": "Your savings profile is ready",
+      "level": "Level {{level}}",
+      "points": "{{points}} points",
+      "badges_earned": "Badges unlocked",
+      "potential_identified": "Savings potential identified",
+      "monthly": "${{amount}}/month",
+      "yearly": "That's ${{amount}} per year!",
+      "next_steps": {
+        "title": "Next steps",
+        "ai_ready": "Personalized AI suggestions activated",
+        "daily_tips": "Daily tips available",
+        "gamification": "Gamification system activated"
+      },
+      "start_saving": "🚀 Start saving",
+      "welcome_message": "Welcome to your new life as a smart saver! 🎉"
+    }
+  },
+  "home": {
+    "welcome": "Hello {{name}}!",
+    "savings_progress": "Savings progress",
+    "goal_achievement": "${{amount}} of ${{goal}}",
+    "monthly_goal": "Monthly goal",
+    "streak": "Streak",
+    "streak_days": "{{count}} day{{count, plural, =0 {} =1 {} other {s}}}",
+    "level": "Level {{level}}",
+    "categories": {
+      "title": "Savings categories",
+      "food": "👨‍🍳 Food",
+      "habits": "👕 Clothing",
+      "activities": "🎭 Activities",
+      "transport": "🚗 Transport"
+    },
+    "recent_activity": "Recent activity",
+    "suggestions": "Today's suggestions",
+    "no_suggestions": "No suggestions available"
+  },
+  "suggestions": {
+    "loading": "Loading suggestions...",
+    "error": "Error loading suggestions",
+    "try_again": "Try again",
+    "no_suggestions": "No suggestions available at the moment",
+    "refresh": "Refresh",
+    "implement": "Implement",
+    "implemented": "Implemented",
+    "save_money": "Save ${{amount}}",
+    "difficulty": {
+      "easy": "Easy",
+      "medium": "Medium",
+      "hard": "Hard"
+    },
+    "time_to_implement": "Time: {{time}}",
+    "categories": {
+      "food": "Food",
+      "habits": "Clothing",
+      "activities": "Activities",
+      "transport": "Transport"
+    }
+  },
+  "profile": {
+    "title": "My Profile",
+    "personal_info": "Personal information",
+    "preferences": "Preferences",
+    "achievements": "Achievements",
+    "statistics": "Statistics",
+    "edit_profile": "Edit profile",
+    "change_password": "Change password",
+    "delete_account": "Delete account",
+    "total_saved": "Total saved",
+    "plans_used": "Plans used this month",
+    "member_since": "Member since"
+  },
+  "settings": {
+    "title": "Settings",
+    "language": "Language",
+    "notifications": "Notifications",
+    "privacy": "Privacy",
+    "account": "Account",
+    "about": "About",
+    "version": "Version {{version}}",
+    "logout": "Log out",
+    "save_changes": "Save changes",
+    "changes_saved": "Changes saved"
+  },
+  "notifications": {
+    "success": {
+      "account_created": "Account created successfully!",
+      "login_success": "Login successful!",
+      "email_verified": "Email verified successfully!",
+      "profile_updated": "Profile updated!",
+      "language_changed": "Language changed to {{language}}",
+      "suggestion_implemented": "Suggestion implemented!"
+    },
+    "error": {
+      "network_error": "Connection error. Please check your internet connection.",
+      "invalid_credentials": "Invalid credentials",
+      "email_already_exists": "This email address is already in use",
+      "verification_failed": "Verification failed",
+      "generic_error": "An error occurred"
+    },
+    "warning": {
+      "limit_reached": "Limit reached! Upgrade to Premium to continue",
+      "unsaved_changes": "You have unsaved changes"
+    },
+    "info": {
+      "verification_skipped": "Verification skipped",
+      "loading": "Loading..."
+    }
+  },
+  "errors": {
+    "404": "Page not found",
+    "500": "Server error",
+    "network": "Network error",
+    "unauthorized": "Unauthorized",
+    "forbidden": "Access denied",
+    "validation": "Validation error",
+    "try_again": "Try again",
+    "go_home": "Go home"
+  },
+  "validation": {
+    "required": "This field is required",
+    "email_invalid": "Invalid email format",
+    "password_too_short": "Password must be at least {{min}} characters",
+    "passwords_no_match": "Passwords do not match",
+    "name_too_short": "Name must be at least {{min}} characters",
+    "code_invalid": "Invalid code",
+    "amount_invalid": "Invalid amount"
+  },
+  "financial": {
+    "dashboard": {
+      "title": "Financial Dashboard",
+      "welcome": "Welcome to your dashboard",
+      "lastUpdate": "Last update",
+      "loading": "Loading financial data...",
+      "refresh": "Refresh",
+      "sync": "Sync",
+      "retry": "Retry",
+      "error": {
+        "title": "Loading error"
+      },
+      "noData": {
+        "title": "No financial data",
+        "description": "Connect your accounts to start analyzing your finances."
+      },
+      "assetAllocation": "Asset Allocation",
+      "netWorthTrend": "Net Worth Trend",
+      "accounts": "Accounts",
+      "goals": "Goals",
+      "insights": "AI Insights",
+      "topAssets": "Top Assets",
+      "topLiabilities": "Top Liabilities",
+      "addAccount": "Add Account"
+    },
+    "netWorth": {
+      "title": "Net Worth",
+      "subtitle": "Assets - Liabilities"
+    },
+    "totalAssets": "Total Assets",
+    "totalLiabilities": "Total Liabilities",
+    "liquidAssets": "Liquid Assets",
+    "monthlyIncome": "Monthly Income",
+    "accounts": "accounts",
+    "assets": "assets",
+    "activeGoals": "active goals",
+    "healthScore": "Health Score",
+    "debtToAssetRatio": "Debt-to-Asset Ratio",
+    "liquidityRatio": "Liquidity Ratio",
+    "total": "Total",
+    "changeFromPrevious": "Change from previous",
+    "trendSummary": "Trend Summary",
+    "periodGrowth": "Period Growth",
+    "dataPoints": "Data Points",
+    "snapshots": "snapshots",
+    "transactions": "transactions",
+    "assetTypes": {
+      "stock": "Stocks",
+      "crypto": "Cryptocurrency",
+      "real_estate": "Real Estate",
+      "bond": "Bonds",
+      "etf": "ETFs",
+      "commodity": "Commodities",
+      "cash": "Cash",
+      "checking": "Checking Account",
+      "savings": "Savings"
+    },
+    "accountTypes": {
+      "checking": "Checking",
+      "savings": "Savings",
+      "investment": "Investment",
+      "crypto": "Crypto",
+      "loan": "Loan"
+    },
+    "charts": {
+      "noData": "No data to display",
+      "addAssetsFirst": "Add assets to see allocation breakdown",
+      "noTrendData": "No trend data available",
+      "needMoreSnapshots": "Multiple snapshots needed to display trend"
+    },
+    "allocationInsights": "Allocation Insights",
+    "insights": {
+      "overConcentrated": "Over {{percentage}}% in {{type}} - Consider diversification",
+      "wellDiversified": "Well-diversified portfolio",
+      "considerDiversification": "Consider diversifying your investments further",
+      "positiveGrowth": "Positive average growth of {{amount}} per period",
+      "negativeGrowth": "Average decline of {{amount}} per period",
+      "stableNetWorth": "Stable net worth over time",
+      "needMoreData": "More data needed for analysis"
+    },
+    "accounts": {
+      "noAccounts": "No connected accounts",
+      "addFirst": "Add first",
+      "manual": "Manual",
+      "syncRecent": "Recent sync",
+      "syncHours": "{{hours}}h ago",
+      "syncDays": "{{days}}d ago",
+      "neverSynced": "Never synced",
+      "manualEntry": "Manual entry",
+      "total": "Total",
+      "accountsCount": "accounts",
+      "addAccount": "Add Account",
+      "syncAll": "Sync All"
+    },
+    "goals": {
+      "noGoals": "No goals set",
+      "createFirst": "Create first",
+      "progress": "Progress",
+      "remaining": "Remaining",
+      "completed": "Completed",
+      "today": "Today",
+      "overdue": "Overdue",
+      "daysLeft": "{{count}} day{{count, plural, =0 {} =1 {} other {s}}} left",
+      "monthsLeft": "{{count}} month{{count, plural, =0 {} =1 {} other {s}}} left",
+      "priority": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High",
+        "success": "Success"
+      },
+      "types": {
+        "savings": "Savings",
+        "debt_payoff": "Debt Payoff",
+        "investment": "Investment",
+        "emergency_fund": "Emergency Fund"
+      },
+      "suggestion": {
+        "dailySavings": "Save {{amount}}/day to reach goal",
+        "debtPayoff": "Focus on this priority payoff",
+        "general": "Stay focused on this important goal"
+      },
+      "summary": "Goals Summary",
+      "createNew": "New Goal",
+      "viewAll": "View All"
+    },
+    "insights": {
+      "noInsights": "No insights available",
+      "addMoreData": "Add more data to get personalized insights",
+      "recommendedActions": "Recommended Actions",
+      "relatedMetrics": "Related Metrics",
+      "confidence": "Confidence",
+      "summary": "Insights Summary",
+      "high": "High",
+      "medium": "Medium",
+      "positive": "Positive",
+      "poweredByAI": "Powered by AI",
+      "getMoreInsights": "Get More Insights",
+      "priority": {
+        "low": "Low Priority",
+        "medium": "Medium Priority",
+        "high": "High Priority",
+        "success": "Success"
+      }
+    }
+  },
+  "finance": {
+    "title": "Financial Dashboard",
+    "tabs": {
+      "overview": "Overview",
+      "expenses": "Expenses",
+      "income": "Income",
+      "suggestions": "Suggestions"
+    },
+    "summary": {
+      "title": "Financial Summary",
+      "subtitle": "Overview of your current financial situation",
+      "totalSavings": "Total savings",
+      "monthlyIncome": "Monthly income",
+      "totalExpenses": "Total expenses",
+      "goalProgress": "Goal progress",
+      "completed": "completed",
+      "goalReached": "Goal reached!",
+      "savingsRate": "Savings rate",
+      "netSavings": "Net savings"
+    },
+    "period": "Period",
+    "thisMonth": "This month",
+    "thisWeek": "This week",
+    "noData": "No financial data available",
+    "transactions": "transactions",
+    "expenses": {
+      "title": "Expenses",
+      "total": "Total expenses"
+    },
+    "expensesAnalysis": "Expense Analysis",
+    "expensesByCategory": "Expenses by category",
+    "expensesTrend": "Expense trends",
+    "categoryBreakdown": "Category breakdown",
+    "recentExpenses": "Recent expenses",
+    "dailyExpenses": "Daily expenses",
+    "periods": {
+      "week": "Week",
+      "month": "Month",
+      "quarter": "Quarter",
+      "year": "Year"
+    },
+    "income": {
+      "title": "Income",
+      "analysis": "Income Analysis",
+      "byType": "Income by type",
+      "sourceBreakdown": "Source breakdown",
+      "sourcesList": "Source list",
+      "monthlyAmount": "Monthly amount",
+      "perMonth": "per month",
+      "sources": "sources",
+      "noSources": "No income sources",
+      "noSourcesDescription": "Add your income sources to see the analysis",
+      "types": {
+        "salary": "Salary",
+        "freelance": "Freelance",
+        "investment": "Investments",
+        "rental": "Rental income",
+        "pension": "Pension",
+        "other": "Other"
+      },
+      "frequency": {
+        "weekly": "Weekly",
+        "monthly": "Monthly",
+        "quarterly": "Quarterly",
+        "annual": "Annual"
+      }
+    },
+    "suggestions": {
+      "title": "AI Suggestions",
+      "detailedTitle": "Personalized Financial Advice",
+      "subtitle": "Recommendations based on your financial profile",
+      "refresh": "Refresh",
+      "generating": "Generating...",
+      "noSuggestions": "No suggestions available",
+      "noSuggestionsDescription": "Generate new suggestions based on your financial data",
+      "generateSuggestions": "Generate suggestions",
+      "dismiss": "Dismiss",
+      "actionRequired": "Action required",
+      "potentialSaving": "Potential saving",
+      "priority": "Priority",
+      "impact": {
+        "high": "High",
+        "medium": "Medium",
+        "low": "Low"
+      },
+      "types": {
+        "expenseReduction": "Expense reduction",
+        "budgetOptimization": "Budget optimization",
+        "savingsIncrease": "Savings increase"
+      }
+    },
+    "categories": {
+      "alimentation": "Food & Dining",
+      "transport": "Transportation",
+      "logement": "Housing",
+      "loisirs": "Entertainment",
+      "sante": "Healthcare",
+      "habits": "Clothing",
+      "autres": "Other"
+    }
+  },
+  "profile": {
+    "title": "My Profile",
+    "subtitle": "Manage your personal information and preferences",
+    "userNotFound": "Unable to load user information",
+    "userInfo": {
+      "title": "Personal information",
+      "email": "Email",
+      "status": "Account status",
+      "memberSince": "Member since",
+      "lastLogin": "Last login",
+      "emailVerified": "Email verified",
+      "points": "Gamification points",
+      "statuses": {
+        "active": "Active",
+        "inactive": "Inactive",
+        "suspended": "Suspended"
+      }
+    },
+    "gamification": {
+      "title": "Progress",
+      "level": "Level",
+      "points": "Points"
+    },
+    "settings": {
+      "language": {
+        "title": "Language",
+        "select": "Choose your language"
+      }
+    },
+    "actions": {
+      "title": "Quick actions",
+      "backToHome": "Back to home",
+      "notifications": "Notifications",
+      "security": "Security",
+      "preferences": "Preferences"
+    },
+    "dangerZone": {
+      "title": "Danger zone"
+    },
+    "logout": {
+      "button": "Logout",
+      "confirmMessage": "Are you sure you want to logout?",
+      "description": "This will disconnect you from your current session.",
+      "inProgress": "Logging out...",
+      "error": "Error during logout"
+    }
+  },
+  "landing": {
+    "hero": {
+      "title": "Save smartly with AI",
+      "subtitle": "Discover your savings potential with our AI-powered personalized suggestions"
+    },
+    "stats": {
+      "users": "Active users",
+      "saved": "Saved",
+      "satisfaction": "Satisfaction",
+      "support": "Support"
+    },
+    "features": {
+      "title": "Why choose Pluqla?",
+      "subtitle": "A revolutionary approach to optimize your personal finances",
+      "savings": {
+        "title": "Smart savings",
+        "description": "AI analyzes your habits and finds unique savings opportunities"
+      },
+      "ai": {
+        "title": "Artificial intelligence",
+        "description": "Personalized suggestions based on your real financial data"
+      },
+      "analytics": {
+        "title": "Advanced analytics",
+        "description": "Interactive dashboards to track your progress in real-time"
+      },
+      "goals": {
+        "title": "Clear objectives",
+        "description": "Set and achieve your financial goals with personalized guidance"
+      }
+    },
+    "howItWorks": {
+      "title": "How does it work?",
+      "step1": {
+        "title": "Analyze your finances",
+        "description": "Connect your accounts and let AI analyze your spending habits"
+      },
+      "step2": {
+        "title": "Receive suggestions",
+        "description": "Get personalized recommendations to optimize your budget"
+      },
+      "step3": {
+        "title": "Save more",
+        "description": "Apply the advice and watch your savings grow month after month"
+      }
+    },
+    "cta": {
+      "start": "Start for free",
+      "login": "Login"
+    },
+    "finalCta": {
+      "title": "Ready to transform your finances?",
+      "subtitle": "Join thousands of users already saving with Pluqla",
+      "button": "Start now"
+    },
+    "footer": {
+      "rights": "All rights reserved."
+    }
+  },
+  "activity": {
+    "title": "Activities",
+    "tabs": {
+      "tracker": "Tracker",
+      "stats": "Statistics",
+      "recommendations": "Recommendations"
+    }
+  }
+}

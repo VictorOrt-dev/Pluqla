@@ -4,29 +4,29 @@
   "description": "Application d'économies intelligentes avec IA - Frontend React + Backend Node.js",
   "private": true,
   "workspaces": [
-    "frontend",
-    "backend"
+    "client",
+    "server"
   ],
   "scripts": {
-    "start": "concurrently \"npm run start:backend\" \"npm run start:frontend\"",
-    "start:frontend": "cd frontend && npm start",
-    "start:backend": "cd backend && npm run dev",
-    "build": "npm run build:frontend",
-    "build:frontend": "cd frontend && npm run build",
-    "test": "concurrently \"npm run test:frontend\" \"npm run test:backend\"",
-    "test:frontend": "cd frontend && npm test",
-    "test:backend": "cd backend && npm test",
-    "install:all": "npm install && npm run install:frontend && npm run install:backend",
-    "install:frontend": "cd frontend && npm install",
-    "install:backend": "cd backend && npm install",
-    "clean": "npm run clean:frontend && npm run clean:backend",
-    "clean:frontend": "cd frontend && rm -rf node_modules build",
-    "clean:backend": "cd backend && rm -rf node_modules coverage",
-    "db:setup": "cd backend && npm run db:generate && npm run db:migrate",
-    "db:seed": "cd backend && npm run db:seed",
-    "lint": "concurrently \"npm run lint:frontend\" \"npm run lint:backend\"",
-    "lint:frontend": "cd frontend && npm run lint",
-    "lint:backend": "cd backend && npm run lint"
+    "start": "concurrently \"npm run start:server\" \"npm run start:client\"",
+    "start:client": "cd client && npm start",
+    "start:server": "cd server && npm run dev",
+    "build": "npm run build:client",
+    "build:client": "cd client && npm run build",
+    "test": "concurrently \"npm run test:client\" \"npm run test:server\"",
+    "test:client": "cd client && npm test",
+    "test:server": "cd server && npm test",
+    "install:all": "npm install && npm run install:client && npm run install:server",
+    "install:client": "cd client && npm install",
+    "install:server": "cd server && npm install",
+    "clean": "npm run clean:client && npm run clean:server",
+    "clean:client": "cd client && rm -rf node_modules build",
+    "clean:server": "cd server && rm -rf node_modules coverage",
+    "db:setup": "cd server && npm run db:generate && npm run db:migrate",
+    "db:seed": "cd server && npm run db:seed",
+    "lint": "concurrently \"npm run lint:client\" \"npm run lint:server\"",
+    "lint:client": "cd client && npm run lint",
+    "lint:server": "cd server && npm run lint"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
@@ -35,7 +35,7 @@
     "node": ">=18.0.0",
     "npm": ">=9.0.0"
   },
-  "author": "Victor - +Clair Team",
+  "author": "Victor - Pluqla Team",
   "license": "MIT",
   "keywords": [
     "react",
@@ -45,5 +45,8 @@
     "ai",
     "savings",
     "monorepo"
-  ]
+  ],
+  "dependencies": {
+    "dompurify": "^3.2.7"
+  }
 }

@@ -1,0 +1,181 @@
+# 🔒 Pluqla Code Owners - Security & Compliance
+#
+# This file defines who must review changes to critical parts of the Pluqla financial application.
+# Learn more: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# ==============================================================================
+# 🛡️ GLOBAL RULES
+# ==============================================================================
+
+# Default owners for everything in the repo
+# These users are automatically requested for review on all PRs
+* @VictorOrt-dev
+
+# ==============================================================================
+# 🔐 CRITICAL SECURITY FILES - MANDATORY REVIEW
+# ==============================================================================
+
+# Authentication & JWT Security - Highest Risk
+backend/src/controllers/authController.js @VictorOrt-dev
+backend/src/middleware/auth.js @VictorOrt-dev
+backend/src/utils/jwt.js @VictorOrt-dev
+backend/src/utils/tokenUtils.js @VictorOrt-dev
+backend/src/services/refreshTokenService.js @VictorOrt-dev
+
+# Password & Email Security
+backend/src/services/emailService.js @VictorOrt-dev
+backend/tests/integration/passwordReset.test.js @VictorOrt-dev
+
+# Financial Data Controllers - Critical Business Logic
+backend/src/controllers/aiController.js @VictorOrt-dev
+
+# Security Utilities & Logging
+backend/src/utils/secureLogger.js @VictorOrt-dev
+backend/src/utils/logger.js @VictorOrt-dev
+
+# ==============================================================================
+# 🗄️ DATABASE & SCHEMA PROTECTION
+# ==============================================================================
+
+# Prisma Schema - Database Structure Changes
+backend/prisma/schema.prisma @VictorOrt-dev
+
+# Database Migrations - Data Integrity Risk
+backend/prisma/migrations/ @VictorOrt-dev
+
+# Database Seeding - Data Consistency
+backend/prisma/seed.js @VictorOrt-dev
+
+# ==============================================================================
+# 🔧 INFRASTRUCTURE & CI/CD PROTECTION
+# ==============================================================================
+
+# GitHub Actions Workflows - CI/CD Security
+.github/workflows/ @VictorOrt-dev
+
+# Security Configuration
+.audit-ci.json @VictorOrt-dev
+
+# Docker & Deployment (if added later)
+Dockerfile* @VictorOrt-dev
+docker-compose*.yml @VictorOrt-dev
+
+# Environment Configuration Examples
+backend/.env.example* @VictorOrt-dev
+
+# ==============================================================================
+# 📦 PACKAGE DEPENDENCIES - SUPPLY CHAIN SECURITY
+# ==============================================================================
+
+# Root Package Management
+package.json @VictorOrt-dev
+package-lock.json @VictorOrt-dev
+
+# Backend Dependencies
+backend/package.json @VictorOrt-dev
+backend/package-lock.json @VictorOrt-dev
+
+# Frontend Dependencies
+frontend/package.json @VictorOrt-dev
+frontend/package-lock.json @VictorOrt-dev
+
+# ==============================================================================
+# 🧪 CRITICAL TESTS - QUALITY ASSURANCE
+# ==============================================================================
+
+# Security Test Suites
+backend/tests/unit/jwtSecurity.test.js @VictorOrt-dev
+backend/tests/unit/secureLogging.test.js @VictorOrt-dev
+backend/tests/integration/jwtAuthFlow.test.js @VictorOrt-dev
+
+# E2E Test Configuration
+tests/ @VictorOrt-dev
+playwright.config.js @VictorOrt-dev
+
+# ==============================================================================
+# 💰 FINANCIAL FEATURES - BUSINESS LOGIC PROTECTION
+# ==============================================================================
+
+# Financial Dashboard & Calculations
+frontend/src/components/features/dashboard/ @VictorOrt-dev
+frontend/src/components/finance/ @VictorOrt-dev
+frontend/src/components/features/FinancialDashboard.jsx @VictorOrt-dev
+
+# Financial API Services
+frontend/src/services/financialApi.js @VictorOrt-dev
+
+# ==============================================================================
+# 🔑 AUTHENTICATION FRONTEND - USER SECURITY
+# ==============================================================================
+
+# Authentication Screens & Logic
+frontend/src/components/auth/ @VictorOrt-dev
+frontend/src/components/onboarding/ @VictorOrt-dev
+frontend/src/contexts/AuthContext.js @VictorOrt-dev
+frontend/src/services/authService.js @VictorOrt-dev
+
+# ==============================================================================
+# ⚙️ CORE CONFIGURATION - SYSTEM BEHAVIOR
+# ==============================================================================
+
+# Core Application Files
+backend/src/app.js @VictorOrt-dev
+backend/src/server.js @VictorOrt-dev
+frontend/src/App.jsx @VictorOrt-dev
+
+# Middleware Stack
+backend/src/middleware/ @VictorOrt-dev
+
+# API Routes Definition
+backend/src/routes/ @VictorOrt-dev
+
+# ==============================================================================
+# 📚 DOCUMENTATION & COMPLIANCE
+# ==============================================================================
+
+# Technical Documentation
+CLAUDE.md @VictorOrt-dev
+README.md @VictorOrt-dev
+
+# Security Documentation
+backend/SECURITY_SETUP.md @VictorOrt-dev
+
+# API Documentation
+backend/README.md @VictorOrt-dev
+
+# ==============================================================================
+# 🌍 INTERNATIONALIZATION - USER EXPERIENCE
+# ==============================================================================
+
+# Translation Files - User-Facing Content
+frontend/src/i18n/ @VictorOrt-dev
+
+# ==============================================================================
+# 📱 PWA & SERVICE WORKER - CLIENT SECURITY
+# ==============================================================================
+
+# Service Worker - Caching & Offline Security
+frontend/public/sw.js @VictorOrt-dev
+
+# PWA Manifest - App Configuration
+frontend/public/manifest.json @VictorOrt-dev
+
+# PWA Management
+frontend/src/components/common/PWAManager.jsx @VictorOrt-dev
+frontend/src/services/pwaService.js @VictorOrt-dev
+
+# ==============================================================================
+# 📋 NOTES FOR REVIEWERS
+# ==============================================================================
+
+# 🔴 CRITICAL: Files marked here require mandatory review for:
+# - Security vulnerabilities and data exposure risks
+# - Financial calculation accuracy and fraud prevention
+# - Authentication and authorization bypass attempts
+# - Database integrity and migration safety
+# - Supply chain security and dependency vulnerabilities
+
+# 🟡 IMPORTANT: Always test changes locally and run full test suite
+# 🟢 PROCESS: Use GitHub's "Request review" feature for faster review cycles
+
+# For questions about code ownership, contact: @VictorOrt-dev

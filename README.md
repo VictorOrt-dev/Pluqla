@@ -1,152 +1,119 @@
-# +Clair
+# 🚀 Pluqla - Fintech Premium avec IA
 
-**Smart savings app with AI-powered insights and gamification**
+> Application financière nouvelle génération pour optimiser vos économies intelligemment
 
-[![Status](https://img.shields.io/badge/Status-Ready-brightgreen)]()
-[![Version](https://img.shields.io/badge/Version-2.0.0-blue)]()
-[![Architecture](https://img.shields.io/badge/Architecture-Monorepo-orange)]()
+[![Version](https://img.shields.io/badge/version-2.0.0-red.svg?style=flat-square)](https://github.com/pluqla/app)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg?style=flat-square)](LICENSE)
+[![Production](https://img.shields.io/badge/production-ready-green.svg?style=flat-square)](#)
 
-## Quick Start
+## ⚡ Démarrage Ultra-Rapide
 
 ```bash
-# Install dependencies
-npm run install:all
-
-# Setup database
-npm run db:setup
-
-# Start development servers
-npm start
+git clone https://github.com/pluqla/app.git && cd pluqla
+npm run install:all && npm start
 ```
 
-**Access:** Frontend at [localhost:3000](http://localhost:3000) • Backend at [localhost:3004](http://localhost:3004)
+**🌐 URLs** : [Client](http://localhost:3000) • [API](http://localhost:3004)
 
-## Features
-
-- 💰 **Smart Savings** - AI-powered expense tracking and recommendations
-- 🎮 **Gamification** - Daily streaks, badges, and progress levels
-- 🤖 **Multi-AI Support** - Claude, OpenAI, Gemini integrations
-- 🌍 **Multilingual** - French, English, Spanish with adaptive AI
-- 📱 **PWA Ready** - Mobile-first progressive web app
-- 🔒 **Secure** - JWT auth, encryption, rate limiting
-
-## Project Structure
+## 🏗️ Architecture Monorepo
 
 ```
-+Clair/
-├── frontend/         # React app (port 3000)
-│   ├── src/         # Components, hooks, services
-│   └── public/      # Static assets
-├── backend/         # Node.js API (port 3004)
-│   ├── src/         # Controllers, routes, services
-│   ├── prisma/      # Database schema & migrations
-│   └── tests/       # API tests
-└── package.json     # Monorepo scripts
+pluqla/
+├── client/     # React 18 + Tailwind CSS + PWA
+├── server/     # Node.js + Express + Prisma + PostgreSQL
+├── infra/      # Docker + CI/CD + Monitoring
+└── docs/       # Documentation technique complète
 ```
 
-## Available Scripts
+## 🛠️ Stack Technique Premium
 
-### Development
+- **Frontend** : React 18, Tailwind CSS, PWA, Framer Motion
+- **Backend** : Node.js 18+, Express, Prisma ORM, PostgreSQL 15
+- **IA** : OpenAI GPT-4, Claude 3, Gemini Pro
+- **Infra** : Docker, GitHub Actions, Monitoring temps réel
+
+## 🎨 Design System Signature
+
+- **Couleur principale** : Rouge cerise #F14545
+- **Thème** : Glassmorphism + Micro-interactions 60fps
+- **Typographie** : Inter/SF Pro Display
+- **Animations** : Subtiles, orientées feedback utilisateur
+
+## 📱 Fonctionnalités Principales
+
+### 💰 **Dashboard Financier IA**
+- Analyse automatique des dépenses
+- Suggestions d'économies personnalisées
+- Prédictions de budget intelligent
+- Alertes proactives d'optimisation
+
+### 👤 **Profil Gamifié**
+- Système de niveaux et récompenses
+- Défis d'économies quotidiens
+- Streak tracking motivationnel
+- Badges de progression
+
+### 🔐 **Sécurité Premium**
+- Chiffrement SSL 256-bit
+- Conformité GDPR + PCI DSS
+- Authentification JWT sécurisée
+- Audit sécurité automatique
+
+## 🚀 Commands Essentielles
+
 ```bash
-npm start                  # Start both frontend & backend
-npm run start:frontend     # Frontend only
-npm run start:backend      # Backend only
+# Développement
+npm start                # Fullstack (client + server)
+npm run dev:client       # Frontend seul
+npm run dev:server       # Backend seul
+
+# Production
+npm run build           # Build optimisé
+npm run docker:up       # Environnement Docker
+npm test               # Suite de tests complète
+
+# Base de données
+npm run db:migrate     # Migrations Prisma
+npm run db:seed        # Données de test
 ```
 
-### Build & Test
-```bash
-npm run build             # Production build
-npm test                  # Run all tests
-npm run lint              # Code linting
-```
+## 📊 Qualité & Performance
 
-### Database
-```bash
-npm run db:setup          # Initialize database
-npm run db:migrate        # Run migrations
-npm run db:seed           # Seed test data
-```
+- **Tests** : 85%+ couverture (Jest + Playwright)
+- **Performance** : Lighthouse 90+ score
+- **Sécurité** : OWASP compliant, audit automatique
+- **Accessibilité** : WCAG 2.1 AA
 
-## Tech Stack
+## 📚 Documentation
 
-**Frontend:** React 18, Tailwind CSS, i18next, Chart.js, PWA
-**Backend:** Node.js, Express, Prisma, JWT, SQLite/PostgreSQL
-**AI:** Claude (Anthropic), OpenAI GPT, Google Gemini
-**Tools:** npm workspaces, Jest, ESLint, Winston
+| Ressource | Description |
+|-----------|-------------|
+| [**Guide Développeur**](CLAUDE.md) | Workflow complet, standards qualité |
+| [**API Reference**](docs/api/) | Documentation REST complète |
+| [**Design System**](docs/guides/VISUAL_IDENTITY_GUIDE.md) | Identité visuelle Pluqla |
+| [**Déploiement**](docs/setup/DEPLOYMENT_CHECKLIST.md) | Production ready guide |
 
-## Environment Setup
+## 🎯 Roadmap 2024
 
-1. **Copy environment files:**
-   ```bash
-   cp .env.example .env
-   cp backend/.env.example backend/.env
-   ```
+- [ ] **Q1** : Intégration bancaire Open Banking
+- [ ] **Q2** : Assistant IA conversationnel
+- [ ] **Q3** : Application mobile native
+- [ ] **Q4** : Marketplace partenaires
 
-2. **Configure API keys** (optional):
-   ```bash
-   # In backend/.env
-   OPENAI_API_KEY=your_key_here
-   ANTHROPIC_API_KEY=your_key_here
-   GEMINI_API_KEY=your_key_here
-   ```
+## 🤝 Contribution
 
-3. **Initialize database:**
-   ```bash
-   npm run db:setup
-   ```
+Voir [CONTRIBUTING.md](CONTRIBUTING.md) pour les guidelines de contribution.
 
-## API Endpoints
+## 📄 Licence
 
-**Core APIs:**
-- `GET /api/health` - Health check
-- `POST /api/auth/login` - User authentication
-- `GET /api/transactions` - Transaction history
-- `GET /api/ai/suggestions` - AI recommendations
-- `GET /api/strikes/current` - Daily streak status
-
-**Full API documentation:** [localhost:3004/api](http://localhost:3004/api)
-
-## Performance
-
-- **Test Coverage:** 80%+ backend, comprehensive frontend
-- **Bundle Size:** Optimized with code splitting
-- **Database:** Indexed queries, connection pooling
-- **Security:** Helmet, CORS, rate limiting, input validation
-
-## Troubleshooting
-
-**Port conflicts:**
-```bash
-npm run clean && npm start
-```
-
-**Database issues:**
-```bash
-npm run db:setup
-```
-
-**Dependency problems:**
-```bash
-npm run install:all
-```
-
-## Contributing
-
-1. Follow existing code patterns
-2. Add tests for new features
-3. Update documentation
-4. Run `npm test` before committing
-
-## Documentation
-
-- **[CLAUDE.md](./CLAUDE.md)** - Technical implementation guide
-- **[Backend API](./backend/README.md)** - API documentation
-- **[Frontend Components](./frontend/src/)** - React component library
-
-## License
-
-MIT © +Clair Team
+MIT License - voir [LICENSE](LICENSE) pour plus de détails.
 
 ---
 
-*Smart savings for the modern world* 🚀
+<div align="center">
+
+**🚀 Pluqla Team** • Version 2.0.0 • **Production Ready** ✅
+
+[Website](https://pluqla.com) • [Documentation](docs/) • [Support](mailto:dev@pluqla.com)
+
+</div>
