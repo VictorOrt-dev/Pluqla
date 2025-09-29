@@ -5,6 +5,7 @@ import { useNavigation } from '../../contexts/NavigationContext';
 import ExpensesChart from './ExpensesChart';
 import IncomeChart from './IncomeChart';
 import LoadingSpinner from '../common/LoadingSpinner';
+import { FinancialErrorBoundary } from '../common/ErrorBoundary';
 import '../../styles/unified-theme.css';
 import '../../styles/finance-premium.css';
 
@@ -101,11 +102,12 @@ const Dashboard = ({ darkMode }) => {
   };
 
   return (
-    <div className={`min-h-screen transition-all duration-300 ${
-      darkMode
-        ? 'bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950'
-        : 'bg-gradient-to-br from-slate-50 via-white to-slate-100'
-    }`}>
+    <FinancialErrorBoundary componentName="Dashboard">
+      <div className={`min-h-screen transition-all duration-300 ${
+        darkMode
+          ? 'bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950'
+          : 'bg-gradient-to-br from-slate-50 via-white to-slate-100'
+      }`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
         {/* Hero Balance Section */}
@@ -435,7 +437,8 @@ const Dashboard = ({ darkMode }) => {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </FinancialErrorBoundary>
   );
 };
 

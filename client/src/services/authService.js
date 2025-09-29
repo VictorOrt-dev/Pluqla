@@ -24,19 +24,17 @@ class AuthService {
       const response = await fetch(`${this.apiUrl}/auth/login`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'User-Agent': navigator.userAgent || 'Pluqla-Client/1.0'
         },
         body: JSON.stringify({ email, password })
       });
 
-      console.log('📡 Réponse serveur:', {
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers.entries())
-      });
+      // CRITICAL SECURITY FIX: Remove sensitive header/data logging
+      console.log('📡 Login response status:', response.status);
 
       const data = await response.json();
-      console.log('📡 Données reçues:', data);
+      // SECURITY: Only log non-sensitive response status
 
       if (response.ok && data.success) {
         // Stocker les tokens
@@ -95,19 +93,17 @@ class AuthService {
       const response = await fetch(`${this.apiUrl}/auth/register`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'User-Agent': navigator.userAgent || 'Pluqla-Client/1.0'
         },
         body: JSON.stringify(userData)
       });
 
-      console.log('📡 Réponse serveur inscription:', {
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers.entries())
-      });
+      // CRITICAL SECURITY FIX: Remove sensitive header/data logging
+      console.log('📡 Registration response status:', response.status);
 
       const data = await response.json();
-      console.log('📡 Données reçues inscription:', data);
+      // SECURITY: Only log non-sensitive status information
 
       if (response.ok && data.success) {
         // Auto-login après inscription

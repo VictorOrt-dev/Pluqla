@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useReducer, useEffect, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import { apiAdapter } from '../services/api/apiAdapter';
 import { initFinancialApi } from '../services/financialApi';
 import secureLogger from '../utils/secureLogger';
@@ -114,7 +113,6 @@ const authReducer = (state, action) => {
 
 export const AuthProvider = ({ children }) => {
   const [state, dispatch] = useReducer(authReducer, initialState);
-  const { t } = useTranslation();
 
   // 🌐 Utiliser un chemin relatif pour permettre au proxy de fonctionner avec Ngrok
   const API_BASE_URL = process.env.REACT_APP_API_URL || '/api';
@@ -152,7 +150,7 @@ export const AuthProvider = ({ children }) => {
     if (!refreshToken) {
       dispatch({
         type: AUTH_ACTIONS.TOKEN_REFRESH_FAILED,
-        payload: { error: t('auth.noRefreshToken') }
+        payload: { error: 'No refresh token available' }
       });
       return false;
     }
@@ -164,6 +162,7 @@ export const AuthProvider = ({ children }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'User-Agent': navigator.userAgent || 'Pluqla-Client/1.0'
         },
         body: JSON.stringify({ refreshToken })
       });
@@ -173,7 +172,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       const result = await response.json();
-      console.log('📡 Refresh response received:', result);
+      // SECURITY FIX: Remove sensitive token data logging
 
       // Le backend renvoie maintenant: { success: true, data: { token, refreshToken } }
       if (result.success && result.data && result.data.token) {
@@ -201,12 +200,12 @@ export const AuthProvider = ({ children }) => {
 
       dispatch({
         type: AUTH_ACTIONS.TOKEN_REFRESH_FAILED,
-        payload: { error: t('auth.sessionExpired') }
+        payload: { error: 'Session expired' }
       });
 
       return false;
     }
-  }, [API_BASE_URL, t, loadTokensFromStorage, saveTokensToStorage, clearTokensFromStorage]);
+  }, [API_BASE_URL, loadTokensFromStorage, saveTokensToStorage, clearTokensFromStorage]);
 
   // Fonction pour faire des appels API avec gestion automatique du token
   const apiCall = useCallback(async (endpoint, options = {}) => {
@@ -222,6 +221,7 @@ export const AuthProvider = ({ children }) => {
         headers: {
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
+          'User-Agent': navigator.userAgent || 'Pluqla-Client/1.0',
           ...options.headers
         },
         ...options
@@ -270,20 +270,21 @@ export const AuthProvider = ({ children }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'User-Agent': navigator.userAgent || 'Pluqla-Client/1.0'
         },
         body: JSON.stringify({ email, password })
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        console.log('📡 Login error response:', errorData);
+        // SECURITY: Don't log sensitive error responses
         // Le backend renvoie: { success: false, message: "...", error: "..." }
         const errorMessage = errorData.message || errorData.error || 'Email ou mot de passe incorrect';
         throw new Error(errorMessage);
       }
 
       const result = await response.json();
-      console.log('📡 Login response received:', result);
+      // SECURITY FIX: Remove sensitive login data logging
 
       // Le backend renvoie maintenant: { success: true, data: { user, token, refreshToken } }
       if (result.success && result.data && result.data.user && result.data.token) {
@@ -334,6 +335,7 @@ export const AuthProvider = ({ children }) => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'User-Agent': navigator.userAgent || 'Pluqla-Client/1.0'
           },
           body: JSON.stringify({ refreshToken })
         });
@@ -374,7 +376,8 @@ export const AuthProvider = ({ children }) => {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'User-Agent': navigator.userAgent || 'Pluqla-Client/1.0'
         }
       });
 
@@ -396,7 +399,7 @@ export const AuthProvider = ({ children }) => {
         if (!refreshSuccess) {
           dispatch({
             type: AUTH_ACTIONS.TOKEN_REFRESH_FAILED,
-            payload: { error: t('auth.sessionExpired') }
+            payload: { error: 'Session expired' }
           });
         }
       } else {
@@ -415,7 +418,7 @@ export const AuthProvider = ({ children }) => {
         }
       });
     }
-  }, [API_BASE_URL, loadTokensFromStorage, refreshAuthToken, clearTokensFromStorage, t]);
+  }, [API_BASE_URL, loadTokensFromStorage, refreshAuthToken, clearTokensFromStorage]);
 
   // Vérifier l'authentification au montage - une seule fois
   useEffect(() => {
