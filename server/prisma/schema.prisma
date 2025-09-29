@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -13,6 +13,7 @@ model User {
   email                 String   @unique
   password              String
   name                  String
+  role                  String   @default("user") // user, admin, moderator
   status                String   @default("active") // active, inactive, suspended
   savedAmount           Float    @default(0)
   monthlyGoal           Float    @default(800)
@@ -58,6 +59,7 @@ model User {
   passwordResets        PasswordReset[]
 
   // Performance indexes for authentication and user management
+  @@index([role], name: "idx_user_role") // Admin and role-based queries - SECURITY
   @@index([status], name: "idx_user_status") // Filter active users - Critical for auth queries
   @@index([emailVerificationToken], name: "idx_user_email_verification_token") // Email verification lookup
   @@index([lastLoginAt], name: "idx_user_last_login") // Recent activity queries for analytics
@@ -763,4 +765,20 @@ model FinancialSuggestion {
   @@index([validUntil], name: "idx_financial_suggestion_valid") // Valid suggestions
   @@index([generatedBy], name: "idx_financial_suggestion_generated") // AI vs manual suggestions
   @@map("financial_suggestions")
+}
+
+// ===== OAUTH SECURITY MODELS =====
+
+model OauthState {
+  id        String   @id @default(cuid())
+  state     String   @unique // OAuth state parameter
+  data      String   // JSON: PKCE verifier, user context, etc.
+  expiresAt DateTime // Automatic cleanup of expired states
+  createdAt DateTime @default(now())
+
+  // OAuth state persistence for distributed systems
+  @@index([state], name: "idx_oauth_state_lookup") // Fast state lookup - CRITICAL
+  @@index([expiresAt], name: "idx_oauth_state_expires") // Cleanup expired states
+  @@index([createdAt], name: "idx_oauth_state_created") // State creation analytics
+  @@map("oauth_states")
 }

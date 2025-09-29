@@ -35,17 +35,9 @@ function createPrismaClient() {
   const baseUrl = process.env.DATABASE_URL;
 
   if (!baseUrl) {
-    // FIXED: Provide default SQLite database for development
-    logger.warn('DATABASE_URL not found, using default SQLite database');
-    return new PrismaClient({
-      datasources: {
-        db: {
-          url: 'file:./dev.db'
-        }
-      },
-      log: process.env.NODE_ENV === 'development' ? ['warn', 'error'] : ['error'],
-      errorFormat: 'minimal'
-    });
+    // CRITICAL: PostgreSQL is now required for production security
+    logger.error('DATABASE_URL is required and must be a PostgreSQL connection string');
+    throw new Error('DATABASE_URL environment variable is required for secure database operations');
   }
 
   // Production-optimized connection parameters
@@ -206,7 +198,6 @@ async function disconnectPrisma(force = false) {
     }
 
     logger.info('✅ Prisma client disconnected successfully');
-
   } catch (error) {
     logger.error('❌ Error disconnecting Prisma client:', error);
     throw error;
@@ -227,7 +218,7 @@ async function getDatabaseHealth() {
   try {
     const client = getPrismaClient();
 
-    // Lightweight query to test connection
+    // Lightweight query to test PostgreSQL connection
     await client.$queryRaw`SELECT 1 as health_check`;
 
     const latency = Date.now() - startTime;
@@ -237,7 +228,6 @@ async function getDatabaseHealth() {
       latency,
       timestamp: new Date().toISOString()
     };
-
   } catch (error) {
     return {
       healthy: false,
@@ -272,7 +262,6 @@ async function getConnectionStats() {
     `;
 
     return stats[0] || {};
-
   } catch (error) {
     logger.error('❌ Failed to get connection stats:', error);
     return {
