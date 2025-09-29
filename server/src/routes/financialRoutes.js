@@ -4,6 +4,10 @@ const financialController = require('../controllers/financialController');
 const { authenticateToken } = require('../middleware/auth');
 const rateLimit = require('../middleware/rateLimit');
 
+// CRITICAL: Import SCA middleware for PSD2 compliance
+const { createSCAMiddleware } = require('../middleware/scaAuthentication');
+const { validateSCATransaction } = require('../middleware/validation/scaValidation');
+
 const router = express.Router();
 
 // Apply authentication middleware to all routes
@@ -14,7 +18,8 @@ router.use(authenticateToken);
  */
 
 // GET /api/financial/dashboard - Get comprehensive dashboard data
-router.get('/dashboard',
+router.get(
+  '/dashboard',
   query('lang').optional().isIn(['fr', 'en', 'es']),
   rateLimit.financial.reports, // Use financial report rate limiting
   financialController.getDashboard
@@ -25,7 +30,8 @@ router.get('/dashboard',
  */
 
 // GET /api/financial/accounts - Get all user accounts
-router.get('/accounts',
+router.get(
+  '/accounts',
   query('type').optional().isIn(['checking', 'savings', 'investment', 'crypto', 'loan']),
   query('provider').optional().isLength({ min: 1, max: 50 }),
   query('includeInactive').optional().isBoolean(),
@@ -34,7 +40,8 @@ router.get('/accounts',
 );
 
 // POST /api/financial/accounts - Create new account
-router.post('/accounts',
+router.post(
+  '/accounts',
   [
     body('name').isLength({ min: 1, max: 100 }).withMessage('Name must be 1-100 characters'),
     body('type').isIn(['checking', 'savings', 'investment', 'crypto', 'loan']).withMessage('Invalid account type'),
@@ -49,7 +56,8 @@ router.post('/accounts',
 );
 
 // PUT /api/financial/accounts/:id - Update account
-router.put('/accounts/:id',
+router.put(
+  '/accounts/:id',
   [
     param('id').isLength({ min: 1 }).withMessage('Account ID is required'),
     body('name').optional().isLength({ min: 1, max: 100 }),
@@ -65,7 +73,8 @@ router.put('/accounts/:id',
  */
 
 // GET /api/financial/assets - Get user assets with pagination
-router.get('/assets',
+router.get(
+  '/assets',
   [
     query('type').optional().isIn(['stock', 'crypto', 'real_estate', 'bond', 'etf', 'commodity']),
     query('page').optional().isInt({ min: 1 }).withMessage('Page must be a positive integer'),
@@ -75,8 +84,9 @@ router.get('/assets',
   financialController.getAssets
 );
 
-// POST /api/financial/assets - Create new asset
-router.post('/assets',
+// POST /api/financial/assets - Create new asset (SCA PROTECTED)
+router.post(
+  '/assets',
   [
     body('name').isLength({ min: 1, max: 100 }).withMessage('Name must be 1-100 characters'),
     body('type').isIn(['stock', 'crypto', 'real_estate', 'bond', 'etf', 'commodity']).withMessage('Invalid asset type'),
@@ -87,7 +97,13 @@ router.post('/assets',
     body('acquisitionDate').optional().isISO8601(),
     body('acquisitionPrice').optional().isNumeric()
   ],
-  rateLimit.financial.transactions, // Use transaction rate limiting for asset creation
+  rateLimit.financial.transactions,
+  // CRITICAL: SCA required for asset creation (calculate total value for threshold)
+  createSCAMiddleware({
+    forceForAmountAbove: 100, // €100 threshold for asset purchases
+    customRiskThreshold: 0.5,
+    allowedMethods: ['sms', 'totp', 'biometric']
+  }),
   financialController.createAsset
 );
 
@@ -96,14 +112,16 @@ router.post('/assets',
  */
 
 // GET /api/financial/net-worth - Get net worth evolution
-router.get('/net-worth',
+router.get(
+  '/net-worth',
   query('period').optional().isIn(['1m', '3m', '6m', '12m', 'all']),
   rateLimit.financial.reports, // Use report rate limiting for net worth data
   financialController.getNetWorthEvolution
 );
 
 // POST /api/financial/net-worth/snapshot - Create new net worth snapshot
-router.post('/net-worth/snapshot',
+router.post(
+  '/net-worth/snapshot',
   rateLimit.financial.transactions, // Use transaction rate limiting for snapshot creation
   financialController.createNetWorthSnapshot
 );
@@ -113,7 +131,8 @@ router.post('/net-worth/snapshot',
  */
 
 // GET /api/financial/goals - Get financial goals
-router.get('/goals',
+router.get(
+  '/goals',
   [
     query('status').optional().isIn(['active', 'completed', 'paused', 'all']),
     query('type').optional().isIn(['savings', 'debt_payoff', 'investment', 'emergency_fund'])
@@ -123,7 +142,8 @@ router.get('/goals',
 );
 
 // POST /api/financial/goals - Create financial goal
-router.post('/goals',
+router.post(
+  '/goals',
   [
     body('name').isLength({ min: 1, max: 100 }).withMessage('Name must be 1-100 characters'),
     body('type').isIn(['savings', 'debt_payoff', 'investment', 'emergency_fund']).withMessage('Invalid goal type'),
@@ -141,7 +161,8 @@ router.post('/goals',
  */
 
 // GET /api/financial/summary - Get financial summary for dashboard
-router.get('/summary',
+router.get(
+  '/summary',
   query('lang').optional().isIn(['fr', 'en', 'es']),
   query('period').optional().isIn(['week', 'month', 'year', 'all']),
   rateLimit.standard, // Use standard rate limit
@@ -149,7 +170,8 @@ router.get('/summary',
 );
 
 // GET /api/financial/expenses - Get expenses with filtering
-router.get('/expenses',
+router.get(
+  '/expenses',
   [
     query('category').optional().isIn(['alimentation', 'transport', 'logement', 'loisirs', 'sante', 'habits', 'autres']),
     query('period').optional().isIn(['week', 'month', '3month', '6month', 'year', 'all']),
@@ -159,8 +181,9 @@ router.get('/expenses',
   financialController.getExpenses
 );
 
-// POST /api/financial/expenses - Create new expense
-router.post('/expenses',
+// POST /api/financial/expenses - Create new expense (SCA for high amounts)
+router.post(
+  '/expenses',
   [
     body('category').isIn(['alimentation', 'transport', 'logement', 'loisirs', 'sante', 'habits', 'autres']).withMessage('Invalid category'),
     body('amount').isNumeric().withMessage('Amount must be a number'),
@@ -174,12 +197,19 @@ router.post('/expenses',
     body('location').optional().isLength({ max: 200 }),
     body('tags').optional().isArray()
   ],
-  rateLimit.standard, // Use standard rate limit
+  rateLimit.standard,
+  // CRITICAL: SCA for expenses above €30 (PSD2 threshold)
+  createSCAMiddleware({
+    forceForAmountAbove: 30, // €30 PSD2 threshold
+    customRiskThreshold: 0.6,
+    allowedMethods: ['sms', 'totp']
+  }),
   financialController.createExpense
 );
 
 // PUT /api/financial/expenses/:id - Update expense
-router.put('/expenses/:id',
+router.put(
+  '/expenses/:id',
   [
     param('id').isLength({ min: 1 }).withMessage('Expense ID is required'),
     body('category').optional().isIn(['alimentation', 'transport', 'logement', 'loisirs', 'sante', 'habits', 'autres']),
@@ -192,19 +222,22 @@ router.put('/expenses/:id',
 );
 
 // DELETE /api/financial/expenses/:id - Delete expense
-router.delete('/expenses/:id',
+router.delete(
+  '/expenses/:id',
   param('id').isLength({ min: 1 }).withMessage('Expense ID is required'),
   financialController.deleteExpense
 );
 
 // GET /api/financial/income - Get income sources
-router.get('/income',
+router.get(
+  '/income',
   query('includeInactive').optional().isBoolean(),
   financialController.getIncomeDetails
 );
 
 // GET /api/financial/suggestions - Get AI suggestions
-router.get('/suggestions',
+router.get(
+  '/suggestions',
   [
     query('lang').optional().isIn(['fr', 'en', 'es']),
     query('status').optional().isIn(['active', 'dismissed', 'completed', 'all']),
@@ -215,19 +248,22 @@ router.get('/suggestions',
 );
 
 // POST /api/financial/suggestions/dismiss/:id - Dismiss suggestion
-router.post('/suggestions/dismiss/:id',
+router.post(
+  '/suggestions/dismiss/:id',
   param('id').isLength({ min: 1 }).withMessage('Suggestion ID is required'),
   financialController.dismissSuggestion
 );
 
 // GET /api/financial/categories - Get expense categories
-router.get('/categories',
+router.get(
+  '/categories',
   query('lang').optional().isIn(['fr', 'en', 'es']),
   financialController.getExpenseCategories
 );
 
 // GET /api/financial/budget - Get budget plans
-router.get('/budget',
+router.get(
+  '/budget',
   [
     query('type').optional().isIn(['monthly', 'weekly', 'yearly', 'custom']),
     query('includeInactive').optional().isBoolean()
@@ -236,7 +272,8 @@ router.get('/budget',
 );
 
 // POST /api/financial/budget - Create budget plan
-router.post('/budget',
+router.post(
+  '/budget',
   [
     body('name').isLength({ min: 1, max: 100 }).withMessage('Name must be 1-100 characters'),
     body('type').isIn(['monthly', 'weekly', 'yearly', 'custom']).withMessage('Invalid budget type'),

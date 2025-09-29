@@ -58,6 +58,12 @@ model User {
   securityIncidents     SecurityIncident[]
   passwordResets        PasswordReset[]
 
+  // Strong Customer Authentication Relations
+  scaChallenges         ScaChallenge[]
+  scaSessions           ScaSession[]
+  userDevices           UserDevice[]
+  userLocations         UserLocation[]
+
   // Performance indexes for authentication and user management
   @@index([role], name: "idx_user_role") // Admin and role-based queries - SECURITY
   @@index([status], name: "idx_user_status") // Filter active users - Critical for auth queries
@@ -781,4 +787,106 @@ model OauthState {
   @@index([expiresAt], name: "idx_oauth_state_expires") // Cleanup expired states
   @@index([createdAt], name: "idx_oauth_state_created") // State creation analytics
   @@map("oauth_states")
+}
+
+// ===== STRONG CUSTOMER AUTHENTICATION (SCA) MODELS =====
+
+model ScaChallenge {
+  id              String   @id @default(cuid())
+  userId          String
+  transactionId   String   @unique
+  allowedMethods  String   // JSON array of allowed auth methods
+  challengeData   String   // JSON object with challenge details
+  status          String   @default("pending") // pending, completed, expired, locked
+  attempts        Int      @default(0)
+  expiresAt       DateTime
+  completedAt     DateTime?
+  verificationMethod String? // Method used to complete challenge
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions        ScaSession[]
+
+  // SCA challenge performance indexes
+  @@index([userId, status], name: "idx_sca_challenge_user_status") // User's active challenges
+  @@index([transactionId], name: "idx_sca_challenge_transaction") // Transaction lookup
+  @@index([expiresAt], name: "idx_sca_challenge_expires") // Cleanup expired challenges
+  @@index([status, expiresAt], name: "idx_sca_challenge_status_expires") // Active challenges cleanup
+  @@map("sca_challenges")
+}
+
+model ScaSession {
+  id              String   @id @default(cuid())
+  userId          String
+  challengeId     String
+  status          String   @default("active") // active, expired, revoked
+  expiresAt       DateTime
+  lastUsedAt      DateTime @default(now())
+  ipAddress       String?
+  userAgent       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge       ScaChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  // SCA session performance indexes
+  @@index([userId, status, expiresAt], name: "idx_sca_session_user_active") // User's active sessions
+  @@index([challengeId], name: "idx_sca_session_challenge") // Challenge lookup
+  @@index([expiresAt], name: "idx_sca_session_expires") // Cleanup expired sessions
+  @@map("sca_sessions")
+}
+
+model UserDevice {
+  id              String   @id @default(cuid())
+  userId          String
+  deviceHash      String   // SHA-256 hash of user agent
+  deviceName      String?  // User-friendly device name
+  deviceType      String?  // mobile, desktop, tablet
+  firstSeenAt     DateTime @default(now())
+  lastSeenAt      DateTime @default(now())
+  isTrusted       Boolean  @default(false)
+  isActive        Boolean  @default(true)
+  ipAddress       String?
+  location        String?  // Geolocation data
+  metadata        String?  // JSON: additional device info
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, deviceHash])
+  // Device tracking performance indexes
+  @@index([userId, isActive], name: "idx_user_device_user_active") // User's active devices
+  @@index([deviceHash], name: "idx_user_device_hash") // Device lookup
+  @@index([lastSeenAt], name: "idx_user_device_last_seen") // Recent device activity
+  @@map("user_devices")
+}
+
+model UserLocation {
+  id              String   @id @default(cuid())
+  userId          String
+  ipAddress       String
+  country         String?
+  region          String?
+  city            String?
+  latitude        Float?
+  longitude       Float?
+  isVpn           Boolean  @default(false)
+  isTrusted       Boolean  @default(false)
+  firstSeenAt     DateTime @default(now())
+  lastSeenAt      DateTime @default(now())
+  accessCount     Int      @default(1)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, ipAddress])
+  // Location tracking performance indexes
+  @@index([userId, lastSeenAt], name: "idx_user_location_user_recent") // User's recent locations
+  @@index([ipAddress], name: "idx_user_location_ip") // IP lookup
+  @@index([isVpn], name: "idx_user_location_vpn") // VPN detection
+  @@map("user_locations")
 }

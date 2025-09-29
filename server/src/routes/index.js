@@ -1,4 +1,5 @@
 const express = require('express');
+
 const router = express.Router();
 
 // Import all route modules - fully restored functionality
@@ -13,6 +14,8 @@ const financialRoutes = require('./financialRoutes'); // ✅ Re-enabled for dash
 const oauthRoutes = require('./oauthRoutes'); // ✅ Re-enabled
 const strikeRoutes = require('./strikes'); // ✅ Essential for core functionality
 const shoppingListRoutes = require('./shoppingList'); // ✅ Re-enabled
+const aiProxyRoutes = require('./ai-proxy'); // ✅ SECURITY: Secure AI proxy
+const scaRoutes = require('./sca'); // 🔐 CRITICAL: Strong Customer Authentication for PSD2
 // const performanceRoutes = require('./performance'); // ❌ TEMPORARILY DISABLED for setup
 
 // Health check for API
@@ -36,6 +39,8 @@ router.use('/financial', financialRoutes); // ✅ All methods implemented
 router.use('/oauth', oauthRoutes); // ✅ All methods implemented
 router.use('/strikes', strikeRoutes); // ✅ All methods implemented
 router.use('/shopping-list', shoppingListRoutes); // ✅ All methods implemented
+router.use('/ai-proxy', aiProxyRoutes); // ✅ SECURITY: Secure AI proxy
+router.use('/sca', scaRoutes); // 🔐 CRITICAL: Strong Customer Authentication endpoints
 // router.use('/performance', performanceRoutes); // ❌ TEMPORARILY DISABLED for setup
 
 // API documentation endpoint
