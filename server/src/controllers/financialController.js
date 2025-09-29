@@ -1,11 +1,25 @@
 const { validationResult } = require('express-validator');
 const { prisma } = require('../lib/prisma'); // CRITICAL FIX: Use singleton to prevent connection pool exhaustion in financial operations
 const logger = require('../utils/logger');
-const { sendSuccess, sendError, sendAnalytics, sendPaginated, asyncHandler } = require('../utils/responseHelper');
+const {
+  sendSuccess, sendError, sendAnalytics, sendPaginated, asyncHandler
+} = require('../utils/responseHelper');
 const analyticsService = require('../services/analyticsService');
 const cacheService = require('../services/cacheService');
 const aiService = require('../services/aiService');
 const financialAIService = require('../services/financialAIService');
+
+// CRITICAL: Import financial utilities for precise decimal calculations
+const {
+  calculateAssetValue,
+  calculateNetWorth,
+  calculateSavingsRate,
+  add,
+  subtract,
+  multiply,
+  roundToCurrency,
+  toNumber
+} = require('../utils/financialUtils');
 
 /**
  * Controller for financial dashboard management
@@ -61,24 +75,44 @@ const financialController = {
       })
     ]);
 
-    // Calculate totals
-    const totalAssets = assets.reduce((sum, asset) => sum + asset.totalValue, 0);
-    const totalLiabilities = liabilities.reduce((sum, liability) => sum + liability.balance, 0);
-    const netWorth = totalAssets - totalLiabilities;
-    const liquidAssets = accounts
-      .filter(acc => ['checking', 'savings'].includes(acc.type))
-      .reduce((sum, acc) => sum + acc.balance, 0);
+    // CRITICAL FIX: Calculate totals using precise decimal arithmetic
+    const totalAssets = toNumber(roundToCurrency(
+      assets.reduce((sum, asset) => add(sum, asset.totalValue, 'asset_total'), 0),
+      'total_assets'
+    ));
 
-    const monthlyIncome = incomes.reduce((sum, income) => {
-      const factor = income.frequency === 'weekly' ? 4.33 :
-                    income.frequency === 'annual' ? 1/12 :
-                    income.frequency === 'quarterly' ? 1/3 : 1;
-      return sum + (income.amount * factor);
-    }, 0);
+    const totalLiabilities = toNumber(roundToCurrency(
+      liabilities.reduce((sum, liability) => add(sum, liability.balance, 'liability_total'), 0),
+      'total_liabilities'
+    ));
 
-    // Asset allocation by type
+    const netWorth = calculateNetWorth(totalAssets, totalLiabilities);
+
+    const liquidAssets = toNumber(roundToCurrency(
+      accounts
+        .filter((acc) => ['checking', 'savings'].includes(acc.type))
+        .reduce((sum, acc) => add(sum, acc.balance, 'liquid_assets'), 0),
+      'liquid_assets_total'
+    ));
+
+    const monthlyIncome = toNumber(roundToCurrency(
+      incomes.reduce((sum, income) => {
+        const factor = income.frequency === 'weekly' ? 4.33
+          : income.frequency === 'annual' ? (1 / 12)
+            : income.frequency === 'quarterly' ? (1 / 3) : 1;
+        const monthlyAmount = multiply(income.amount, factor, `income_${income.frequency}_conversion`);
+        return add(sum, monthlyAmount, 'monthly_income_calculation');
+      }, 0),
+      'monthly_income_total'
+    ));
+
+    // CRITICAL FIX: Asset allocation using precise arithmetic
     const assetAllocation = assets.reduce((acc, asset) => {
-      acc[asset.type] = (acc[asset.type] || 0) + asset.totalValue;
+      const currentValue = acc[asset.type] || 0;
+      acc[asset.type] = toNumber(roundToCurrency(
+        add(currentValue, asset.totalValue, `asset_allocation_${asset.type}`),
+        `allocation_${asset.type}_total`
+      ));
       return acc;
     }, {});
 
@@ -91,7 +125,9 @@ const financialController = {
         }
       },
       orderBy: { date: 'asc' },
-      select: { date: true, netWorth: true, totalAssets: true, totalLiabilities: true }
+      select: {
+        date: true, netWorth: true, totalAssets: true, totalLiabilities: true
+      }
     });
 
     const dashboardData = {
@@ -105,7 +141,7 @@ const financialController = {
         assetsCount: assets.length,
         goalsCount: goals.length
       },
-      accounts: accounts.map(acc => ({
+      accounts: accounts.map((acc) => ({
         id: acc.id,
         name: acc.name,
         type: acc.type,
@@ -157,10 +193,14 @@ const financialController = {
       where,
       include: {
         assets: {
-          select: { id: true, name: true, type: true, totalValue: true }
+          select: {
+            id: true, name: true, type: true, totalValue: true
+          }
         },
         liabilities: {
-          select: { id: true, name: true, type: true, balance: true }
+          select: {
+            id: true, name: true, type: true, balance: true
+          }
         },
         _count: {
           select: { accountTransactions: true }
@@ -184,7 +224,9 @@ const financialController = {
     }
 
     const userId = req.user.id;
-    const { name, type, subtype, provider, balance, currency = 'EUR', accountNumber } = req.body;
+    const {
+      name, type, subtype, provider, balance, currency = 'EUR', accountNumber
+    } = req.body;
 
     // Validate account type
     const validTypes = ['checking', 'savings', 'investment', 'crypto', 'loan'];
@@ -199,7 +241,7 @@ const financialController = {
         type,
         subtype,
         provider: provider || 'manual',
-        balance: parseFloat(balance) || 0,
+        balance: toNumber(roundToCurrency(balance || 0, 'account_balance')),
         currency,
         accountNumber: accountNumber ? `****${accountNumber.slice(-4)}` : null
       }
@@ -234,7 +276,7 @@ const financialController = {
 
     const updateData = {};
     if (name !== undefined) updateData.name = name;
-    if (balance !== undefined) updateData.balance = parseFloat(balance);
+    if (balance !== undefined) updateData.balance = toNumber(roundToCurrency(balance, 'account_update_balance'));
     if (isActive !== undefined) updateData.isActive = isActive;
 
     const updatedAccount = await prisma.account.update({
@@ -311,7 +353,8 @@ const financialController = {
       return sendError(res, 'Invalid asset type', 400);
     }
 
-    const totalValue = parseFloat(quantity) * parseFloat(unitValue);
+    // CRITICAL FIX: Use precise decimal calculation for asset value
+    const totalValue = calculateAssetValue(quantity, unitValue);
 
     const asset = await prisma.asset.create({
       data: {
@@ -320,12 +363,12 @@ const financialController = {
         name,
         type,
         symbol,
-        quantity: parseFloat(quantity),
-        unitValue: parseFloat(unitValue),
+        quantity: toNumber(roundToCurrency(quantity, 'asset_quantity')),
+        unitValue: toNumber(roundToCurrency(unitValue, 'asset_unit_value')),
         totalValue,
         currency,
         acquisitionDate: acquisitionDate ? new Date(acquisitionDate) : null,
-        acquisitionPrice: acquisitionPrice ? parseFloat(acquisitionPrice) : null
+        acquisitionPrice: acquisitionPrice ? toNumber(roundToCurrency(acquisitionPrice, 'asset_acquisition_price')) : null
       }
     });
 
@@ -348,22 +391,22 @@ const financialController = {
     const now = new Date();
 
     switch (period) {
-      case '1m':
-        dateFilter = { gte: new Date(now.getFullYear(), now.getMonth(), 1) };
-        break;
-      case '3m':
-        dateFilter = { gte: new Date(now.getTime() - 3 * 30 * 24 * 60 * 60 * 1000) };
-        break;
-      case '6m':
-        dateFilter = { gte: new Date(now.getTime() - 6 * 30 * 24 * 60 * 60 * 1000) };
-        break;
-      case '12m':
-        dateFilter = { gte: new Date(now.getTime() - 12 * 30 * 24 * 60 * 60 * 1000) };
-        break;
-      case 'all':
-        break;
-      default:
-        dateFilter = { gte: new Date(now.getTime() - 12 * 30 * 24 * 60 * 60 * 1000) };
+    case '1m':
+      dateFilter = { gte: new Date(now.getFullYear(), now.getMonth(), 1) };
+      break;
+    case '3m':
+      dateFilter = { gte: new Date(now.getTime() - 3 * 30 * 24 * 60 * 60 * 1000) };
+      break;
+    case '6m':
+      dateFilter = { gte: new Date(now.getTime() - 6 * 30 * 24 * 60 * 60 * 1000) };
+      break;
+    case '12m':
+      dateFilter = { gte: new Date(now.getTime() - 12 * 30 * 24 * 60 * 60 * 1000) };
+      break;
+    case 'all':
+      break;
+    default:
+      dateFilter = { gte: new Date(now.getTime() - 12 * 30 * 24 * 60 * 60 * 1000) };
     }
 
     const snapshots = await prisma.netWorthSnapshot.findMany({
@@ -377,8 +420,8 @@ const financialController = {
     // Calculate growth metrics
     const latest = snapshots[snapshots.length - 1];
     const previous = snapshots[snapshots.length - 2];
-    const growth = latest && previous ?
-      ((latest.netWorth - previous.netWorth) / Math.abs(previous.netWorth)) * 100 : 0;
+    const growth = latest && previous
+      ? ((latest.netWorth - previous.netWorth) / Math.abs(previous.netWorth)) * 100 : 0;
 
     const data = {
       period,
@@ -386,8 +429,8 @@ const financialController = {
       summary: {
         current: latest?.netWorth || 0,
         growth: Math.round(growth * 100) / 100,
-        highest: Math.max(...snapshots.map(s => s.netWorth)),
-        lowest: Math.min(...snapshots.map(s => s.netWorth)),
+        highest: Math.max(...snapshots.map((s) => s.netWorth)),
+        lowest: Math.min(...snapshots.map((s) => s.netWorth)),
         average: snapshots.reduce((sum, s) => sum + s.netWorth, 0) / snapshots.length
       }
     };
@@ -403,68 +446,92 @@ const financialController = {
   createNetWorthSnapshot: asyncHandler(async (req, res) => {
     const userId = req.user.id;
 
-    // Calculate current values
-    const [assets, liabilities, accounts, incomes] = await Promise.all([
-      prisma.asset.aggregate({
-        where: { userId },
-        _sum: { totalValue: true }
-      }),
-      prisma.liability.aggregate({
-        where: { userId },
-        _sum: { balance: true }
-      }),
-      prisma.account.aggregate({
-        where: { userId, isActive: true },
-        _sum: { balance: true }
-      }),
-      prisma.income.findMany({
-        where: { userId, isActive: true }
-      })
-    ]);
+    // CRITICAL FIX: Use atomic transaction for net worth calculation
+    const snapshot = await prisma.$transaction(async (prisma) => {
+      // Calculate current values within transaction for consistency
+      const [assets, liabilities, accounts, incomes] = await Promise.all([
+        prisma.asset.aggregate({
+          where: { userId },
+          _sum: { totalValue: true }
+        }),
+        prisma.liability.aggregate({
+          where: { userId },
+          _sum: { balance: true }
+        }),
+        prisma.account.aggregate({
+          where: { userId, isActive: true },
+          _sum: { balance: true }
+        }),
+        prisma.income.findMany({
+          where: { userId, isActive: true }
+        })
+      ]);
 
-    const totalAssets = (assets._sum.totalValue || 0) + (accounts._sum.balance || 0);
-    const totalLiabilities = liabilities._sum.balance || 0;
-    const netWorth = totalAssets - totalLiabilities;
-    const liquidAssets = accounts._sum.balance || 0;
+      // CRITICAL FIX: Use precise decimal calculations
+      const assetsValue = assets._sum.totalValue || 0;
+      const accountsValue = accounts._sum.balance || 0;
+      const totalAssets = toNumber(roundToCurrency(
+        add(assetsValue, accountsValue, 'snapshot_total_assets'),
+        'snapshot_assets_final'
+      ));
 
-    const monthlyIncome = incomes.reduce((sum, income) => {
-      const factor = income.frequency === 'weekly' ? 4.33 :
-                    income.frequency === 'annual' ? 1/12 :
-                    income.frequency === 'quarterly' ? 1/3 : 1;
-      return sum + (income.amount * factor);
-    }, 0);
+      const totalLiabilities = toNumber(roundToCurrency(
+        liabilities._sum.balance || 0,
+        'snapshot_liabilities'
+      ));
 
-    // Get expenses from recent transactions
-    const recentExpenses = await prisma.transaction.aggregate({
-      where: {
-        userId,
-        type: 'expense',
-        createdAt: {
-          gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+      const netWorth = calculateNetWorth(totalAssets, totalLiabilities);
+      const liquidAssets = toNumber(roundToCurrency(accountsValue, 'snapshot_liquid_assets'));
+
+      const monthlyIncome = toNumber(roundToCurrency(
+        incomes.reduce((sum, income) => {
+          const factor = income.frequency === 'weekly' ? 4.33
+            : income.frequency === 'annual' ? (1 / 12)
+              : income.frequency === 'quarterly' ? (1 / 3) : 1;
+          const monthlyAmount = multiply(income.amount, factor, `snapshot_income_${income.frequency}`);
+          return add(sum, monthlyAmount, 'snapshot_monthly_income');
+        }, 0),
+        'snapshot_income_final'
+      ));
+
+      // Get expenses from recent transactions within the same transaction
+      const recentExpenses = await prisma.transaction.aggregate({
+        where: {
+          userId,
+          type: 'expense',
+          createdAt: {
+            gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+          }
+        },
+        _sum: { amount: true }
+      });
+
+      const monthlyExpenses = toNumber(roundToCurrency(
+        recentExpenses._sum.amount || 0,
+        'snapshot_monthly_expenses'
+      ));
+
+      const savingsRate = calculateSavingsRate(monthlyIncome, monthlyExpenses);
+
+      // Create snapshot within transaction for consistency
+      return await prisma.netWorthSnapshot.create({
+        data: {
+          userId,
+          totalAssets,
+          totalLiabilities,
+          netWorth,
+          liquidAssets,
+          monthlyIncome,
+          monthlyExpenses,
+          savingsRate
         }
-      },
-      _sum: { amount: true }
-    });
-
-    const monthlyExpenses = recentExpenses._sum.amount || 0;
-    const savingsRate = monthlyIncome > 0 ?
-      ((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100 : 0;
-
-    const snapshot = await prisma.netWorthSnapshot.create({
-      data: {
-        userId,
-        totalAssets,
-        totalLiabilities,
-        netWorth,
-        liquidAssets,
-        monthlyIncome,
-        monthlyExpenses,
-        savingsRate
-      }
+      });
+    }, {
+      timeout: 15000 // 15 second timeout for financial operations
     });
 
     await cacheService.delete(`financial_dashboard_${userId}_*`);
-    analyticsService.trackEvent('net_worth_snapshot_created', userId, { netWorth });
+    analyticsService.trackEvent('net_worth_snapshot_created', userId, { netWorth: snapshot.netWorth });
 
     return sendSuccess(res, snapshot, 'Net worth snapshot created successfully', 201);
   }),
@@ -491,9 +558,9 @@ const financialController = {
     });
 
     // Calculate progress for each goal
-    const goalsWithProgress = goals.map(goal => {
-      const progressPercentage = goal.targetAmount > 0 ?
-        (goal.currentAmount / goal.targetAmount) * 100 : 0;
+    const goalsWithProgress = goals.map((goal) => {
+      const progressPercentage = goal.targetAmount > 0
+        ? (goal.currentAmount / goal.targetAmount) * 100 : 0;
 
       const remainingAmount = Math.max(0, goal.targetAmount - goal.currentAmount);
 
@@ -527,7 +594,9 @@ const financialController = {
     }
 
     const userId = req.user.id;
-    const { name, type, targetAmount, targetDate, priority = 'medium', description } = req.body;
+    const {
+      name, type, targetAmount, targetDate, priority = 'medium', description
+    } = req.body;
 
     const validTypes = ['savings', 'debt_payoff', 'investment', 'emergency_fund'];
     const validPriorities = ['low', 'medium', 'high'];
@@ -578,20 +647,21 @@ const financialController = {
 
     // Calculate date filters
     const now = new Date();
-    let startDate, endDate = now;
+    let startDate; const
+      endDate = now;
 
     switch (period) {
-      case 'week':
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        break;
-      case 'month':
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        break;
-      case 'year':
-        startDate = new Date(now.getFullYear(), 0, 1);
-        break;
-      default:
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    case 'week':
+      startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      break;
+    case 'month':
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      break;
+    case 'year':
+      startDate = new Date(now.getFullYear(), 0, 1);
+      break;
+    default:
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
     }
 
     // Get expenses and income data in parallel
@@ -641,9 +711,9 @@ const financialController = {
 
     // Calculate monthly income
     const monthlyIncome = incomes.reduce((sum, income) => {
-      const factor = income.frequency === 'weekly' ? 4.33 :
-                    income.frequency === 'annual' ? 1/12 :
-                    income.frequency === 'quarterly' ? 1/3 : 1;
+      const factor = income.frequency === 'weekly' ? 4.33
+        : income.frequency === 'annual' ? 1 / 12
+          : income.frequency === 'quarterly' ? 1 / 3 : 1;
       return sum + (income.amount * factor);
     }, 0);
 
@@ -652,7 +722,7 @@ const financialController = {
     const savingsRate = monthlyIncome > 0 ? (netSavings / monthlyIncome) * 100 : 0;
 
     // Format category breakdown for charts
-    const categoryData = categoryBreakdown.map(cat => ({
+    const categoryData = categoryBreakdown.map((cat) => ({
       category: cat.category,
       amount: cat._sum.amount,
       count: cat._count,
@@ -678,7 +748,7 @@ const financialController = {
       },
       income: {
         total: monthlyIncome,
-        sources: incomes.map(inc => ({
+        sources: incomes.map((inc) => ({
           id: inc.id,
           name: inc.name,
           type: inc.type,
@@ -703,31 +773,33 @@ const financialController = {
    */
   getExpenses: asyncHandler(async (req, res) => {
     const userId = req.user.id;
-    const { category, period = 'month', page = 1, limit = 20 } = req.query;
+    const {
+      category, period = 'month', page = 1, limit = 20
+    } = req.query;
 
     // Calculate date filters
     const now = new Date();
     let dateFilter = {};
 
     switch (period) {
-      case 'week':
-        dateFilter = { gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) };
-        break;
-      case 'month':
-        dateFilter = { gte: new Date(now.getFullYear(), now.getMonth(), 1) };
-        break;
-      case '3month':
-        dateFilter = { gte: new Date(now.getTime() - 3 * 30 * 24 * 60 * 60 * 1000) };
-        break;
-      case '6month':
-        dateFilter = { gte: new Date(now.getTime() - 6 * 30 * 24 * 60 * 60 * 1000) };
-        break;
-      case 'year':
-        dateFilter = { gte: new Date(now.getFullYear(), 0, 1) };
-        break;
-      case 'all':
-      default:
-        break;
+    case 'week':
+      dateFilter = { gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) };
+      break;
+    case 'month':
+      dateFilter = { gte: new Date(now.getFullYear(), now.getMonth(), 1) };
+      break;
+    case '3month':
+      dateFilter = { gte: new Date(now.getTime() - 3 * 30 * 24 * 60 * 60 * 1000) };
+      break;
+    case '6month':
+      dateFilter = { gte: new Date(now.getTime() - 6 * 30 * 24 * 60 * 60 * 1000) };
+      break;
+    case 'year':
+      dateFilter = { gte: new Date(now.getFullYear(), 0, 1) };
+      break;
+    case 'all':
+    default:
+      break;
     }
 
     const where = { userId };
@@ -824,7 +896,9 @@ const financialController = {
   updateExpense: asyncHandler(async (req, res) => {
     const { id } = req.params;
     const userId = req.user.id;
-    const { category, subcategory, amount, description, merchant } = req.body;
+    const {
+      category, subcategory, amount, description, merchant
+    } = req.body;
 
     const existingExpense = await prisma.expense.findFirst({
       where: { id, userId }
@@ -897,10 +971,10 @@ const financialController = {
     });
 
     // Calculate monthly equivalent for each income
-    const incomesWithMonthly = incomes.map(income => {
-      const factor = income.frequency === 'weekly' ? 4.33 :
-                    income.frequency === 'annual' ? 1/12 :
-                    income.frequency === 'quarterly' ? 1/3 : 1;
+    const incomesWithMonthly = incomes.map((income) => {
+      const factor = income.frequency === 'weekly' ? 4.33
+        : income.frequency === 'annual' ? 1 / 12
+          : income.frequency === 'quarterly' ? 1 / 3 : 1;
       const monthlyAmount = income.amount * factor;
 
       return {
@@ -933,7 +1007,9 @@ const financialController = {
    */
   getFinancialSuggestions: asyncHandler(async (req, res) => {
     const userId = req.user.id;
-    const { lang = 'fr', status = 'active', type, limit = 10 } = req.query;
+    const {
+      lang = 'fr', status = 'active', type, limit = 10
+    } = req.query;
 
     const where = { userId };
     if (status !== 'all') where.status = status;
@@ -1128,9 +1204,9 @@ async function generateNewFinancialSuggestions(userId, lang = 'fr') {
     // Calculate financial metrics
     const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
     const monthlyIncome = incomes.reduce((sum, income) => {
-      const factor = income.frequency === 'weekly' ? 4.33 :
-                    income.frequency === 'annual' ? 1/12 :
-                    income.frequency === 'quarterly' ? 1/3 : 1;
+      const factor = income.frequency === 'weekly' ? 4.33
+        : income.frequency === 'annual' ? 1 / 12
+          : income.frequency === 'quarterly' ? 1 / 3 : 1;
       return sum + (income.amount * factor);
     }, 0);
 
@@ -1222,7 +1298,9 @@ async function generateFinancialInsights(userId, financialData, lang = 'fr') {
 
     // Fallback to simple AI suggestions
     try {
-      const { netWorth, totalAssets, totalLiabilities, monthlyIncome } = financialData;
+      const {
+        netWorth, totalAssets, totalLiabilities, monthlyIncome
+      } = financialData;
 
       const prompt = lang === 'en'
         ? `Generate 2 personalized financial insights for a user with:
