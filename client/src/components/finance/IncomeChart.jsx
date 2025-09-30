@@ -29,14 +29,14 @@ const IncomeChart = ({ data, darkMode, compact = false, detailed = false }) => {
 
   const getIncomeTypeColor = (type) => {
     const colors = {
-      salary: '#22c55e',
-      freelance: '#3b82f6',
-      investment: '#f59e0b',
-      rental: '#8b5cf6',
-      pension: '#ef4444',
-      other: '#6b7280'
+      salary: '#10B981', // Modern teal green for salary
+      freelance: '#059669', // Darker emerald variant
+      investment: '#0D9488', // Investment teal
+      rental: '#14B8A6', // Lighter teal variant
+      pension: '#0F766E', // Pension dark teal
+      other: '#115E59' // Other income darker teal
     };
-    return colors[type] || '#6b7280';
+    return colors[type] || '#10B981'; // Default to Modern Green
   };
 
   const getFrequencyDisplayName = (frequency) => {
@@ -80,10 +80,11 @@ const IncomeChart = ({ data, darkMode, compact = false, detailed = false }) => {
       labels: sortedTypes.map(([type]) => getIncomeTypeDisplayName(type)),
       datasets: [{
         data: sortedTypes.map(([,amount]) => amount),
-        backgroundColor: sortedTypes.map(([type]) => getIncomeTypeColor(type)),
-        borderColor: darkMode ? '#1f2937' : '#ffffff',
-        borderWidth: 2,
-        hoverOffset: 4
+        backgroundColor: sortedTypes.map(([type]) => getIncomeTypeColor(type) + '90'), // More opaque for better visibility
+        borderColor: sortedTypes.map(([type]) => getIncomeTypeColor(type)),
+        borderWidth: 3,
+        hoverOffset: 8,
+        hoverBorderWidth: 4
       }]
     };
   };
@@ -110,10 +111,11 @@ const IncomeChart = ({ data, darkMode, compact = false, detailed = false }) => {
       datasets: [{
         label: t('income.monthlyAmount'),
         data: sources.map(source => source.monthlyAmount),
-        backgroundColor: sources.map(source => getIncomeTypeColor(source.type)),
-        borderColor: '#2563eb',
-        borderWidth: 1,
-        borderRadius: 4
+        backgroundColor: sources.map(source => getIncomeTypeColor(source.type) + '90'), // More opaque
+        borderColor: '#10B981',
+        borderWidth: 2,
+        borderRadius: 6,
+        borderSkipped: false
       }]
     };
   };
@@ -211,36 +213,22 @@ const IncomeChart = ({ data, darkMode, compact = false, detailed = false }) => {
   const sourcesCount = data?.sources?.length || getSampleTotals().count;
 
   return (
-    <div className={`rounded-xl p-4 sm:p-6 transition-all duration-300 ${
-      darkMode
-        ? 'bg-gray-900 border border-gray-700'
-        : 'bg-white border border-gray-200'
-    } shadow-lg`}>
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 space-y-2 sm:space-y-0">
-        <div className="min-w-0 flex-1">
-          <h3 className={`text-base sm:text-lg font-semibold truncate ${
-            darkMode ? 'text-white' : 'text-gray-900'
-          }`}>
-            {detailed ? 'Analyse des Revenus' : 'Revenus'}
-          </h3>
-          <p className={`text-xs sm:text-sm ${
+    <div className="h-full">
+      {/* Summary Info */}
+      {!compact && (
+        <div className="mb-6">
+          <div className={`text-sm font-medium ${
             darkMode ? 'text-gray-400' : 'text-gray-600'
           }`}>
-            {formatCurrency(totalIncome)} • {sourcesCount} {t('income.sources')}
-          </p>
+            {formatCurrency(totalIncome)} • {sourcesCount} sources
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Charts */}
       <div className={detailed ? 'grid grid-cols-1 lg:grid-cols-2 gap-6' : ''}>
         {/* Income by Type (Doughnut) */}
         <div>
-          <h4 className={`text-md font-medium mb-4 ${
-            darkMode ? 'text-gray-200' : 'text-gray-700'
-          }`}>
-            {t('income.byType')}
-          </h4>
           <div className={`relative ${compact ? 'h-48' : 'h-64'}`}>
             <Doughnut data={getIncomeByTypeData()} options={chartOptions} />
           </div>

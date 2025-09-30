@@ -18,10 +18,9 @@ const createLimiter = (options) => {
     legacyHeaders: false,
     skipSuccessfulRequests: options.skipSuccessful || false,
     skipFailedRequests: options.skipFailed || false,
-    keyGenerator: (req) => {
+    keyGenerator: (req) =>
       // Utiliser l'ID utilisateur si authentifié, sinon l'IP
-      return req.user?.id || req.ip;
-    },
+      req.user?.id || req.ip,
     handler: (req, res, next, options) => {
       logger.warn('Rate limit atteint:', {
         ip: req.ip,
@@ -58,10 +57,10 @@ const limiters = {
     windowMs: 60 * 1000, // 1 minute
     max: process.env.NODE_ENV === 'production' ? 5 : 20,
     message: 'Limite de requêtes IA atteinte. Attendez 1 minute.',
-    keyGenerator: (req) => {
+    keyGenerator: (req) =>
       // Limiter par utilisateur pour l'IA
-      return req.user?.id || req.ip;
-    }
+      req.user?.id || req.ip
+
   }),
 
   // Limites pour les uploads
@@ -108,47 +107,43 @@ const limiters = {
 };
 
 // Rate limiter dynamique basé sur l'abonnement
-const createSubscriptionBasedLimiter = (freeLimit, premiumLimit, windowMs = 15 * 60 * 1000) => {
-  return (req, res, next) => {
-    const user = req.user;
-    let maxRequests = freeLimit;
+const createSubscriptionBasedLimiter = (freeLimit, premiumLimit, windowMs = 15 * 60 * 1000) => (req, res, next) => {
+  const { user } = req;
+  let maxRequests = freeLimit;
 
-    if (user && user.subscription && user.subscription.plan !== 'free') {
-      maxRequests = premiumLimit;
-    }
+  if (user && user.subscription && user.subscription.plan !== 'free') {
+    maxRequests = premiumLimit;
+  }
 
-    const limiter = createLimiter({
-      windowMs,
-      max: maxRequests,
-      message: user && user.subscription && user.subscription.plan === 'free'
-        ? 'Limite gratuite atteinte. Passez à Premium pour plus de requêtes.'
-        : 'Limite de requêtes atteinte.'
-    });
+  const limiter = createLimiter({
+    windowMs,
+    max: maxRequests,
+    message: user && user.subscription && user.subscription.plan === 'free'
+      ? 'Limite gratuite atteinte. Passez à Premium pour plus de requêtes.'
+      : 'Limite de requêtes atteinte.'
+  });
 
-    limiter(req, res, next);
-  };
+  limiter(req, res, next);
 };
 
 // Rate limiter pour les suggestions IA basé sur l'abonnement
 const aiSubscriptionLimiter = createSubscriptionBasedLimiter(
-  5,   // Limite gratuite: 5 par heure
-  50,  // Limite premium: 50 par heure
+  5, // Limite gratuite: 5 par heure
+  50, // Limite premium: 50 par heure
   60 * 60 * 1000 // 1 heure
 );
 
 // Middleware pour skip le rate limiting en développement
-const skipInDevelopment = (limiter) => {
-  return (req, res, next) => {
-    if (process.env.NODE_ENV === 'development' && process.env.SKIP_RATE_LIMIT === 'true') {
-      return next();
-    }
-    limiter(req, res, next);
-  };
+const skipInDevelopment = (limiter) => (req, res, next) => {
+  if (process.env.NODE_ENV === 'development' && process.env.SKIP_RATE_LIMIT === 'true') {
+    return next();
+  }
+  limiter(req, res, next);
 };
 
 // Exporter tous les limiters avec possibilité de skip en dev
 const exportedLimiters = {};
-Object.keys(limiters).forEach(key => {
+Object.keys(limiters).forEach((key) => {
   exportedLimiters[key] = skipInDevelopment(limiters[key]);
 });
 

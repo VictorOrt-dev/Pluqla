@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 
 const StreakDisplay = ({ className = '' }) => {
-  const { user, tokens } = useAuth();
+  const { user, apiCall, isAuthenticated } = useAuth();
   const [streakData, setStreakData] = useState({
     currentStreak: 0,
     isLoading: true,
@@ -11,13 +11,10 @@ const StreakDisplay = ({ className = '' }) => {
 
   useEffect(() => {
     fetchStreakData();
-  }, [user, tokens]);
+  }, [user, isAuthenticated, apiCall]);
 
   const fetchStreakData = async () => {
-    // Récupérer le token depuis le contexte d'auth ou localStorage en fallback
-    const token = tokens?.accessToken || localStorage.getItem('token');
-
-    if (!token) {
+    if (!isAuthenticated || !apiCall) {
       setStreakData({ currentStreak: 0, isLoading: false, error: null });
       return;
     }
@@ -25,22 +22,12 @@ const StreakDisplay = ({ className = '' }) => {
     try {
       setStreakData(prev => ({ ...prev, isLoading: true, error: null }));
 
-      const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/strikes/current`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const response = await apiCall('/strikes/current');
+      const data = response.data || response;
 
-      if (!response.ok) {
-        throw new Error('Erreur lors de la récupération du streak');
-      }
-
-      const data = await response.json();
-
-      if (data.success && data.data) {
+      if (data && (data.currentStrike !== undefined || data.currentStreak !== undefined)) {
         setStreakData({
-          currentStreak: data.data.currentStrike || 0,
+          currentStreak: data.currentStrike || data.currentStreak || 0,
           isLoading: false,
           error: null
         });

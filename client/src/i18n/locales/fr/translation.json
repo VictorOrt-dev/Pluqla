@@ -45,14 +45,14 @@
     "login": {
       "title": "Bon retour !",
       "subtitle": "Connecte-toi pour accéder à tes économies personnalisées",
-      "submit": "🚀 Se connecter",
+      "submit": "Se connecter",
       "loading": "Connexion...",
       "switchToRegister": "Pas encore de compte ? S'inscrire"
     },
     "register": {
       "title": "Créons ton compte",
       "subtitle": "Quelques secondes pour débloquer ton potentiel d'économies",
-      "submit": "✨ Créer mon compte",
+      "submit": "Créer un compte",
       "loading": "Création du compte...",
       "switchToLogin": "Déjà un compte ? Se connecter"
     },
@@ -115,7 +115,7 @@
     "welcome": {
       "title": "Pluqla",
       "subtitle": "L'app qui booste vraiment ton pouvoir d'achat",
-      "start_button": "🚀 Commencer gratuitement",
+      "start_button": "Commencer gratuitement",
       "stats": {
         "users": "utilisateurs actifs",
         "saved": "Économisé ce mois"
@@ -252,7 +252,7 @@
       "subtitle": "Découvre des astuces simples pour commencer à économiser dès aujourd'hui",
       "progress": "Astuce {{current}} sur {{total}}",
       "potential": "{{amount}}€/mois potentiel",
-      "reveal_tip": "🎁 Révéler l'astuce",
+      "reveal_tip": "Révéler l'astuce",
       "how_to": "Comment faire :",
       "pro_tip": "Pro tip:",
       "potential_revealed": "Potentiel d'économies révélé : {{amount}}€/mois",
@@ -262,8 +262,8 @@
       "title": "Vérifie ton email",
       "subtitle": "Un code de vérification a été envoyé à {{email}}",
       "code_label": "Code de vérification (6 chiffres)",
-      "verify_button": "✅ Vérifier le code",
-      "resend_code": "📮 Renvoyer le code",
+      "verify_button": "Vérifier le code",
+      "resend_code": "Renvoyer le code",
       "resend_countdown": "Renvoyer le code dans {{seconds}}s",
       "skip_for_now": "Ignorer pour maintenant",
       "help": {
@@ -295,7 +295,7 @@
         "daily_tips": "Conseils quotidiens disponibles",
         "gamification": "Système de gamification activé"
       },
-      "start_saving": "🚀 Commencer à économiser",
+      "start_saving": "Commencer à économiser",
       "welcome_message": "Bienvenue dans ta nouvelle vie d'économiseur intelligent ! 🎉"
     }
   },
@@ -555,7 +555,7 @@
     }
   },
   "finance": {
-    "title": "Dashboard Financier",
+    "title": "Finance",
     "tabs": {
       "overview": "Vue d'ensemble",
       "expenses": "Dépenses",

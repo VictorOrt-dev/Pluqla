@@ -16,7 +16,7 @@ exports.generateShoppingList = async (req, res) => {
     logger.info(`Génération liste de courses pour ${selectedRecipes.length} recettes`);
 
     // Créer le prompt pour l'IA basé sur les recettes
-    const recipeNames = selectedRecipes.map(r => r.title || r.name).join(', ');
+    const recipeNames = selectedRecipes.map((r) => r.title || r.name).join(', ');
     const prompt = `Générez une liste de courses consolidée pour ces recettes : ${recipeNames}
 
     Contexte : Les recettes sélectionnées sont ${JSON.stringify(selectedRecipes)}.
@@ -78,7 +78,6 @@ exports.generateShoppingList = async (req, res) => {
     logger.info(`Liste de courses générée avec ${validatedList.items.length} articles`);
 
     return sendSuccess(res, validatedList, 'Liste de courses générée avec succès');
-
   } catch (error) {
     logger.error('Erreur génération liste de courses:', error);
     return sendError(res, 'Erreur lors de la génération de la liste de courses', 500);
@@ -120,16 +119,26 @@ function generateFallbackShoppingList(recipes, language = 'fr') {
 
   // Générer des ingrédients basiques basés sur les recettes
   const commonIngredients = [
-    { name: 'Tomates', quantity: '1', unit: 'kg', category: 'fruits-legumes', estimatedPrice: 3.50 },
-    { name: 'Oignons', quantity: '500', unit: 'g', category: 'fruits-legumes', estimatedPrice: 1.20 },
-    { name: 'Huile d\'olive', quantity: '1', unit: 'L', category: 'epicerie', estimatedPrice: 4.50 },
-    { name: 'Sel', quantity: '1', unit: 'paquet', category: 'epicerie', estimatedPrice: 0.80 },
-    { name: 'Poivre', quantity: '1', unit: 'paquet', category: 'epicerie', estimatedPrice: 1.50 }
+    {
+      name: 'Tomates', quantity: '1', unit: 'kg', category: 'fruits-legumes', estimatedPrice: 3.50
+    },
+    {
+      name: 'Oignons', quantity: '500', unit: 'g', category: 'fruits-legumes', estimatedPrice: 1.20
+    },
+    {
+      name: 'Huile d\'olive', quantity: '1', unit: 'L', category: 'epicerie', estimatedPrice: 4.50
+    },
+    {
+      name: 'Sel', quantity: '1', unit: 'paquet', category: 'epicerie', estimatedPrice: 0.80
+    },
+    {
+      name: 'Poivre', quantity: '1', unit: 'paquet', category: 'epicerie', estimatedPrice: 1.50
+    }
   ];
 
-  const items = commonIngredients.map(item => ({
+  const items = commonIngredients.map((item) => ({
     ...item,
-    recipes: recipes.map(r => r.title || r.name)
+    recipes: recipes.map((r) => r.title || r.name)
   }));
 
   return {
@@ -146,8 +155,8 @@ function validateShoppingList(list) {
   const validCategories = ['fruits-legumes', 'viande-poisson', 'epicerie', 'frais', 'surgeles'];
 
   const validatedItems = (list.items || [])
-    .filter(item => item.name && item.quantity)
-    .map(item => ({
+    .filter((item) => item.name && item.quantity)
+    .map((item) => ({
       name: String(item.name).substring(0, 100),
       quantity: String(item.quantity).substring(0, 20),
       unit: String(item.unit || 'pièce').substring(0, 20),
@@ -188,10 +197,9 @@ exports.optimizeShoppingList = async (req, res) => {
 
     return sendSuccess(res, {
       optimizedList: shoppingList, // Temporairement retourner la liste originale
-      suggestions: suggestions,
+      suggestions,
       savings: Math.max(0, shoppingList.totalEstimatedCost - (budget || 0))
     }, 'Liste optimisée avec succès');
-
   } catch (error) {
     logger.error('Erreur optimisation liste de courses:', error);
     return sendError(res, 'Erreur lors de l\'optimisation', 500);

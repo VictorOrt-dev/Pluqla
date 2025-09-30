@@ -1,0 +1,266 @@
+# Prometheus Alert Rules for Pluqla Security Monitoring
+
+groups:
+  - name: authentication_alerts
+    interval: 30s
+    rules:
+      # High failed login rate
+      - alert: HighFailedLoginRate
+        expr: rate(pluqla_auth_login_attempts_total{status="failure"}[5m]) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          component: authentication
+        annotations:
+          summary: "High failed login rate detected"
+          description: "Failed login rate is {{ $value }} per second (threshold: 0.5/s)"
+
+      # Very high failed login rate
+      - alert: CriticalFailedLoginRate
+        expr: rate(pluqla_auth_login_attempts_total{status="failure"}[5m]) > 2
+        for: 2m
+        labels:
+          severity: critical
+          component: authentication
+        annotations:
+          summary: "Critical failed login rate detected"
+          description: "Failed login rate is {{ $value }} per second (threshold: 2/s) - possible brute force attack"
+
+      # Account lockouts spike
+      - alert: HighAccountLockoutRate
+        expr: rate(pluqla_auth_account_lockouts_total[10m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: authentication
+        annotations:
+          summary: "High account lockout rate"
+          description: "Account lockout rate is {{ $value }} per second in the last 10 minutes"
+
+      # Low login success rate
+      - alert: LowLoginSuccessRate
+        expr: |
+          (
+            sum(rate(pluqla_auth_login_attempts_total{status="success"}[5m]))
+            /
+            sum(rate(pluqla_auth_login_attempts_total[5m]))
+          ) < 0.5
+        for: 10m
+        labels:
+          severity: warning
+          component: authentication
+        annotations:
+          summary: "Login success rate below 50%"
+          description: "Only {{ $value | humanizePercentage }} of login attempts are succeeding"
+
+  - name: session_alerts
+    interval: 30s
+    rules:
+      # Session cleanup failures
+      - alert: SessionCleanupFailures
+        expr: rate(pluqla_session_cleanup_runs_total{status="failure"}[15m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+          component: session_management
+        annotations:
+          summary: "Session cleanup failures detected"
+          description: "Session cleanup is failing at {{ $value }} per second"
+
+      # High session cleanup duration
+      - alert: SlowSessionCleanup
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(pluqla_session_cleanup_duration_seconds_bucket[5m])) by (le)
+          ) > 10
+        for: 5m
+        labels:
+          severity: warning
+          component: session_management
+        annotations:
+          summary: "Session cleanup is slow"
+          description: "95th percentile cleanup duration is {{ $value }}s (threshold: 10s)"
+
+      # Abnormal session deletion rate
+      - alert: HighSessionDeletionRate
+        expr: rate(pluqla_session_deletion_total[5m]) > 5
+        for: 5m
+        labels:
+          severity: warning
+          component: session_management
+        annotations:
+          summary: "High session deletion rate"
+          description: "Sessions are being deleted at {{ $value }} per second"
+
+  - name: security_alerts
+    interval: 30s
+    rules:
+      # High JWT validation failure rate
+      - alert: HighJwtFailureRate
+        expr: rate(pluqla_jwt_validation_failures_total[5m]) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          component: security
+        annotations:
+          summary: "High JWT validation failure rate"
+          description: "JWT failures at {{ $value }} per second - possible attack or misconfiguration"
+
+      # Suspicious activity detected
+      - alert: SuspiciousActivityDetected
+        expr: rate(pluqla_security_suspicious_activity_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          component: security
+        annotations:
+          summary: "Suspicious security activity detected"
+          description: "Suspicious events at {{ $value }} per second"
+
+      # Timing attack variance
+      - alert: TimingAttackVariance
+        expr: |
+          abs(
+            histogram_quantile(0.95,
+              sum(rate(pluqla_auth_timing_seconds_bucket{operation="login_total",result="success"}[5m])) by (le)
+            )
+            -
+            histogram_quantile(0.95,
+              sum(rate(pluqla_auth_timing_seconds_bucket{operation="login_total",result="failure"}[5m])) by (le)
+            )
+          ) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+          component: security
+        annotations:
+          summary: "Login timing variance detected"
+          description: "Timing difference between success and failure is {{ $value }}s (threshold: 0.05s)"
+
+  - name: api_alerts
+    interval: 30s
+    rules:
+      # High API error rate
+      - alert: HighApiErrorRate
+        expr: rate(pluqla_api_errors_total[5m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "High API error rate"
+          description: "API errors at {{ $value }} per second"
+
+      # Critical API error rate
+      - alert: CriticalApiErrorRate
+        expr: rate(pluqla_api_errors_total[5m]) > 5
+        for: 2m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "Critical API error rate"
+          description: "API errors at {{ $value }} per second - immediate attention required"
+
+      # High API response time
+      - alert: SlowApiResponses
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(pluqla_http_request_duration_seconds_bucket[5m])) by (le, route)
+          ) > 2
+        for: 10m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "API responses are slow"
+          description: "95th percentile response time for {{ $labels.route }} is {{ $value }}s"
+
+      # Rate limiting triggered frequently
+      - alert: FrequentRateLimiting
+        expr: rate(pluqla_rate_limit_hits_total[5m]) > 0.5
+        for: 5m
+        labels:
+          severity: info
+          component: api
+        annotations:
+          summary: "Frequent rate limiting"
+          description: "Rate limits being hit at {{ $value }} per second"
+
+  - name: database_alerts
+    interval: 30s
+    rules:
+      # High database error rate
+      - alert: HighDatabaseErrorRate
+        expr: rate(pluqla_db_errors_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+          component: database
+        annotations:
+          summary: "High database error rate"
+          description: "Database errors at {{ $value }} per second"
+
+      # Slow database queries
+      - alert: SlowDatabaseQueries
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(pluqla_db_query_duration_seconds_bucket[5m])) by (le, operation)
+          ) > 1
+        for: 10m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "Slow database queries"
+          description: "95th percentile query duration for {{ $labels.operation }} is {{ $value }}s"
+
+  - name: system_alerts
+    interval: 30s
+    rules:
+      # High memory usage
+      - alert: HighMemoryUsage
+        expr: pluqla_process_resident_memory_bytes / 1024 / 1024 > 500
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "High memory usage"
+          description: "Memory usage is {{ $value }}MB (threshold: 500MB)"
+
+      # High CPU usage
+      - alert: HighCpuUsage
+        expr: rate(pluqla_process_cpu_seconds_total[1m]) * 100 > 80
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "High CPU usage"
+          description: "CPU usage is {{ $value }}% (threshold: 80%)"
+
+  - name: health_alerts
+    interval: 30s
+    rules:
+      # API server down
+      - alert: ApiServerDown
+        expr: up{job="pluqla-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: availability
+        annotations:
+          summary: "Pluqla API server is down"
+          description: "The API server has been unreachable for 1 minute"
+
+      # Prometheus scrape failures
+      - alert: PrometheusScrapeFailing
+        expr: up{job="pluqla-api"} == 0
+        for: 5m
+        labels:
+          severity: warning
+          component: monitoring
+        annotations:
+          summary: "Prometheus cannot scrape metrics"
+          description: "Prometheus has failed to scrape {{ $labels.job }} for 5 minutes"

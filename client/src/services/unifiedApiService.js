@@ -126,18 +126,6 @@ class UnifiedApiService {
     }
   }
 
-  /**
-   * Get financial dashboard
-   */
-  async getFinancialDashboard(params = {}) {
-    try {
-      const result = await this.adapter.get('/financial/dashboard', params);
-      return result.data;
-    } catch (error) {
-      secureLogger.error('Failed to get financial dashboard', error);
-      throw error;
-    }
-  }
 
   /**
    * Get expenses

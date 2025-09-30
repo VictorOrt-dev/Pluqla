@@ -23,11 +23,6 @@ const PremiumErrorBoundary = ({ children, fallback }) => {
 };
 
 // Lazy loaded components with performance optimizations
-export const LazyFinancialDashboard = React.lazy(() =>
-  import('../features/FinancialDashboard').then(module => ({
-    default: module.default
-  }))
-);
 
 export const LazyProfileScreen = React.lazy(() =>
   import('../../screens/ProfileScreen').then(module => ({

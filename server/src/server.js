@@ -2,18 +2,33 @@
 require('dotenv').config();
 
 const logger = require('./utils/logger');
+const { validateEnvironment } = require('./utils/envValidator');
+
+// SECURITY: Validate environment variables on startup
+logger.info('🔒 Validating security configuration...');
+const envValid = validateEnvironment();
+
+if (!envValid && process.env.NODE_ENV === 'production') {
+  logger.error('🛑 Production startup blocked due to security issues');
+  process.exit(1);
+}
 
 // SECURITY FIX: Use secure logger instead of console.log to prevent environment variable exposure
-logger.info('🔧 Environment variables loaded');
+logger.info('🔧 Environment variables loaded and validated');
 logger.info('📊 NODE_ENV configured');
 logger.info('🚪 PORT configured');
 logger.info('🗃️ DATABASE_URL configured');
 
 const app = require('./app');
 const { disconnectPrisma, getDatabaseHealth } = require('./lib/prisma');
+const { initializeCleanupService, stopCleanupScheduler } = require('./services/sessionCleanupService');
+const { initializeAlerting } = require('./monitoring/alerting');
 
 const PORT = process.env.PORT || 3004; // FIXED: Match client proxy configuration
 const NODE_ENV = process.env.NODE_ENV || 'development';
+
+// Track cleanup scheduler for graceful shutdown
+let sessionCleanupScheduler = null;
 
 logger.info('🚀 Starting server setup...');
 
@@ -30,13 +45,36 @@ const server = app.listen(PORT, async () => {
 
     if (dbHealth.healthy) {
       logger.info(`✅ Database connected successfully (${dbHealth.latency}ms)`);
+
+      // Initialize session cleanup service after database is confirmed healthy
+      try {
+        sessionCleanupScheduler = await initializeCleanupService({
+          runOnStartup: process.env.SESSION_CLEANUP_ON_STARTUP === 'true',
+          enabled: process.env.SESSION_CLEANUP_ENABLED !== 'false'
+        });
+        logger.info('✅ Session cleanup service initialized');
+      } catch (cleanupError) {
+        logger.error('❌ Failed to initialize session cleanup service:', cleanupError);
+        logger.warn('⚠️ Session cleanup disabled - manual cleanup required');
+      }
+
+      // Initialize security alerting system
+      try {
+        initializeAlerting();
+        logger.info('✅ Security alerting system initialized');
+      } catch (alertError) {
+        logger.error('❌ Failed to initialize alerting system:', alertError);
+        logger.warn('⚠️ Alerting disabled - security events will only be logged');
+      }
     } else {
       logger.error('❌ Database connection failed:', dbHealth.error);
       logger.warn('⚠️ Server started but database is unavailable');
+      logger.warn('⚠️ Session cleanup service disabled - database required');
     }
   } catch (error) {
     logger.error('❌ Database health check failed:', error);
     logger.warn('⚠️ Server started but database status unknown');
+    logger.warn('⚠️ Session cleanup service disabled');
   }
 });
 
@@ -70,7 +108,14 @@ async function gracefulShutdown(signal) {
     });
     logger.info('✅ HTTP server stopped');
 
-    // Step 2: Close database connections
+    // Step 2: Stop session cleanup scheduler
+    if (sessionCleanupScheduler) {
+      logger.info('🧹 Stopping session cleanup scheduler...');
+      stopCleanupScheduler(sessionCleanupScheduler);
+      logger.info('✅ Session cleanup scheduler stopped');
+    }
+
+    // Step 3: Close database connections
     logger.info('🗄️ Disconnecting from database...');
     await disconnectPrisma();
     logger.info('✅ Database disconnected');
@@ -80,7 +125,6 @@ async function gracefulShutdown(signal) {
 
     logger.info('✅ Graceful shutdown completed');
     process.exit(0);
-
   } catch (error) {
     logger.error('❌ Error during graceful shutdown:', error);
 
@@ -104,7 +148,9 @@ process.on('uncaughtException', (err) => {
 });
 
 process.on('unhandledRejection', async (err, promise) => {
-  logger.error('💥 Unhandled Rejection at:', promise, 'reason:', err);
+  logger.error('💥 Unhandled Rejection at:', promise);
+  logger.error('💥 Rejection reason:', err);
+  logger.error('💥 Stack trace:', err?.stack);
 
   try {
     // Attempt graceful shutdown with shorter timeout for errors

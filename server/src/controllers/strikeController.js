@@ -23,14 +23,13 @@ const strikeController = {
         currentStrike: strike,
         lastSavingDate,
         message: strike === 0
-          ? "Commencez votre première économie pour démarrer votre série !"
+          ? 'Commencez votre première économie pour démarrer votre série !'
           : strike === 1
-          ? "Bravo ! Continuez demain pour allonger votre série !"
-          : `Fantastique ! ${strike} jours consécutifs d'économies !`
+            ? 'Bravo ! Continuez demain pour allonger votre série !'
+            : `Fantastique ! ${strike} jours consécutifs d'économies !`
       };
 
       return sendSuccess(res, data, 'Strike récupéré avec succès');
-
     } catch (error) {
       logger.error('Erreur lors de la récupération du strike:', error);
       return sendError(res, 'Erreur lors de la récupération du strike', 500);
@@ -58,7 +57,6 @@ const strikeController = {
       };
 
       return sendSuccess(res, data, 'Statistiques de strike récupérées avec succès');
-
     } catch (error) {
       logger.error('Erreur lors de la récupération des stats de strike:', error);
       return sendError(res, 'Erreur lors de la récupération des statistiques', 500);
@@ -82,14 +80,13 @@ const strikeController = {
         currentStrike: strike,
         wasReset,
         message: wasReset
-          ? "Votre série a été remise à zéro car vous n'avez pas fait d'économie hier. Recommencez dès aujourd'hui !"
+          ? 'Votre série a été remise à zéro car vous n\'avez pas fait d\'économie hier. Recommencez dès aujourd\'hui !'
           : strike === 0
-          ? "Commencez votre première économie pour démarrer votre série !"
-          : `Votre série continue : ${strike} jours !`
+            ? 'Commencez votre première économie pour démarrer votre série !'
+            : `Votre série continue : ${strike} jours !`
       };
 
       return sendSuccess(res, data, 'Vérification du strike effectuée');
-
     } catch (error) {
       logger.error('Erreur lors de la vérification du strike:', error);
       return sendError(res, 'Erreur lors de la vérification du strike', 500);
@@ -103,16 +100,15 @@ const strikeController = {
    */
   getEncouragementMessage(strike) {
     if (strike === 0) {
-      return "Commencez votre série d'économies dès aujourd'hui ! 💪";
-    } else if (strike < 7) {
+      return 'Commencez votre série d\'économies dès aujourd\'hui ! 💪';
+    } if (strike < 7) {
       return `Excellent début ! ${strike} jour${strike > 1 ? 's' : ''} d'économies. Continuez ! 🚀`;
-    } else if (strike < 30) {
+    } if (strike < 30) {
       return `Impressionnant ! ${strike} jours consécutifs. Vous êtes sur la bonne voie ! 🔥`;
-    } else if (strike < 100) {
+    } if (strike < 100) {
       return `Incroyable ! ${strike} jours de suite ! Vous êtes un maître de l'épargne ! 🏆`;
-    } else {
-      return `LÉGENDAIRE ! ${strike} jours consécutifs ! Vous êtes un exemple pour tous ! 👑`;
     }
+    return `LÉGENDAIRE ! ${strike} jours consécutifs ! Vous êtes un exemple pour tous ! 👑`;
   }
 };
 

@@ -13,7 +13,9 @@
  * - Regex DoS protection
  */
 
-const { body, param, query, validationResult } = require('express-validator');
+const {
+  body, param, query, validationResult
+} = require('express-validator');
 const validator = require('validator');
 const sanitizeHtml = require('sanitize-html');
 const { sendValidationError } = require('../../utils/responseHelper');
@@ -74,7 +76,6 @@ const SANITIZE_CONFIG = {
  * Core Validation Helper Functions
  */
 class ValidationUtils {
-
   /**
    * Sanitize string input against XSS and injection attacks
    * @param {string} input - Raw input string
@@ -208,7 +209,7 @@ class ValidationUtils {
 
     // Common password checks
     const commonPasswords = ['password', '123456', 'qwerty', 'admin', 'letmein'];
-    if (commonPasswords.some(common => password.toLowerCase().includes(common))) {
+    if (commonPasswords.some((common) => password.toLowerCase().includes(common))) {
       result.errors.push('Password contains common patterns that are not secure');
     }
 
@@ -377,7 +378,7 @@ const customValidators = {
     if (!detection.safe) {
       logger.warn('Malicious input detected', {
         threats: detection.threats,
-        input: value ? value.substring(0, 100) + '...' : 'null'
+        input: value ? `${value.substring(0, 100)}...` : 'null'
       });
       throw new Error('Input contains potentially harmful content');
     }
@@ -396,18 +397,18 @@ const processValidationResults = (req, res, next) => {
     const errorArray = errors.array();
 
     // Log security-relevant validation failures
-    if (errorArray.some(err => err.msg && (err.msg.includes('harmful') || err.msg.includes('injection')))) {
+    if (errorArray.some((err) => err.msg && (err.msg.includes('harmful') || err.msg.includes('injection')))) {
       logger.warn('Security validation failure', {
         ip: req.ip,
         userAgent: req.get('User-Agent'),
         endpoint: req.originalUrl,
         method: req.method,
-        errors: errorArray.map(err => ({ field: err.param, message: err.msg }))
+        errors: errorArray.map((err) => ({ field: err.param, message: err.msg }))
       });
     }
 
     // Format errors for client response (without exposing sensitive details)
-    const formattedErrors = errorArray.map(error => ({
+    const formattedErrors = errorArray.map((error) => ({
       field: error.param,
       message: error.msg,
       value: error.value ? '[REDACTED]' : undefined

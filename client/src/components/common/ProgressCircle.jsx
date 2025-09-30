@@ -19,7 +19,7 @@ const ProgressCircle = ({ userData, progress, darkMode }) => {
           handleClick();
         }
       }}
-      aria-label="Accéder au dashboard financier"
+      aria-label="Accéder à Finance"
     >
       {/* Enhanced Pluqla cherry-red glow background - perfectly centered */}
       <div className="absolute inset-3 bg-gradient-to-br from-[#F14545] via-[#FF6B6B] to-[#D73030] rounded-full blur-xl opacity-20 animate-pulse group-hover:opacity-30 transition-opacity"></div>

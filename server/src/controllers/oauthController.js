@@ -59,7 +59,6 @@ const oauthController = {
         provider: authData.provider,
         expiresIn: 900 // 15 minutes
       }, 'Authorization URL generated successfully');
-
     } catch (error) {
       logger.error('OAuth authorization initiation failed:', error);
       return sendError(res, 'Failed to initiate authorization', 500, 'OAUTH_INIT_FAILED');
@@ -77,7 +76,9 @@ const oauthController = {
       return sendError(res, 'Invalid callback data', 400, 'VALIDATION_ERROR', errors.array());
     }
 
-    const { code, state, provider, error: oauthError } = req.body;
+    const {
+      code, state, provider, error: oauthError
+    } = req.body;
 
     // Handle OAuth errors from provider
     if (oauthError) {
@@ -98,27 +99,25 @@ const oauthController = {
       // Exchange authorization code for access token
       const tokenInfo = await oauthService.exchangeCodeForToken(provider, code, state);
 
-      // Validate the access token by making a test API call
-      const validation = await oauthService.validateToken(provider, tokenInfo.accessToken);
-
-      if (!validation.isValid) {
-        logger.error('OAuth token validation failed', {
-          provider,
-          error: validation.error
-        });
-        return sendError(res, 'Invalid access token received', 400, 'INVALID_TOKEN');
-      }
-
-      // Fetch user accounts from the provider
+      // Fetch user accounts from the provider (this also validates the token)
       const accounts = await oauthService.fetchAccounts(provider, tokenInfo.accessToken);
+
+      // Validate response - fetchAccounts will throw an error if token is invalid
+      if (!Array.isArray(accounts)) {
+        logger.error('OAuth account fetch returned invalid data', {
+          provider,
+          accountsType: typeof accounts
+        });
+        return sendError(res, 'Invalid account data received from provider', 500, 'INVALID_ACCOUNT_DATA');
+      }
 
       if (accounts.length === 0) {
         logger.warn('No accounts found for user', { provider });
         return sendError(res, 'No accounts found for this connection', 404, 'NO_ACCOUNTS_FOUND');
       }
 
-      // Extract user ID from state (you may need to implement state validation)
-      const userId = await this.extractUserIdFromState(state);
+      // Extract user ID from state (using persistent state service)
+      const { userId } = tokenInfo; // Already extracted from state in exchangeCodeForToken
       if (!userId) {
         return sendError(res, 'Invalid or expired authorization state', 400, 'INVALID_STATE');
       }
@@ -165,7 +164,7 @@ const oauthController = {
       return sendSuccess(res, {
         provider,
         accountsConnected: createdAccounts.length,
-        accounts: createdAccounts.map(acc => ({
+        accounts: createdAccounts.map((acc) => ({
           id: acc.id,
           name: acc.name,
           type: acc.type,
@@ -173,7 +172,6 @@ const oauthController = {
           currency: acc.currency
         }))
       }, 'Bank accounts connected successfully', 201);
-
     } catch (error) {
       logger.error('OAuth callback handling failed:', error);
 
@@ -241,7 +239,6 @@ const oauthController = {
           });
 
           accountsDisconnected++;
-
         } catch (accountError) {
           logger.error('Failed to disconnect account:', accountError);
           // Continue with other accounts
@@ -277,7 +274,6 @@ const oauthController = {
         accountsDisconnected,
         tokensRevoked
       }, 'Provider disconnected successfully');
-
     } catch (error) {
       logger.error('OAuth disconnection failed:', error);
       return sendError(res, 'Failed to disconnect provider', 500, 'DISCONNECT_FAILED');
@@ -348,7 +344,7 @@ const oauthController = {
 
       // Add disconnected providers
       const supportedProviders = ['bridge', 'budgetinsight', 'tink'];
-      supportedProviders.forEach(provider => {
+      supportedProviders.forEach((provider) => {
         if (!connectionStatus[provider]) {
           connectionStatus[provider] = {
             provider,
@@ -364,10 +360,9 @@ const oauthController = {
 
       return sendSuccess(res, {
         connections: Object.values(connectionStatus),
-        totalConnectedProviders: Object.values(connectionStatus).filter(c => c.connected).length,
+        totalConnectedProviders: Object.values(connectionStatus).filter((c) => c.connected).length,
         totalAccounts: accounts.length
       }, 'Connection status retrieved successfully');
-
     } catch (error) {
       logger.error('Failed to get connection status:', error);
       return sendError(res, 'Failed to retrieve connection status', 500, 'STATUS_FAILED');
@@ -429,7 +424,6 @@ const oauthController = {
 
             tokensRefreshed++;
           }
-
         } catch (accountError) {
           logger.error('Failed to refresh token for account:', accountError);
           refreshErrors++;
@@ -455,7 +449,6 @@ const oauthController = {
         tokensRefreshed,
         refreshErrors
       }, 'Tokens refreshed successfully');
-
     } catch (error) {
       logger.error('OAuth token refresh failed:', error);
       return sendError(res, 'Failed to refresh tokens', 500, 'REFRESH_FAILED');
@@ -479,7 +472,6 @@ const oauthController = {
       // You might store user ID in Redis with state as key
       // For now, return null to indicate you need to implement this
       return null;
-
     } catch (error) {
       logger.error('Failed to extract user ID from state:', error);
       return null;

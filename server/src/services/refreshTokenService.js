@@ -94,7 +94,6 @@ const storeRefreshToken = async (refreshToken, userId, ipAddress = null, userAge
 
       logger.info(`Refresh token stored for user ${userId} from IP ${ipAddress}`);
       return tokenRecord.id;
-
     } catch (error) {
       logger.error(`Error storing refresh token for user ${userId}:`, error);
       throw error;
@@ -118,7 +117,7 @@ const rotateRefreshToken = async (refreshToken, generateNewTokens, ipAddress = n
   const transaction = prisma.$transaction(async (prisma) => {
     try {
       // First verify the JWT signature and structure
-      const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
+      const { JWT_REFRESH_SECRET } = process.env;
       if (!JWT_REFRESH_SECRET) {
         throw new Error('JWT_REFRESH_SECRET not configured');
       }
@@ -199,7 +198,6 @@ const rotateRefreshToken = async (refreshToken, generateNewTokens, ipAddress = n
         tokens: newTokens,
         userId: tokenRecord.userId
       };
-
     } catch (error) {
       logger.error('Error rotating refresh token:', error);
       return { valid: false };
@@ -234,7 +232,6 @@ const revokeRefreshTokenByJti = async (jti, userId) => {
     const revoked = result.count > 0;
     logger.info(`Refresh token revocation: ${revoked ? 'success' : 'not found'} for jti ${jti}, user ${userId}`);
     return revoked;
-
   } catch (error) {
     logger.error(`Error revoking refresh token jti ${jti} for user ${userId}:`, error);
     return false;
@@ -261,7 +258,6 @@ const revokeAllUserTokens = async (userId) => {
 
     logger.info(`Revoked ${result.count} refresh tokens for user ${userId}`);
     return result.count;
-
   } catch (error) {
     logger.error(`Error revoking all tokens for user ${userId}:`, error);
     return 0;
@@ -291,7 +287,6 @@ const cleanupExpiredTokens = async () => {
     }
 
     return result.count;
-
   } catch (error) {
     logger.error('Error cleaning up expired tokens:', error);
     return 0;
@@ -319,11 +314,14 @@ const getRefreshTokenStats = async (userId = null) => {
       })
     ]);
 
-    return { active, expired, revoked, total: active + expired + revoked };
-
+    return {
+      active, expired, revoked, total: active + expired + revoked
+    };
   } catch (error) {
     logger.error('Error getting refresh token stats:', error);
-    return { active: 0, expired: 0, revoked: 0, total: 0 };
+    return {
+      active: 0, expired: 0, revoked: 0, total: 0
+    };
   }
 };
 

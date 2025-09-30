@@ -45,14 +45,14 @@
     "login": {
       "title": "Welcome back!",
       "subtitle": "Sign in to access your personalized savings",
-      "submit": "🚀 Sign in",
+      "submit": "Sign In",
       "loading": "Signing in...",
       "switchToRegister": "No account yet? Sign up"
     },
     "register": {
       "title": "Let's create your account",
       "subtitle": "A few seconds to unlock your savings potential",
-      "submit": "✨ Create my account",
+      "submit": "Create Account",
       "loading": "Creating account...",
       "switchToLogin": "Already have an account? Sign in"
     },
@@ -113,7 +113,7 @@
     "welcome": {
       "title": "Pluqla",
       "subtitle": "The app that truly boosts your purchasing power",
-      "start_button": "🚀 Start for free",
+      "start_button": "Start for free",
       "stats": {
         "users": "active users",
         "saved": "Saved this month"
@@ -250,7 +250,7 @@
       "subtitle": "Discover simple tips to start saving today",
       "progress": "Tip {{current}} of {{total}}",
       "potential": "${{amount}}/month potential",
-      "reveal_tip": "🎁 Reveal the tip",
+      "reveal_tip": "Reveal Tip",
       "how_to": "How to do it:",
       "pro_tip": "Pro tip:",
       "potential_revealed": "Savings potential revealed: ${{amount}}/month",
@@ -260,8 +260,8 @@
       "title": "Verify your email",
       "subtitle": "A verification code has been sent to {{email}}",
       "code_label": "Verification code (6 digits)",
-      "verify_button": "✅ Verify code",
-      "resend_code": "📮 Resend code",
+      "verify_button": "Verify Code",
+      "resend_code": "Resend Code",
       "resend_countdown": "Resend code in {{seconds}}s",
       "skip_for_now": "Skip for now",
       "help": {
@@ -293,7 +293,7 @@
         "daily_tips": "Daily tips available",
         "gamification": "Gamification system activated"
       },
-      "start_saving": "🚀 Start saving",
+      "start_saving": "Start Saving",
       "welcome_message": "Welcome to your new life as a smart saver! 🎉"
     }
   },

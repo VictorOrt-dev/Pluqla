@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback, Suspense, useMemo } from 'react';
 import { loadFromLocalStorage, saveToLocalStorage } from './utils/storage';
-import { autoDiagnose } from './utils/debugApp';
 import { INITIAL_ANSWERS } from './utils/constants';
 import { useUserData } from './hooks/useUserData';
 import { useNotifications } from './hooks/useNotifications';
@@ -91,11 +90,6 @@ function AppContent() {
   }, [userData]);
 
   // Auto-diagnostic pour détecter l'écran noir
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      autoDiagnose();
-    }
-  }, []);
 
   // Sauvegarde des réponses
   useEffect(() => {
@@ -256,6 +250,7 @@ function AppContent() {
           </Suspense>
         );
 
+
       case 'activity':
       case 'activite':  // Support ancien nom français
         return (
@@ -399,7 +394,7 @@ function AppContent() {
           />
         );
 
-      default:
+      default: {
         const availableScreens = [
           'debug', 'onboarding', 'finance', 'activity', 'activite', 'habits',
           'alimentation', 'deplacement', 'expenses-detail', 'income-detail',
@@ -429,6 +424,7 @@ function AppContent() {
             </div>
           </div>
         );
+      }
     }
   }, [currentScreen, setCurrentScreen, darkMode, currentCategory, categoryConfig, userData, notificationSystem, aiSuggestionsHook, usePlan, addTransaction, removeTransaction, showRecipeDetail, suggestionsCache, answers, transactions, progress, setUserData, setDarkMode, setCurrentCategory, setShowRecipeDetail, setSuggestionsCache, isInitialized]);
 
@@ -565,11 +561,6 @@ function AppContent() {
     // Écrans accessibles aux non-connectés
     switch (currentScreen) {
       case 'login':
-        console.log('Login screen access:', {
-          currentScreen,
-          isAuthenticated,
-          authState,
-        });
         return (
           <div className="max-w-md mx-auto bg-white dark:bg-black min-h-screen relative font-system transition-colors duration-300" style={{minHeight: '100vh', backgroundColor: darkMode ? '#000000' : '#ffffff'}}>
             <LoginScreen darkMode={darkMode} />

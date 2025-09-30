@@ -2,6 +2,7 @@ const axios = require('axios');
 const crypto = require('crypto');
 const logger = require('../utils/logger');
 const { encryptionService } = require('../middleware/securityMiddleware');
+const oauthStateService = require('./oauthStateService');
 
 /**
  * OAuth2 Service for Secure Bank API Integration
@@ -56,7 +57,7 @@ class OAuthService {
       'TINK_CLIENT_SECRET'
     ];
 
-    const missing = requiredEnvVars.filter(varName => !process.env[varName]);
+    const missing = requiredEnvVars.filter((varName) => !process.env[varName]);
 
     if (missing.length > 0) {
       logger.warn('Missing OAuth configuration:', { missing });
@@ -73,14 +74,19 @@ class OAuthService {
       }
 
       const config = this.providers[provider];
-      const stateParam = state || this.generateSecureState(userId);
+      const stateParam = state || oauthStateService.generateSecureState(`oauth_${provider}`);
 
       // Generate PKCE challenge for enhanced security
       const codeVerifier = this.generateCodeVerifier();
       const codeChallenge = this.generateCodeChallenge(codeVerifier);
 
-      // Store PKCE verifier temporarily (should use Redis in production)
-      await this.storePKCEVerifier(stateParam, codeVerifier);
+      // Store state with PKCE verifier and user context (persistent across instances)
+      await oauthStateService.storeUserState(stateParam, userId, provider, {
+        codeVerifier,
+        codeChallenge,
+        timestamp: new Date().toISOString(),
+        clientId: config.clientId
+      });
 
       const params = new URLSearchParams({
         client_id: config.clientId,
@@ -97,7 +103,7 @@ class OAuthService {
       logger.info('OAuth authorization URL generated', {
         provider,
         userId,
-        state: stateParam
+        state: `${stateParam.substring(0, 8)}...`
       });
 
       return {
@@ -105,7 +111,6 @@ class OAuthService {
         state: stateParam,
         provider
       };
-
     } catch (error) {
       logger.error('Failed to generate OAuth URL:', error);
       throw new Error('Failed to generate authorization URL');
@@ -123,10 +128,15 @@ class OAuthService {
 
       const config = this.providers[provider];
 
-      // Retrieve and verify PKCE verifier
-      const codeVerifier = await this.retrievePKCEVerifier(state);
-      if (!codeVerifier) {
+      // Retrieve and verify state data (includes PKCE verifier and user context)
+      const stateData = await oauthStateService.getState(state);
+      if (!stateData || !stateData.codeVerifier) {
         throw new Error('Invalid or expired authorization state');
+      }
+
+      // Verify state integrity
+      if (stateData.provider !== provider) {
+        throw new Error('State provider mismatch - possible CSRF attack');
       }
 
       const tokenData = {
@@ -135,13 +145,13 @@ class OAuthService {
         client_secret: config.clientSecret,
         code,
         redirect_uri: config.redirectUri,
-        code_verifier: codeVerifier
+        code_verifier: stateData.codeVerifier
       };
 
       const response = await axios.post(config.tokenUrl, tokenData, {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Accept': 'application/json'
+          Accept: 'application/json'
         },
         timeout: 30000
       });
@@ -150,8 +160,8 @@ class OAuthService {
         throw new Error('No access token received from provider');
       }
 
-      // Clean up PKCE verifier
-      await this.deletePKCEVerifier(state);
+      // Clean up state after successful exchange
+      await oauthStateService.deleteState(state);
 
       const tokenInfo = {
         accessToken: response.data.access_token,
@@ -160,17 +170,18 @@ class OAuthService {
         tokenType: response.data.token_type || 'Bearer',
         scope: response.data.scope,
         provider,
-        obtainedAt: new Date().toISOString()
+        obtainedAt: new Date().toISOString(),
+        userId: stateData.userId // Include user context from state
       };
 
       logger.info('OAuth token exchange successful', {
         provider,
+        userId: stateData.userId,
         expiresIn: tokenInfo.expiresIn,
         hasRefreshToken: !!tokenInfo.refreshToken
       });
 
       return tokenInfo;
-
     } catch (error) {
       logger.error('OAuth token exchange failed:', error);
       throw new Error('Failed to exchange authorization code for token');
@@ -198,7 +209,7 @@ class OAuthService {
       const response = await axios.post(config.tokenUrl, refreshData, {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Accept': 'application/json'
+          Accept: 'application/json'
         },
         timeout: 30000
       });
@@ -222,7 +233,6 @@ class OAuthService {
       });
 
       return tokenInfo;
-
     } catch (error) {
       logger.error('OAuth token refresh failed:', error);
       throw new Error('Failed to refresh access token');
@@ -246,7 +256,7 @@ class OAuthService {
           token: accessToken
         }, {
           headers: {
-            'Authorization': `Bearer ${accessToken}`,
+            Authorization: `Bearer ${accessToken}`,
             'Content-Type': 'application/json'
           },
           timeout: 15000
@@ -254,7 +264,6 @@ class OAuthService {
 
         logger.info('OAuth token revoked successfully', { provider });
         return true;
-
       } catch (revokeError) {
         // Token revocation failed, but that's not always critical
         logger.warn('Token revocation failed (may not be supported)', {
@@ -263,7 +272,6 @@ class OAuthService {
         });
         return false;
       }
-
     } catch (error) {
       logger.error('Token revocation error:', error);
       return false;
@@ -284,8 +292,8 @@ class OAuthService {
       // Make a simple API call to validate token
       const response = await axios.get(`${config.apiUrl}/accounts`, {
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Accept': 'application/json'
+          Authorization: `Bearer ${accessToken}`,
+          Accept: 'application/json'
         },
         timeout: 15000
       });
@@ -302,7 +310,6 @@ class OAuthService {
         isValid,
         accountCount: response.data?.accounts?.length || 0
       };
-
     } catch (error) {
       logger.warn('Token validation failed', {
         provider,
@@ -330,8 +337,8 @@ class OAuthService {
 
       const response = await axios.get(`${config.apiUrl}/accounts`, {
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Accept': 'application/json'
+          Authorization: `Bearer ${accessToken}`,
+          Accept: 'application/json'
         },
         timeout: 30000
       });
@@ -345,7 +352,6 @@ class OAuthService {
       });
 
       return accounts;
-
     } catch (error) {
       logger.error('Failed to fetch accounts:', error);
       throw new Error(`Failed to fetch accounts from ${provider}`);
@@ -374,8 +380,8 @@ class OAuthService {
 
       const response = await axios.get(`${config.apiUrl}/accounts/${accountId}/transactions?${params}`, {
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Accept': 'application/json'
+          Authorization: `Bearer ${accessToken}`,
+          Accept: 'application/json'
         },
         timeout: 30000
       });
@@ -390,7 +396,6 @@ class OAuthService {
       });
 
       return transactions;
-
     } catch (error) {
       logger.error('Failed to fetch transactions:', error);
       throw new Error(`Failed to fetch transactions from ${provider}`);
@@ -415,46 +420,19 @@ class OAuthService {
     return crypto.createHash('sha256').update(verifier).digest('base64url');
   }
 
-  async storePKCEVerifier(state, verifier) {
-    // In production, use Redis or secure session storage
-    // For now, using in-memory storage (not recommended for production)
-    if (!global.pkceStore) {
-      global.pkceStore = new Map();
-    }
-
-    // Store with expiration (15 minutes)
-    global.pkceStore.set(state, {
-      verifier,
-      expiresAt: Date.now() + 15 * 60 * 1000
-    });
-
-    // Clean up expired entries (only if not in test environment)
-    if (process.env.NODE_ENV !== 'test') {
-      setTimeout(() => {
-        if (global.pkceStore && global.pkceStore.has(state)) {
-          global.pkceStore.delete(state);
-        }
-      }, 15 * 60 * 1000);
-    }
-  }
-
-  async retrievePKCEVerifier(state) {
-    if (!global.pkceStore) {
+  /**
+   * Extract user ID from OAuth state (using persistent state service)
+   */
+  async extractUserIdFromState(state) {
+    try {
+      const stateData = await oauthStateService.getUserFromState(state);
+      if (stateData && stateData.userId) {
+        return stateData.userId;
+      }
       return null;
-    }
-
-    const stored = global.pkceStore.get(state);
-    if (!stored || stored.expiresAt < Date.now()) {
-      global.pkceStore.delete(state);
+    } catch (error) {
+      logger.error('Failed to extract user ID from state:', error);
       return null;
-    }
-
-    return stored.verifier;
-  }
-
-  async deletePKCEVerifier(state) {
-    if (global.pkceStore) {
-      global.pkceStore.delete(state);
     }
   }
 
@@ -466,51 +444,50 @@ class OAuthService {
       let accounts = [];
 
       switch (provider) {
-        case 'bridge':
-          accounts = rawData.resources?.map(account => ({
-            externalId: account.id,
-            name: account.name,
-            type: this.mapAccountType(account.type),
-            balance: account.balance,
-            currency: account.currency_code || 'EUR',
-            bankName: account.bank?.name,
-            iban: account.iban,
-            number: account.number
-          })) || [];
-          break;
+      case 'bridge':
+        accounts = rawData.resources?.map((account) => ({
+          externalId: account.id,
+          name: account.name,
+          type: this.mapAccountType(account.type),
+          balance: account.balance,
+          currency: account.currency_code || 'EUR',
+          bankName: account.bank?.name,
+          iban: account.iban,
+          number: account.number
+        })) || [];
+        break;
 
-        case 'budgetinsight':
-          accounts = rawData.accounts?.map(account => ({
-            externalId: account.id.toString(),
-            name: account.name,
-            type: this.mapAccountType(account.type),
-            balance: account.balance / 100, // Budget Insight uses cents
-            currency: account.currency?.symbol || 'EUR',
-            bankName: account.bank?.name,
-            iban: account.iban,
-            number: account.number
-          })) || [];
-          break;
+      case 'budgetinsight':
+        accounts = rawData.accounts?.map((account) => ({
+          externalId: account.id.toString(),
+          name: account.name,
+          type: this.mapAccountType(account.type),
+          balance: account.balance / 100, // Budget Insight uses cents
+          currency: account.currency?.symbol || 'EUR',
+          bankName: account.bank?.name,
+          iban: account.iban,
+          number: account.number
+        })) || [];
+        break;
 
-        case 'tink':
-          accounts = rawData.accounts?.map(account => ({
-            externalId: account.id,
-            name: account.name,
-            type: this.mapAccountType(account.type),
-            balance: account.balance,
-            currency: account.currencyCode || 'EUR',
-            bankName: account.financialInstitutionId,
-            iban: account.identifiers?.iban,
-            number: account.accountNumber
-          })) || [];
-          break;
+      case 'tink':
+        accounts = rawData.accounts?.map((account) => ({
+          externalId: account.id,
+          name: account.name,
+          type: this.mapAccountType(account.type),
+          balance: account.balance,
+          currency: account.currencyCode || 'EUR',
+          bankName: account.financialInstitutionId,
+          iban: account.identifiers?.iban,
+          number: account.accountNumber
+        })) || [];
+        break;
 
-        default:
-          throw new Error(`Unsupported provider for account normalization: ${provider}`);
+      default:
+        throw new Error(`Unsupported provider for account normalization: ${provider}`);
       }
 
       return accounts;
-
     } catch (error) {
       logger.error('Failed to normalize account data:', error);
       return [];
@@ -525,48 +502,47 @@ class OAuthService {
       let transactions = [];
 
       switch (provider) {
-        case 'bridge':
-          transactions = rawData.resources?.map(tx => ({
-            externalId: tx.id,
-            amount: tx.amount,
-            description: tx.description,
-            date: tx.date,
-            category: tx.category?.name,
-            merchant: tx.merchant?.name,
-            type: tx.amount < 0 ? 'debit' : 'credit'
-          })) || [];
-          break;
+      case 'bridge':
+        transactions = rawData.resources?.map((tx) => ({
+          externalId: tx.id,
+          amount: tx.amount,
+          description: tx.description,
+          date: tx.date,
+          category: tx.category?.name,
+          merchant: tx.merchant?.name,
+          type: tx.amount < 0 ? 'debit' : 'credit'
+        })) || [];
+        break;
 
-        case 'budgetinsight':
-          transactions = rawData.transactions?.map(tx => ({
-            externalId: tx.id.toString(),
-            amount: tx.value / 100, // Budget Insight uses cents
-            description: tx.simplified_wording || tx.wording,
-            date: tx.date,
-            category: tx.category?.name,
-            merchant: tx.merchant?.name,
-            type: tx.value < 0 ? 'debit' : 'credit'
-          })) || [];
-          break;
+      case 'budgetinsight':
+        transactions = rawData.transactions?.map((tx) => ({
+          externalId: tx.id.toString(),
+          amount: tx.value / 100, // Budget Insight uses cents
+          description: tx.simplified_wording || tx.wording,
+          date: tx.date,
+          category: tx.category?.name,
+          merchant: tx.merchant?.name,
+          type: tx.value < 0 ? 'debit' : 'credit'
+        })) || [];
+        break;
 
-        case 'tink':
-          transactions = rawData.transactions?.map(tx => ({
-            externalId: tx.id,
-            amount: tx.amount,
-            description: tx.description,
-            date: tx.date,
-            category: tx.categoryId,
-            merchant: tx.merchantName,
-            type: tx.amount < 0 ? 'debit' : 'credit'
-          })) || [];
-          break;
+      case 'tink':
+        transactions = rawData.transactions?.map((tx) => ({
+          externalId: tx.id,
+          amount: tx.amount,
+          description: tx.description,
+          date: tx.date,
+          category: tx.categoryId,
+          merchant: tx.merchantName,
+          type: tx.amount < 0 ? 'debit' : 'credit'
+        })) || [];
+        break;
 
-        default:
-          throw new Error(`Unsupported provider for transaction normalization: ${provider}`);
+      default:
+        throw new Error(`Unsupported provider for transaction normalization: ${provider}`);
       }
 
       return transactions;
-
     } catch (error) {
       logger.error('Failed to normalize transaction data:', error);
       return [];
@@ -576,25 +552,25 @@ class OAuthService {
   mapAccountType(externalType) {
     const typeMapping = {
       // Bridge API types
-      'checking': 'checking',
-      'savings': 'savings',
-      'investment': 'investment',
-      'loan': 'loan',
+      checking: 'checking',
+      savings: 'savings',
+      investment: 'investment',
+      loan: 'loan',
 
       // Budget Insight types
-      'bank': 'checking',
-      'card': 'checking',
-      'saving': 'savings',
-      'deposit': 'savings',
-      'loan': 'loan',
-      'mortgage': 'loan',
+      bank: 'checking',
+      card: 'checking',
+      saving: 'savings',
+      deposit: 'savings',
+      loan: 'loan',
+      mortgage: 'loan',
 
       // Tink types
-      'CHECKING': 'checking',
-      'SAVINGS': 'savings',
-      'INVESTMENT': 'investment',
-      'CREDIT_CARD': 'checking',
-      'LOAN': 'loan'
+      CHECKING: 'checking',
+      SAVINGS: 'savings',
+      INVESTMENT: 'investment',
+      CREDIT_CARD: 'checking',
+      LOAN: 'loan'
     };
 
     return typeMapping[externalType] || 'checking';

@@ -41,14 +41,14 @@
     "login": {
       "title": "¡Bienvenido de vuelta!",
       "subtitle": "Inicia sesión para acceder a tus ahorros personalizados",
-      "submit": "🚀 Iniciar sesión",
+      "submit": "Iniciar sesión",
       "loading": "Iniciando sesión...",
       "switchToRegister": "¿No tienes cuenta? Registrarse"
     },
     "register": {
       "title": "Creemos tu cuenta",
       "subtitle": "Unos segundos para desbloquear tu potencial de ahorro",
-      "submit": "✨ Crear mi cuenta",
+      "submit": "Crear cuenta",
       "loading": "Creando cuenta...",
       "switchToLogin": "¿Ya tienes cuenta? Iniciar sesión"
     },
@@ -109,7 +109,7 @@
     "welcome": {
       "title": "Pluqla",
       "subtitle": "La app que realmente impulsa tu poder adquisitivo",
-      "start_button": "🚀 Comenzar gratis",
+      "start_button": "Comenzar gratis",
       "stats": {
         "users": "usuarios activos",
         "saved": "Ahorrado este mes"
@@ -256,8 +256,8 @@
       "title": "Verifica tu email",
       "subtitle": "Se ha enviado un código de verificación a {{email}}",
       "code_label": "Código de verificación (6 dígitos)",
-      "verify_button": "✅ Verificar código",
-      "resend_code": "📮 Reenviar código",
+      "verify_button": "Verificar código",
+      "resend_code": "Reenviar código",
       "resend_countdown": "Reenviar código en {{seconds}}s",
       "skip_for_now": "Saltar por ahora",
       "help": {
@@ -289,7 +289,7 @@
         "daily_tips": "Consejos diarios disponibles",
         "gamification": "Sistema de gamificación activado"
       },
-      "start_saving": "🚀 Comenzar a ahorrar",
+      "start_saving": "Comenzar a ahorrar",
       "welcome_message": "¡Bienvenido a tu nueva vida como ahorrador inteligente! 🎉"
     }
   },

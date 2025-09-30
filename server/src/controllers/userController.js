@@ -66,7 +66,7 @@ const userController = {
         level: user.level,
         gamificationPoints: user.gamificationPoints,
         streak: user.streak,
-        badges: user.badges.map(ub => ({
+        badges: user.badges.map((ub) => ({
           id: ub.badge.id,
           name: ub.badge.name,
           title: ub.badge.title,
@@ -84,7 +84,7 @@ const userController = {
         plansUsedThisMonth: user.plansUsedThisMonth,
 
         // Transactions récentes
-        recentTransactions: user.transactions.map(t => ({
+        recentTransactions: user.transactions.map((t) => ({
           id: t.id,
           amount: t.amount,
           category: t.category,
@@ -94,7 +94,7 @@ const userController = {
         })),
 
         // Comptes financiers
-        accounts: user.accounts.map(acc => ({
+        accounts: user.accounts.map((acc) => ({
           id: acc.id,
           name: acc.name,
           type: acc.type,
@@ -103,7 +103,7 @@ const userController = {
         })),
 
         // Objectifs financiers
-        financialGoals: user.financialGoals.map(goal => ({
+        financialGoals: user.financialGoals.map((goal) => ({
           id: goal.id,
           name: goal.name,
           type: goal.type,
@@ -115,7 +115,7 @@ const userController = {
         })),
 
         // Défis du jour
-        todayChallenges: user.dailyChallenges.map(challenge => ({
+        todayChallenges: user.dailyChallenges.map((challenge) => ({
           id: challenge.id,
           title: challenge.title,
           description: challenge.description,
@@ -130,7 +130,6 @@ const userController = {
 
       logger.info(`✅ Profil utilisateur récupéré avec succès: ${user.name}`);
       return sendSuccess(res, profileData, 'Profil utilisateur récupéré avec succès');
-
     } catch (error) {
       logger.error('Erreur getProfile:', error);
       return sendError(res, 'Erreur lors de la récupération du profil', 500);
@@ -164,7 +163,6 @@ const userController = {
 
       logger.info(`✅ Profil utilisateur mis à jour: ${updatedUser.name}`);
       return sendSuccess(res, updatedUser, 'Profil mis à jour avec succès');
-
     } catch (error) {
       logger.error('Erreur updateProfile:', error);
       return sendError(res, 'Erreur lors de la mise à jour du profil', 500);
@@ -228,7 +226,6 @@ const userController = {
 
       logger.info(`✅ Mot de passe changé avec succès: ${user.email}`);
       return sendSuccess(res, null, 'Mot de passe mis à jour avec succès');
-
     } catch (error) {
       logger.error('Erreur changePassword:', error);
       return sendError(res, 'Erreur lors du changement de mot de passe', 500);
@@ -265,7 +262,6 @@ const userController = {
 
       logger.info(`✅ Préférences récupérées pour l'utilisateur: ${userId}`);
       return sendSuccess(res, preferences, 'Préférences récupérées avec succès');
-
     } catch (error) {
       logger.error('Erreur getPreferences:', error);
       return sendError(res, 'Erreur lors de la récupération des préférences', 500);
@@ -275,7 +271,9 @@ const userController = {
   async updatePreferences(req, res) {
     try {
       const userId = req.user.id;
-      const { theme, language, notificationsEnabled, currency, customSettings } = req.body;
+      const {
+        theme, language, notificationsEnabled, currency, customSettings
+      } = req.body;
 
       logger.info(`🎛️ Mise à jour des préférences utilisateur: ${userId}`);
 
@@ -320,7 +318,6 @@ const userController = {
 
       logger.info(`✅ Préférences mises à jour pour l'utilisateur: ${userId}`);
       return sendSuccess(res, preferences, 'Préférences mises à jour avec succès');
-
     } catch (error) {
       logger.error('Erreur updatePreferences:', error);
       return sendError(res, 'Erreur lors de la mise à jour des préférences', 500);
@@ -374,7 +371,6 @@ const userController = {
 
       logger.info(`✅ Statistiques calculées pour l'utilisateur: ${userId}`);
       return sendSuccess(res, extendedStats, 'Statistiques récupérées avec succès');
-
     } catch (error) {
       logger.error('Erreur getUserStats:', error);
       return sendError(res, 'Erreur lors de la récupération des statistiques', 500);
@@ -417,7 +413,8 @@ const userController = {
 
       // For now, just return a placeholder response
       // In a full implementation, you would handle file upload using multer
-      return sendSuccess(res,
+      return sendSuccess(
+        res,
         { message: 'Profile picture upload endpoint ready' },
         'Endpoint fonctionnel'
       );
@@ -538,7 +535,7 @@ async function calculateUserStats(userId) {
       expensesTrendDirection: expensesTrend > 0 ? 'up' : expensesTrend < 0 ? 'down' : 'stable',
 
       // Répartition des dépenses
-      topExpenseCategories: expensesByCategory.map(cat => ({
+      topExpenseCategories: expensesByCategory.map((cat) => ({
         category: cat.category,
         amount: cat._sum.amount,
         percentage: thisMonthTotal > 0 ? Math.round((cat._sum.amount / thisMonthTotal) * 100) : 0
@@ -557,7 +554,6 @@ async function calculateUserStats(userId) {
       // Statut par rapport aux objectifs
       isOnTrack: checkIfOnTrack(thisMonthTotal, lastMonthTotal)
     };
-
   } catch (error) {
     logger.error('Erreur calculateUserStats:', error);
     return {
@@ -677,7 +673,7 @@ function calculateGrowthTrend(stats) {
   return {
     ...trends,
     overall: score >= 2 ? 'positive' : score === 1 ? 'neutral' : 'negative',
-    score: score
+    score
   };
 }
 

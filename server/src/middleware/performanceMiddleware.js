@@ -20,20 +20,20 @@ function performanceMiddleware(req, res, next) {
   // Store original res.end to capture when response is sent
   const originalEnd = res.end;
 
-  res.end = function(chunk, encoding) {
+  res.end = function (chunk, encoding) {
     const duration = Date.now() - startTime;
 
     // Normalize endpoint path for better aggregation
     const endpoint = normalizeEndpoint(req.path);
-    const method = req.method;
-    const statusCode = res.statusCode;
+    const { method } = req;
+    const { statusCode } = res;
 
     // Track the API call performance
     performanceMonitor.trackApiCall(endpoint, method, duration, statusCode);
 
     // Log slow requests immediately
     if (duration > 2000) { // 2 seconds threshold
-      logger.warn(`🐌 Slow API request detected`, {
+      logger.warn('🐌 Slow API request detected', {
         method,
         endpoint: req.path,
         duration,

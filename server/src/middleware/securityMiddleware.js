@@ -13,22 +13,22 @@ const logger = require('../utils/logger');
  */
 class EncryptionService {
   constructor() {
-    this.algorithm = 'aes-256-gcm';
+    this.algorithm = 'aes-256-cbc';
     this.keyLength = 32;
-    this.ivLength = 12;
+    this.ivLength = 16;
     this.saltLength = 64;
     this.tagLength = 16;
 
-    // Master key from environment (must be 32 bytes)
+    // Master key from environment (REQUIRED - must be 32 bytes)
     const envKey = process.env.FINANCIAL_ENCRYPTION_KEY;
-    if (envKey) {
-      // Convert hex string to Buffer
-      this.masterKey = Buffer.from(envKey, 'hex');
-      if (this.masterKey.length !== this.keyLength) {
-        throw new Error('FINANCIAL_ENCRYPTION_KEY must be exactly 32 bytes (64 hex characters)');
-      }
-    } else {
-      this.masterKey = this.generateKey();
+    if (!envKey) {
+      throw new Error('FINANCIAL_ENCRYPTION_KEY is required in environment variables (64 hex characters = 32 bytes)');
+    }
+
+    // Convert hex string to Buffer
+    this.masterKey = Buffer.from(envKey, 'hex');
+    if (this.masterKey.length !== this.keyLength) {
+      throw new Error('FINANCIAL_ENCRYPTION_KEY must be exactly 32 bytes (64 hex characters)');
     }
   }
 
@@ -37,7 +37,7 @@ class EncryptionService {
   }
 
   /**
-   * Encrypt sensitive financial data with authenticated encryption
+   * Encrypt sensitive financial data with AES-256-CBC + HMAC
    */
   encrypt(plaintext) {
     try {
@@ -47,12 +47,17 @@ class EncryptionService {
       // Derive key using PBKDF2
       const key = crypto.pbkdf2Sync(this.masterKey, salt, 100000, this.keyLength, 'sha512');
 
-      const cipher = crypto.createCipherGCM(this.algorithm, key, iv);
+      const cipher = crypto.createCipheriv(this.algorithm, key, iv);
 
       let encrypted = cipher.update(plaintext, 'utf8', 'hex');
       encrypted += cipher.final('hex');
 
-      const authTag = cipher.getAuthTag();
+      // Create HMAC for authentication
+      const hmac = crypto.createHmac('sha256', key);
+      hmac.update(salt);
+      hmac.update(iv);
+      hmac.update(Buffer.from(encrypted, 'hex'));
+      const authTag = hmac.digest();
 
       // Combine salt + iv + authTag + encrypted data
       const combined = Buffer.concat([
@@ -79,14 +84,24 @@ class EncryptionService {
       // Extract components
       const salt = combined.slice(0, this.saltLength);
       const iv = combined.slice(this.saltLength, this.saltLength + this.ivLength);
-      const authTag = combined.slice(this.saltLength + this.ivLength, this.saltLength + this.ivLength + this.tagLength);
-      const encrypted = combined.slice(this.saltLength + this.ivLength + this.tagLength);
+      const authTag = combined.slice(this.saltLength + this.ivLength, this.saltLength + this.ivLength + 32); // HMAC-SHA256 = 32 bytes
+      const encrypted = combined.slice(this.saltLength + this.ivLength + 32);
 
       // Derive key using same parameters
       const key = crypto.pbkdf2Sync(this.masterKey, salt, 100000, this.keyLength, 'sha512');
 
-      const decipher = crypto.createDecipherGCM(this.algorithm, key, iv);
-      decipher.setAuthTag(authTag);
+      // Verify HMAC before decrypting
+      const hmac = crypto.createHmac('sha256', key);
+      hmac.update(salt);
+      hmac.update(iv);
+      hmac.update(encrypted);
+      const expectedAuthTag = hmac.digest();
+
+      if (!crypto.timingSafeEqual(authTag, expectedAuthTag)) {
+        throw new Error('Authentication tag verification failed');
+      }
+
+      const decipher = crypto.createDecipheriv(this.algorithm, key, iv);
 
       let decrypted = decipher.update(encrypted, null, 'utf8');
       decrypted += decipher.final('utf8');
@@ -104,7 +119,7 @@ class EncryptionService {
   hash(data) {
     const salt = crypto.randomBytes(32);
     const hash = crypto.pbkdf2Sync(data, salt, 100000, 64, 'sha512');
-    return salt.toString('hex') + ':' + hash.toString('hex');
+    return `${salt.toString('hex')}:${hash.toString('hex')}`;
   }
 
   /**
@@ -135,14 +150,12 @@ const createFinancialRateLimit = (options = {}) => {
     standardHeaders: true,
     legacyHeaders: false,
     // Advanced features for financial security
-    keyGenerator: (req) => {
+    keyGenerator: (req) =>
       // Use both IP and user ID for rate limiting
-      return req.user?.id ? `${req.ip}:${req.user.id}` : req.ip;
-    },
-    skip: (req) => {
+      (req.user?.id ? `${req.ip}:${req.user.id}` : req.ip),
+    skip: (req) =>
       // Skip rate limiting for health checks
-      return req.path === '/health' || req.path === '/status';
-    },
+      req.path === '/health' || req.path === '/status',
     handler: (req, res, next, options) => {
       logger.warn('Rate limit exceeded', {
         ip: req.ip,
@@ -160,29 +173,27 @@ const createFinancialRateLimit = (options = {}) => {
 /**
  * Security headers middleware specifically for financial data
  */
-const financialSecurityHeaders = () => {
-  return helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],
-        scriptSrc: ["'self'"],
-        imgSrc: ["'self'", "data:", "https:"],
-        connectSrc: ["'self'", "https://api.bridgeapi.io", "https://api.budget-insight.com"],
-        fontSrc: ["'self'"],
-        objectSrc: ["'none'"],
-        mediaSrc: ["'self'"],
-        frameSrc: ["'none'"],
-      },
-    },
-    crossOriginEmbedderPolicy: false, // Allow external financial APIs
-    hsts: {
-      maxAge: 31536000,
-      includeSubDomains: true,
-      preload: true
+const financialSecurityHeaders = () => helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ['\'self\''],
+      styleSrc: ['\'self\'', '\'unsafe-inline\''],
+      scriptSrc: ['\'self\''],
+      imgSrc: ['\'self\'', 'data:', 'https:'],
+      connectSrc: ['\'self\'', 'https://api.bridgeapi.io', 'https://api.budget-insight.com'],
+      fontSrc: ['\'self\''],
+      objectSrc: ['\'none\''],
+      mediaSrc: ['\'self\''],
+      frameSrc: ['\'none\'']
     }
-  });
-};
+  },
+  crossOriginEmbedderPolicy: false, // Allow external financial APIs
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  }
+});
 
 /**
  * Input validation and sanitization for financial data
@@ -229,7 +240,7 @@ const validateFinancialInput = (req, res, next) => {
     }
 
     // Sanitize text inputs
-    ['name', 'description', 'category'].forEach(field => {
+    ['name', 'description', 'category'].forEach((field) => {
       if (req.body[field]) {
         req.body[field] = req.body[field].toString().trim().slice(0, 255);
       }
@@ -271,7 +282,7 @@ const monitorSuspiciousActivity = async (req, res, next) => {
 
       // Rapid transaction detection
       const cacheKey = `transaction_count_${userId}`;
-      const redis = req.app.locals.redis;
+      const { redis } = req.app.locals;
 
       if (redis) {
         const transactionCount = await redis.incr(cacheKey);

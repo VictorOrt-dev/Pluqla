@@ -70,9 +70,9 @@ class GDPRService {
       });
 
       const consentStatus = {};
-      consents.forEach(consent => {
-        if (!consentStatus[consent.consentType] ||
-            consent.createdAt > consentStatus[consent.consentType].createdAt) {
+      consents.forEach((consent) => {
+        if (!consentStatus[consent.consentType]
+            || consent.createdAt > consentStatus[consent.consentType].createdAt) {
           consentStatus[consent.consentType] = consent;
         }
       });
@@ -131,7 +131,7 @@ class GDPRService {
       ]);
 
       exportData.financial = {
-        accounts: accounts.map(acc => ({
+        accounts: accounts.map((acc) => ({
           ...acc,
           // Remove encrypted credentials from export
           encryptedCredentials: '[REDACTED FOR SECURITY]'
@@ -277,7 +277,6 @@ class GDPRService {
 
       logger.info('User data deleted/anonymized', deletionLog);
       return deletionLog;
-
     } catch (error) {
       logger.error('Failed to delete user data:', error);
       throw new Error('Failed to delete user data');
@@ -332,7 +331,6 @@ class GDPRService {
 
       logger.info('User data rectified', rectificationLog);
       return rectificationLog;
-
     } catch (error) {
       logger.error('Failed to rectify user data:', error);
       throw new Error('Failed to rectify user data');
@@ -405,7 +403,6 @@ class GDPRService {
       report.metrics.securityIncidents = securityIncidents;
 
       return report;
-
     } catch (error) {
       logger.error('Failed to generate compliance report:', error);
       throw new Error('Failed to generate compliance report');
@@ -436,9 +433,9 @@ class GDPRService {
     try {
       const retentionPeriods = {
         analyticsEvent: 730, // 2 years
-        cacheEntry: 30,      // 30 days
+        cacheEntry: 30, // 30 days
         accountTransaction: 2555, // 7 years (legal requirement)
-        userConsent: 2555    // 7 years (legal requirement)
+        userConsent: 2555 // 7 years (legal requirement)
       };
 
       const deletionResults = {};
@@ -457,7 +454,6 @@ class GDPRService {
 
       logger.info('Data retention policy enforced', deletionResults);
       return deletionResults;
-
     } catch (error) {
       logger.error('Failed to enforce data retention:', error);
       throw new Error('Failed to enforce data retention policy');

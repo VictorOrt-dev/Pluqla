@@ -94,7 +94,6 @@ const aiController = {
           hasMore: suggestions.length > parseInt(limit)
         }
       });
-
     } catch (error) {
       logger.error('Erreur getSuggestions:', error);
 
@@ -178,7 +177,6 @@ const aiController = {
           hasMore: suggestions.length > parseInt(limit)
         }
       });
-
     } catch (error) {
       logger.error('Erreur getSuggestionsPublic:', error);
 
@@ -270,7 +268,6 @@ const aiController = {
           pointsEarned: 5
         }
       });
-
     } catch (error) {
       logger.error('Erreur rateSuggestion:', error);
       res.status(500).json({
@@ -318,9 +315,7 @@ const aiController = {
       // Obtenir des suggestions pour chaque catégorie demandée
       let targetCategories = ['alimentation', 'habits', 'activite', 'deplacement'];
       if (categories !== 'all') {
-        targetCategories = categories.split(',').filter(cat =>
-          ['alimentation', 'habits', 'activite', 'deplacement'].includes(cat)
-        );
+        targetCategories = categories.split(',').filter((cat) => ['alimentation', 'habits', 'activite', 'deplacement'].includes(cat));
       }
 
       const suggestionPromises = targetCategories.map(async (category) => {
@@ -371,7 +366,6 @@ const aiController = {
         success: true,
         data: result
       });
-
     } catch (error) {
       logger.error('Erreur getPersonalizedSuggestions:', error);
       res.status(500).json({
@@ -488,7 +482,6 @@ const aiController = {
           analyzedAt: new Date().toISOString()
         }
       });
-
     } catch (error) {
       logger.error('Erreur generateSuggestionsFromImage:', error);
       res.status(500).json({
@@ -566,7 +559,6 @@ const aiController = {
           hasMore: false
         }
       });
-
     } catch (error) {
       logger.error('Erreur getFoodSuggestions:', error);
 
@@ -848,7 +840,6 @@ const aiController = {
           isPremium: user.isPremium
         }
       });
-
     } catch (error) {
       logger.error('Erreur processAIChat:', error);
       res.status(500).json({
@@ -924,7 +915,7 @@ const aiController = {
       return {
         user,
         preferences: userAnswers,
-        recentTransactions: recentTransactions.map(t => ({
+        recentTransactions: recentTransactions.map((t) => ({
           amount: t.amount,
           category: t.category,
           description: t.description,
@@ -956,17 +947,17 @@ const aiController = {
           _sum: { amount: true },
           _count: { id: true }
         }),
-        // Tendance mensuelle des 6 derniers mois
+        // Tendance mensuelle des 6 derniers mois (PostgreSQL compatible)
         prisma.$queryRaw`
           SELECT
-            strftime('%Y-%m', createdAt) as month,
+            TO_CHAR("createdAt", 'YYYY-MM') as month,
             category,
             SUM(amount) as total_amount,
             COUNT(*) as transaction_count
           FROM transactions
-          WHERE userId = ${userId}
-            AND createdAt >= date('now', '-6 months')
-          GROUP BY strftime('%Y-%m', createdAt), category
+          WHERE "userId" = ${userId}
+            AND "createdAt" >= NOW() - INTERVAL '6 months'
+          GROUP BY TO_CHAR("createdAt", 'YYYY-MM'), category
           ORDER BY month ASC
         `,
         // Recettes favorites
@@ -980,13 +971,13 @@ const aiController = {
       return {
         ...basicContext,
         analytics: {
-          categoryStats: categoryStats.map(stat => ({
+          categoryStats: categoryStats.map((stat) => ({
             category: stat.category,
             totalAmount: stat._sum.amount || 0,
             transactionCount: stat._count.id || 0
           })),
           monthlyTrends,
-          favoriteRecipes: favoriteRecipes.map(fr => fr.recipe.title)
+          favoriteRecipes: favoriteRecipes.map((fr) => fr.recipe.title)
         }
       };
     } catch (error) {
@@ -1009,7 +1000,7 @@ const aiController = {
         - Montant total économisé : ${context.user?.savedAmount || 0}€
         - Objectif mensuel : ${context.user?.monthlyGoal || 0}€
         - Transactions récentes : ${context.recentTransactions.length}
-        - Catégories préférées : ${context.analytics?.categoryStats?.map(c => c.category).join(', ') || 'Aucune'}
+        - Catégories préférées : ${context.analytics?.categoryStats?.map((c) => c.category).join(', ') || 'Aucune'}
 
         Fournis 3 insights clés et 3 recommandations d'amélioration.
       `;
@@ -1042,9 +1033,7 @@ const aiController = {
       }
 
       const totalSpent = analytics.categoryStats.reduce((sum, cat) => sum + cat.totalAmount, 0);
-      const dominantCategory = analytics.categoryStats.reduce((max, cat) =>
-        cat.totalAmount > max.totalAmount ? cat : max
-      );
+      const dominantCategory = analytics.categoryStats.reduce((max, cat) => (cat.totalAmount > max.totalAmount ? cat : max));
 
       const averageTransaction = recentTransactions.length > 0
         ? recentTransactions.reduce((sum, t) => sum + t.amount, 0) / recentTransactions.length
@@ -1075,20 +1064,20 @@ const aiController = {
       let prompt = '';
 
       switch (analysisType) {
-        case 'receipt':
-          prompt = `Voici l'analyse d'un reçu : ${JSON.stringify(analysisData)}.
+      case 'receipt':
+        prompt = `Voici l'analyse d'un reçu : ${JSON.stringify(analysisData)}.
             Génère des suggestions d'économies basées sur ces achats.`;
-          break;
-        case 'clothing':
-          prompt = `Voici l'analyse d'un vêtement : ${JSON.stringify(analysisData)}.
+        break;
+      case 'clothing':
+        prompt = `Voici l'analyse d'un vêtement : ${JSON.stringify(analysisData)}.
             Suggère des alternatives moins chères ou des occasions d'achat.`;
-          break;
-        case 'food':
-          prompt = `Voici l'analyse d'un produit alimentaire : ${JSON.stringify(analysisData)}.
+        break;
+      case 'food':
+        prompt = `Voici l'analyse d'un produit alimentaire : ${JSON.stringify(analysisData)}.
             Suggère des alternatives plus économiques ou des recettes.`;
-          break;
-        default:
-          prompt = `Analyse cette image : ${JSON.stringify(analysisData)}.
+        break;
+      default:
+        prompt = `Analyse cette image : ${JSON.stringify(analysisData)}.
             Génère des suggestions d'économies pertinentes.`;
       }
 
@@ -1164,7 +1153,6 @@ const aiController = {
           hasMore: false
         }
       });
-
     } catch (error) {
       logger.error(`Erreur ${category} suggestions:`, error);
 

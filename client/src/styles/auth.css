@@ -1,8 +1,9 @@
 /**
- * 🔒 PLUQLA AUTH DESIGN SYSTEM
+ * 🔒 PLUQLA AUTH DESIGN SYSTEM - DARK MODE
  * Premium authentication screens - Mobile-first, WCAG AA compliant
  *
  * Design principles:
+ * - Dark theme matching landing page
  * - Signature Pluqla red (#F14545) for trust & energy
  * - Clean, spacious layout with generous whitespace
  * - Premium micro-interactions (60fps GPU-optimized)
@@ -20,15 +21,18 @@
   align-items: center;
   justify-content: center;
   padding: var(--pluqla-space-4);
-  background: linear-gradient(135deg,
-    var(--pluqla-gray-50) 0%,
-    #FFF5F5 50%,
-    var(--pluqla-red-soft) 100%);
+  /* Dark mode gradient matching landing page */
+  background: linear-gradient(
+    135deg,
+    var(--pluqla-black-primary, #1A202C) 0%,
+    var(--pluqla-gray-800, #1A202C) 50%,
+    var(--pluqla-black-primary, #1A202C) 100%
+  );
   position: relative;
   overflow: hidden;
 }
 
-/* Subtle background pattern for premium feel */
+/* Dark mode background pattern matching landing page */
 .auth-container::before {
   content: '';
   position: absolute;
@@ -36,10 +40,18 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-image:
-    radial-gradient(circle at 20% 30%, rgba(241, 69, 69, 0.03) 0%, transparent 50%),
-    radial-gradient(circle at 80% 70%, rgba(241, 69, 69, 0.02) 0%, transparent 50%);
+  background:
+    radial-gradient(circle at 20% 30%, rgba(241, 69, 69, 0.1) 0%, transparent 40%),
+    radial-gradient(circle at 80% 70%, rgba(241, 69, 69, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(241, 69, 69, 0.05) 0%, transparent 60%);
   pointer-events: none;
+  animation: auth-mesh-drift 20s ease-in-out infinite;
+}
+
+@keyframes auth-mesh-drift {
+  0%, 100% { transform: translate(0, 0); }
+  33% { transform: translate(2%, -2%); }
+  66% { transform: translate(-2%, 2%); }
 }
 
 .auth-content-wrapper {
@@ -51,11 +63,16 @@
 
 /* ===== AUTH CARD ===== */
 .auth-card {
-  background: var(--pluqla-white);
+  /* Dark card background with subtle transparency */
+  background: rgba(42, 46, 55, 0.95);
   border-radius: var(--pluqla-radius-xl);
   padding: var(--pluqla-space-8);
-  box-shadow: var(--pluqla-shadow-xl);
-  border: 1px solid rgba(241, 69, 69, 0.08);
+  box-shadow:
+    0 20px 40px rgba(0, 0, 0, 0.4),
+    0 8px 32px rgba(241, 69, 69, 0.15);
+  border: 1px solid rgba(241, 69, 69, 0.2);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   transition: all var(--pluqla-transition-normal);
   animation: auth-card-enter 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -111,7 +128,7 @@
   font-size: var(--pluqla-text-3xl);
   font-weight: var(--pluqla-font-bold);
   line-height: var(--pluqla-leading-tight);
-  color: var(--pluqla-gray-900);
+  color: var(--pluqla-white);
   margin-bottom: var(--pluqla-space-2);
   letter-spacing: -0.025em;
 }
@@ -119,7 +136,7 @@
 .auth-subtitle {
   font-size: var(--pluqla-text-base);
   line-height: var(--pluqla-leading-normal);
-  color: var(--pluqla-gray-600);
+  color: rgba(255, 255, 255, 0.7);
 }
 
 /* ===== AUTH FORM ===== */
@@ -137,12 +154,12 @@
   display: block;
   font-size: var(--pluqla-text-sm);
   font-weight: var(--pluqla-font-medium);
-  color: var(--pluqla-gray-700);
+  color: rgba(255, 255, 255, 0.9);
   margin-bottom: var(--pluqla-space-2);
 }
 
 .auth-label-required {
-  color: var(--pluqla-red-primary);
+  color: var(--pluqla-red-light);
   margin-left: var(--pluqla-space-1);
 }
 
@@ -154,49 +171,61 @@
   width: 100%;
   min-height: var(--pluqla-touch-min);
   padding: var(--pluqla-space-3) var(--pluqla-space-4);
-  padding-left: 3rem;
-  border: 2px solid var(--pluqla-gray-300);
+  padding-left: 2.75rem; /* Space for small inline icon */
+  border: 2px solid rgba(255, 255, 255, 0.15);
   border-radius: var(--pluqla-radius-lg);
   font-size: var(--pluqla-text-base);
   line-height: var(--pluqla-leading-normal);
-  background: var(--pluqla-white);
-  color: var(--pluqla-gray-900);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--pluqla-white);
   transition: all var(--pluqla-transition-normal);
   outline: none;
 }
 
 .auth-input::placeholder {
-  color: var(--pluqla-gray-400);
+  color: rgba(255, 255, 255, 0.4);
 }
 
 .auth-input:focus {
   border-color: var(--pluqla-red-primary);
-  box-shadow: 0 0 0 3px rgba(241, 69, 69, 0.1);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 0 0 3px rgba(241, 69, 69, 0.15);
 }
 
 .auth-input:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-  background: var(--pluqla-gray-100);
+  background: rgba(255, 255, 255, 0.02);
 }
 
 .auth-input[aria-invalid="true"] {
   border-color: var(--pluqla-red-primary);
+  background: rgba(241, 69, 69, 0.05);
 }
 
-/* Input with icon */
+/* Small inline icon inside input - FIXED SIZE */
 .auth-input-icon {
   position: absolute;
-  left: var(--pluqla-space-4);
+  left: 0.75rem; /* 12px */
   top: 50%;
   transform: translateY(-50%);
-  color: var(--pluqla-gray-400);
+  width: 18px;
+  height: 18px;
+  color: rgba(255, 255, 255, 0.4);
   pointer-events: none;
   transition: color var(--pluqla-transition-normal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.auth-input:focus + .auth-input-icon,
-.auth-input:not(:placeholder-shown) + .auth-input-icon {
+.auth-input-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.auth-input:focus ~ .auth-input-icon,
+.auth-input:not(:placeholder-shown) ~ .auth-input-icon {
   color: var(--pluqla-red-primary);
 }
 
@@ -213,7 +242,7 @@
   justify-content: center;
   background: transparent;
   border: none;
-  color: var(--pluqla-gray-400);
+  color: rgba(255, 255, 255, 0.4);
   cursor: pointer;
   border-radius: var(--pluqla-radius-sm);
   transition: all var(--pluqla-transition-normal);
@@ -221,13 +250,13 @@
 }
 
 .auth-password-toggle:hover {
-  color: var(--pluqla-gray-600);
-  background: var(--pluqla-gray-100);
+  color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .auth-password-toggle:focus {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(241, 69, 69, 0.2);
+  box-shadow: 0 0 0 2px rgba(241, 69, 69, 0.3);
 }
 
 .auth-password-toggle[aria-pressed="true"] {
@@ -241,7 +270,7 @@
   gap: var(--pluqla-space-2);
   margin-top: var(--pluqla-space-2);
   font-size: var(--pluqla-text-sm);
-  color: var(--pluqla-red-primary);
+  color: #FF6B6B;
   line-height: var(--pluqla-leading-snug);
 }
 
@@ -275,15 +304,15 @@
 }
 
 .auth-status-banner.error {
-  background: #FEF2F2;
-  border: 1px solid #FEE2E2;
-  color: var(--pluqla-red-primary);
+  background: rgba(241, 69, 69, 0.1);
+  border: 1px solid rgba(241, 69, 69, 0.3);
+  color: #FF6B6B;
 }
 
 .auth-status-banner.success {
-  background: var(--pluqla-green-soft);
-  border: 1px solid #BBF7D0;
-  color: var(--pluqla-green-primary);
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.3);
+  color: #34D399;
 }
 
 .auth-status-icon {
@@ -325,7 +354,7 @@
 }
 
 .auth-button-primary:focus {
-  box-shadow: var(--pluqla-shadow-premium), 0 0 0 3px rgba(241, 69, 69, 0.2);
+  box-shadow: var(--pluqla-shadow-premium), 0 0 0 3px rgba(241, 69, 69, 0.3);
 }
 
 .auth-button-primary:disabled {
@@ -372,11 +401,11 @@
 
 .auth-switch-mode {
   font-size: var(--pluqla-text-sm);
-  color: var(--pluqla-gray-600);
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .auth-switch-link {
-  color: var(--pluqla-red-primary);
+  color: var(--pluqla-red-light);
   font-weight: var(--pluqla-font-medium);
   text-decoration: none;
   transition: color var(--pluqla-transition-normal);
@@ -390,13 +419,13 @@
 }
 
 .auth-switch-link:hover {
-  color: var(--pluqla-red-hover);
+  color: var(--pluqla-red-primary);
   text-decoration: underline;
 }
 
 .auth-switch-link:focus {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(241, 69, 69, 0.2);
+  box-shadow: 0 0 0 2px rgba(241, 69, 69, 0.3);
   border-radius: var(--pluqla-radius-sm);
 }
 
@@ -421,19 +450,19 @@
   gap: var(--pluqla-space-2);
   font-size: var(--pluqla-text-xs);
   font-weight: var(--pluqla-font-medium);
-  color: var(--pluqla-gray-500);
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .auth-security-icon {
   width: 16px;
   height: 16px;
-  color: var(--pluqla-gray-400);
+  color: rgba(255, 255, 255, 0.4);
 }
 
 .auth-security-text {
   font-size: var(--pluqla-text-xs);
   line-height: var(--pluqla-leading-relaxed);
-  color: var(--pluqla-gray-400);
+  color: rgba(255, 255, 255, 0.4);
   max-width: 400px;
   margin: 0 auto;
 }
@@ -502,7 +531,8 @@
   .auth-input,
   .auth-password-toggle,
   .auth-switch-link,
-  .auth-logo-container {
+  .auth-logo-container,
+  .auth-container::before {
     animation: none !important;
     transition: none !important;
   }
@@ -515,11 +545,15 @@
 
   .auth-input:focus {
     border-color: var(--pluqla-red-primary);
-    box-shadow: 0 0 0 4px rgba(241, 69, 69, 0.3);
+    box-shadow: 0 0 0 4px rgba(241, 69, 69, 0.4);
   }
 
   .auth-button-primary {
     border: 2px solid var(--pluqla-red-hover);
+  }
+
+  .auth-card {
+    border-width: 2px;
   }
 }
 
@@ -546,9 +580,11 @@
 }
 
 /**
- * 🎯 END OF PLUQLA AUTH DESIGN SYSTEM
+ * 🎯 END OF PLUQLA AUTH DESIGN SYSTEM - DARK MODE
  *
  * Features:
+ * ✅ Dark mode matching landing page
+ * ✅ Fixed icon sizing (18px, inline in inputs)
  * ✅ Mobile-first responsive (320px → 1440px)
  * ✅ WCAG 2.1 AA compliant (contrast, focus, keyboard nav)
  * ✅ 60fps GPU-optimized animations

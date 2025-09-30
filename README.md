@@ -10,10 +10,21 @@
 
 ```bash
 git clone https://github.com/pluqla/app.git && cd pluqla
-npm run install:all && npm start
+npm run install:all
+
+# 🔐 CONFIGURATION SÉCURITÉ (OBLIGATOIRE)
+cp server/.env.example server/.env
+# Générez vos clés de chiffrement
+openssl rand -hex 32  # FINANCIAL_ENCRYPTION_KEY
+openssl rand -hex 32  # BANK_ENCRYPTION_KEY
+# Ajoutez-les à server/.env
+
+npm start
 ```
 
 **🌐 URLs** : [Client](http://localhost:3000) • [API](http://localhost:3004)
+
+⚠️ **IMPORTANT** : Voir [SECURITY.md](./SECURITY.md) pour la configuration complète des clés de chiffrement
 
 ## 🏗️ Architecture Monorepo
 
@@ -88,6 +99,7 @@ npm run db:seed        # Données de test
 
 | Ressource | Description |
 |-----------|-------------|
+| [**🔐 SECURITY.md**](SECURITY.md) | **Guide sécurité GDPR/PSD2 (OBLIGATOIRE)** |
 | [**Guide Développeur**](CLAUDE.md) | Workflow complet, standards qualité |
 | [**API Reference**](docs/api/) | Documentation REST complète |
 | [**Design System**](docs/guides/VISUAL_IDENTITY_GUIDE.md) | Identité visuelle Pluqla |

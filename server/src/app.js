@@ -3,12 +3,14 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const morgan = require('morgan');
+const cookieParser = require('cookie-parser');
 
 const logger = require('./utils/logger');
 const errorHandler = require('./middleware/errorHandler');
 const rateLimit = require('./middleware/rateLimit');
 const { requestTracker, globalErrorHandler } = require('./utils/responseHelper');
 const { performanceMiddleware } = require('./middleware/performanceMiddleware');
+const metricsMiddleware = require('./middleware/metricsMiddleware');
 
 // Routes
 const routes = require('./routes');
@@ -24,7 +26,7 @@ if (process.env.TRUST_PROXY === 'true') {
 const corsOptions = {
   origin: (origin, callback) => {
     const allowedOrigins = process.env.CORS_ORIGIN
-      ? process.env.CORS_ORIGIN.split(',').map(o => o.trim())
+      ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
       : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'];
 
     // Permettre les requêtes sans origin (mobile, Postman, etc.)
@@ -45,13 +47,13 @@ const corsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 };
 
 // Middlewares de sécurité
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: "cross-origin" },
-  contentSecurityPolicy: false, // Désactivé pour les uploads d'images
+  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  contentSecurityPolicy: false // Désactivé pour les uploads d'images
 }));
 
 app.use(cors(corsOptions));
@@ -59,7 +61,7 @@ app.use(compression());
 
 // Logging des requêtes HTTP
 if (process.env.NODE_ENV === 'production') {
-  app.use(morgan('combined', { stream: { write: msg => logger.info(msg.trim()) } }));
+  app.use(morgan('combined', { stream: { write: (msg) => logger.info(msg.trim()) } }));
 } else {
   app.use(morgan('dev'));
 }
@@ -73,6 +75,12 @@ app.use(requestTracker);
 // Performance monitoring middleware
 app.use(performanceMiddleware);
 
+// Prometheus metrics middleware (must be before routes)
+app.use(metricsMiddleware);
+
+// Cookie parser middleware (REQUIRED for Better Auth session persistence)
+app.use(cookieParser());
+
 // Parsing du body
 app.use(express.json({ limit: process.env.UPLOAD_MAX_SIZE || '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: process.env.UPLOAD_MAX_SIZE || '10mb' }));
@@ -80,62 +88,61 @@ app.use(express.urlencoded({ extended: true, limit: process.env.UPLOAD_MAX_SIZE 
 // Servir les fichiers statiques (uploads)
 app.use('/uploads', express.static('uploads', {
   maxAge: '1d',
-  etag: true,
+  etag: true
 }));
 
-// Health check endpoint with database status
+// Comprehensive health check endpoint with all subsystems
 app.get('/health', async (req, res) => {
-  const { getDatabaseHealth, getConnectionStats } = require('./lib/prisma');
+  const { getHealthStatus } = require('./services/monitoringService');
 
   try {
-    // Get database health
-    const dbHealth = await getDatabaseHealth();
+    const healthStatus = await getHealthStatus();
 
-    // Get connection statistics (only if database is healthy)
-    let connectionStats = null;
-    if (dbHealth.healthy) {
-      try {
-        connectionStats = await getConnectionStats();
-      } catch (error) {
-        // Connection stats are optional, continue without them
-        console.warn('Failed to get connection stats:', error.message);
-      }
+    // Determine HTTP status code based on health
+    let statusCode = 200;
+    if (healthStatus.status === 'degraded') {
+      statusCode = 200; // Still operational, just degraded
+    } else if (healthStatus.status === 'unhealthy') {
+      statusCode = 503; // Service unavailable
     }
 
-    const healthStatus = {
-      status: dbHealth.healthy ? 'OK' : 'DEGRADED',
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      environment: process.env.NODE_ENV,
-      version: require('../package.json').version,
-      database: {
-        healthy: dbHealth.healthy,
-        latency: dbHealth.latency,
-        error: dbHealth.error || null,
-        connections: connectionStats
-      }
-    };
-
-    // Return 503 if database is unhealthy
-    const statusCode = dbHealth.healthy ? 200 : 503;
     res.status(statusCode).json(healthStatus);
-
   } catch (error) {
     logger.error('Health check failed:', error);
     res.status(503).json({
-      status: 'ERROR',
+      status: 'unhealthy',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
       environment: process.env.NODE_ENV,
       version: require('../package.json').version,
-      error: 'Health check failed',
-      database: {
-        healthy: false,
-        error: error.message
+      error: 'Health check failed: ' + error.message,
+      subsystems: {
+        database: { healthy: false, error: 'Unknown' },
+        auth: { healthy: false, error: 'Unknown' },
+        ai: { healthy: false, error: 'Unknown' },
+        sessionCleanup: { healthy: false, error: 'Unknown' }
       }
     });
   }
 });
+
+// Prometheus metrics endpoint
+app.get('/metrics', async (req, res) => {
+  try {
+    const { register } = require('./monitoring/metrics');
+    res.set('Content-Type', register.contentType);
+    const metrics = await register.metrics();
+    res.end(metrics);
+  } catch (err) {
+    logger.error('Error generating metrics:', err);
+    res.status(500).end('Error generating metrics');
+  }
+});
+
+// Better Auth Routes (mount before other API routes)
+// TEMPORARILY DISABLED: Better Auth has issues with SQLite adapter
+// const { auth } = require('./auth/betterAuth');
+// app.use('/api/auth', auth.handler);
 
 // API Routes
 app.use('/api', routes);
@@ -155,7 +162,7 @@ if (process.env.NODE_ENV !== 'production') {
 
       app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument, {
         explorer: true,
-        customCss: '.swagger-ui .topbar { display: none }',
+        customCss: '.swagger-ui .topbar { display: none }'
       }));
     } else {
       logger.warn('OpenAPI documentation file not found at:', openApiPath);
@@ -170,7 +177,7 @@ app.use('*', (req, res) => {
   res.status(404).json({
     error: 'Endpoint not found',
     message: `Route ${req.originalUrl} does not exist`,
-    availableEndpoints: ['/health', '/api/auth', '/api/users', '/api/transactions'],
+    availableEndpoints: ['/health', '/api/auth', '/api/users', '/api/transactions']
   });
 });
 

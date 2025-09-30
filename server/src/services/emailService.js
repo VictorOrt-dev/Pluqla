@@ -21,11 +21,11 @@ class EmailService {
         secure: process.env.EMAIL_PORT === '465', // true pour 465, false pour autres ports
         auth: {
           user: process.env.EMAIL_USER,
-          pass: process.env.EMAIL_PASS,
+          pass: process.env.EMAIL_PASS
         },
         tls: {
-          rejectUnauthorized: false, // Pour le développement
-        },
+          rejectUnauthorized: false // Pour le développement
+        }
       });
 
       logger.info('📧 Email service initialized successfully');
@@ -44,7 +44,9 @@ class EmailService {
     return this.transporter !== null;
   }
 
-  async sendEmail({ to, subject, text, html }) {
+  async sendEmail({
+    to, subject, text, html
+  }) {
     try {
       if (!this.transporter) {
         logger.warn('Email service not configured - email not sent');
@@ -56,7 +58,7 @@ class EmailService {
         to,
         subject,
         text,
-        html,
+        html
       };
 
       const result = await this.transporter.sendMail(mailOptions);
@@ -111,7 +113,7 @@ class EmailService {
       to: userEmail,
       subject,
       text,
-      html,
+      html
     });
   }
 
@@ -154,7 +156,7 @@ class EmailService {
       to: userEmail,
       subject,
       text,
-      html,
+      html
     });
   }
 
@@ -202,7 +204,7 @@ class EmailService {
       to: userEmail,
       subject,
       text,
-      html,
+      html
     });
   }
 
@@ -223,7 +225,7 @@ class EmailService {
       to: userEmail,
       subject,
       text,
-      html,
+      html
     });
   }
 

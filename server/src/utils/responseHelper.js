@@ -44,7 +44,7 @@ function getExecutionTime(requestId) {
  * @param {number} statusCode - HTTP status code (default: 200)
  */
 function sendSuccess(res, data = null, message = 'Success', statusCode = 200) {
-  const requestId = res.locals.requestId;
+  const { requestId } = res.locals;
   const executionTime = requestId ? getExecutionTime(requestId) : 0;
 
   const response = {
@@ -75,7 +75,7 @@ function sendSuccess(res, data = null, message = 'Success', statusCode = 200) {
  * @param {Object} additionalMeta - Additional metadata
  */
 function sendError(res, message = 'Internal server error', statusCode = 500, errors = [], additionalMeta = {}) {
-  const requestId = res.locals.requestId;
+  const { requestId } = res.locals;
   const executionTime = requestId ? getExecutionTime(requestId) : 0;
 
   // Ensure errors is always an array
@@ -287,9 +287,8 @@ function sendExport(res, filename, contentType, data) {
 
   if (contentType === 'application/json') {
     return res.json(data);
-  } else {
-    return res.send(data);
   }
+  return res.send(data);
 }
 
 /**

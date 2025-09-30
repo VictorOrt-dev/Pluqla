@@ -44,7 +44,7 @@ const handlePrismaError = (error) => {
     const field = error.meta?.target?.[0] || 'field';
     return new ValidationError(`${field} already exists`, [{
       field,
-      message: `This ${field} is already taken`,
+      message: `This ${field} is already taken`
     }]);
   }
 
@@ -77,7 +77,7 @@ const errorHandler = (err, req, res, next) => {
     method: req.method,
     ip: req.ip,
     userAgent: req.get('User-Agent'),
-    userId: req.user?.id,
+    userId: req.user?.id
   });
 
   // Erreurs Prisma
@@ -108,14 +108,14 @@ const errorHandler = (err, req, res, next) => {
   if (err.code === 'LIMIT_FILE_SIZE') {
     error = new ValidationError('File too large', [{
       field: 'file',
-      message: `File size must be less than ${process.env.UPLOAD_MAX_SIZE || '10MB'}`,
+      message: `File size must be less than ${process.env.UPLOAD_MAX_SIZE || '10MB'}`
     }]);
   }
 
   if (err.code === 'LIMIT_FILE_COUNT') {
     error = new ValidationError('Too many files', [{
       field: 'files',
-      message: 'Maximum number of files exceeded',
+      message: 'Maximum number of files exceeded'
     }]);
   }
 
@@ -132,7 +132,7 @@ const errorHandler = (err, req, res, next) => {
     ...(process.env.NODE_ENV === 'development' && {
       stack: err.stack,
       details: error
-    }),
+    })
   };
 
   res.status(error.statusCode).json(response);
@@ -144,5 +144,5 @@ module.exports = {
   ValidationError,
   NotFoundError,
   AuthenticationError,
-  AuthorizationError,
+  AuthorizationError
 };

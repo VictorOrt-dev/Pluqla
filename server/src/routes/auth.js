@@ -17,60 +17,70 @@ const {
 const router = express.Router();
 
 // Authentication routes with enhanced security validation
-router.post('/register',
+router.post(
+  '/register',
   authRateLimit.registration, // More restrictive rate limiting for registration
   validateRegistration,
   authController.register
 );
 
-router.post('/login',
+router.post(
+  '/login',
   authRateLimit.standard,
   validateLogin,
   authController.login
 );
 
-router.post('/logout',
+router.post(
+  '/logout',
   validateLogout,
   authController.logout
 );
 
-router.post('/refresh',
+router.post(
+  '/refresh',
   authRateLimit.standard,
   validateTokenRefresh,
   authController.refreshToken
 );
 
-router.post('/forgot-password',
+router.post(
+  '/forgot-password',
   authRateLimit.strict,
   validateForgotPassword,
   authController.forgotPassword
 );
 
-router.post('/reset-password',
+router.post(
+  '/reset-password',
   authRateLimit.strict,
   validatePasswordReset,
   authController.resetPassword
 );
 
-router.get('/verify-email/:token',
+router.get(
+  '/verify-email/:token',
   validateEmailVerification,
   authController.verifyEmail
 );
 
-router.post('/resend-verification',
+router.post(
+  '/resend-verification',
   authRateLimit.standard,
   validateForgotPassword, // Same validation as forgot password (just email)
   authController.resendVerification
 );
 
-router.post('/change-password',
+router.post(
+  '/change-password',
   authenticateToken,
   authRateLimit.standard,
   validateChangePassword,
   authController.changePassword
 );
 
-router.get('/verify',
+router.get(
+  '/verify',
   authenticateToken,
   authController.verifyToken
 );

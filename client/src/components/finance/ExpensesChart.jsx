@@ -3,25 +3,27 @@ import { useTranslation } from 'react-i18next';
 import '../../utils/chartSetup'; // Import centralisé pour Chart.js
 import { Doughnut, Bar } from 'react-chartjs-2';
 import LoadingSpinner from '../common/LoadingSpinner';
-import { financialApi } from '../../services/financialApi';
+// import { financialApi } from '../../services/financialApi';
 
 const ExpensesChart = ({ data, darkMode, compact = false, detailed = false }) => {
   const { t } = useTranslation();
   const [expenses, setExpenses] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [period, setPeriod] = useState('month');
+  const [period] = useState('month');
 
   const fetchDetailedExpenses = useCallback(async () => {
     try {
       setLoading(true);
-      const data = await financialApi.getExpenses(period, 100);
-      setExpenses(data?.expenses || []);
+      // TODO: Re-enable when financialApi import is fixed
+      // const data = await financialApi.getExpenses(period, 100);
+      // setExpenses(data?.expenses || []);
+      setExpenses([]); // Temporary fallback
     } catch (error) {
       console.error('Error fetching detailed expenses:', error);
     } finally {
       setLoading(false);
     }
-  }, [period]);
+  }, []);
 
   useEffect(() => {
     if (detailed) {
@@ -53,15 +55,15 @@ const ExpensesChart = ({ data, darkMode, compact = false, detailed = false }) =>
 
   const getCategoryColor = (category) => {
     const colors = {
-      alimentation: '#22c55e',
-      transport: '#3b82f6',
-      logement: '#f59e0b',
-      loisirs: '#8b5cf6',
-      sante: '#ef4444',
-      habits: '#ec4899',
-      autres: '#6b7280'
+      alimentation: '#F14545', // Pluqla Primary Red
+      transport: '#FF6B6B', // Lighter red variant
+      logement: '#D73030', // Darker red variant
+      loisirs: '#F85454', // Medium red variant
+      sante: '#E63946', // Health red
+      habits: '#FF5A5A', // Habits red
+      autres: '#B83030' // Other expenses dark red
     };
-    return colors[category] || '#6b7280';
+    return colors[category] || '#F14545'; // Default to Pluqla Red
   };
 
   const getSampleData = () => {
@@ -84,10 +86,11 @@ const ExpensesChart = ({ data, darkMode, compact = false, detailed = false }) =>
       labels: sortedCategories.map(cat => getCategoryDisplayName(cat.category)),
       datasets: [{
         data: sortedCategories.map(cat => cat.amount),
-        backgroundColor: sortedCategories.map(cat => getCategoryColor(cat.category)),
-        borderColor: darkMode ? '#1f2937' : '#ffffff',
-        borderWidth: 2,
-        hoverOffset: 4
+        backgroundColor: sortedCategories.map(cat => getCategoryColor(cat.category) + '90'), // More opaque for better visibility
+        borderColor: sortedCategories.map(cat => getCategoryColor(cat.category)),
+        borderWidth: 3,
+        hoverOffset: 8,
+        hoverBorderWidth: 4
       }]
     };
   };
@@ -121,10 +124,11 @@ const ExpensesChart = ({ data, darkMode, compact = false, detailed = false }) =>
       datasets: [{
         label: t('finance.dailyExpenses'),
         data: last30Days.map(date => expensesByDay[date] || 0),
-        backgroundColor: darkMode ? '#3b82f6' : '#60a5fa',
-        borderColor: '#2563eb',
-        borderWidth: 1,
-        borderRadius: 4
+        backgroundColor: '#F1454590', // Pluqla Red with opacity
+        borderColor: '#F14545',
+        borderWidth: 2,
+        borderRadius: 6,
+        borderSkipped: false
       }]
     };
   };
@@ -217,43 +221,17 @@ const ExpensesChart = ({ data, darkMode, compact = false, detailed = false }) =>
   const expenseCount = data?.count || getSampleTotals().count;
 
   return (
-    <div className={`rounded-xl p-4 sm:p-6 transition-all duration-300 ${
-      darkMode
-        ? 'bg-gray-900 border border-gray-700'
-        : 'bg-white border border-gray-200'
-    } shadow-lg`}>
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-6 space-y-2 sm:space-y-0">
-        <div className="min-w-0 flex-1">
-          <h3 className={`text-base sm:text-lg font-semibold truncate ${
-            darkMode ? 'text-white' : 'text-gray-900'
-          }`}>
-            {detailed ? t('finance.expensesAnalysis') : t('finance.expenses.title')}
-          </h3>
-          <p className={`text-xs sm:text-sm ${
+    <div className="h-full">
+      {/* Summary Info */}
+      {!compact && (
+        <div className="mb-6">
+          <div className={`text-sm font-medium ${
             darkMode ? 'text-gray-400' : 'text-gray-600'
           }`}>
-            {formatCurrency(totalExpenses)} • {expenseCount} {t('finance.transactions')}
-          </p>
+            {formatCurrency(totalExpenses)} • {expenseCount} transactions
+          </div>
         </div>
-
-        {detailed && (
-          <select
-            value={period}
-            onChange={(e) => setPeriod(e.target.value)}
-            className={`px-3 py-1 rounded-lg text-sm border ${
-              darkMode
-                ? 'bg-gray-800 border-gray-600 text-white'
-                : 'bg-white border-gray-300 text-gray-900'
-            } focus:outline-none focus:ring-2 focus:ring-blue-500`}
-          >
-            <option value="week">{t('finance.periods.week')}</option>
-            <option value="month">{t('finance.periods.month')}</option>
-            <option value="3month">{t('finance.periods.quarter')}</option>
-            <option value="year">{t('finance.periods.year')}</option>
-          </select>
-        )}
-      </div>
+      )}
 
       {loading ? (
         <div className="flex items-center justify-center h-64">
@@ -262,15 +240,10 @@ const ExpensesChart = ({ data, darkMode, compact = false, detailed = false }) =>
       ) : (
         <>
           {/* Charts */}
-          <div className={detailed ? 'grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6' : ''}>
+          <div className={detailed ? 'grid grid-cols-1 lg:grid-cols-2 gap-6' : ''}>
             {/* Pie Chart */}
             <div>
-              <h4 className={`text-sm sm:text-md font-medium mb-3 sm:mb-4 ${
-                darkMode ? 'text-gray-200' : 'text-gray-700'
-              }`}>
-                {t('finance.expensesByCategory')}
-              </h4>
-              <div className={`relative ${compact ? 'h-40 sm:h-48' : 'h-56 sm:h-64'}`}>
+              <div className={`relative ${compact ? 'h-48' : 'h-64'}`}>
                 <Doughnut data={getCategoryData()} options={chartOptions} />
               </div>
             </div>

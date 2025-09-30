@@ -78,18 +78,20 @@ const CircularProgress = ({
       role={clickable ? "button" : undefined}
       tabIndex={clickable ? 0 : undefined}
       onKeyDown={clickable ? handleKeyDown : undefined}
-      aria-label={clickable ? "Accéder au dashboard financier" : undefined}
+      aria-label={clickable ? "Accéder à Finance" : undefined}
     >
-      {/* Pluqla cherry-red glow background */}
+      {/* Enhanced glow for light mode visibility */}
       <div
-        className="absolute inset-0 rounded-full blur-xl opacity-20 animate-pulse group-hover:opacity-30 transition-opacity"
+        className={`absolute inset-0 rounded-full blur-xl animate-pulse group-hover:opacity-30 transition-opacity ${
+          darkMode ? 'opacity-20' : 'opacity-30'
+        }`}
         style={{
           background: 'linear-gradient(135deg, #F14545 0%, #FF6B6B 50%, #D73030 100%)',
           transform: 'scale(0.8)'
         }}
       />
 
-      {/* Enhanced shadow for depth */}
+      {/* Enhanced shadow with light mode optimization */}
       <div
         className="absolute rounded-full"
         style={{
@@ -97,7 +99,9 @@ const CircularProgress = ({
           left: size * 0.05,
           right: size * 0.05,
           bottom: size * 0.05,
-          boxShadow: `0 ${size * 0.05}px ${size * 0.15}px rgba(241, 69, 69, 0.2)`
+          boxShadow: darkMode
+            ? `0 ${size * 0.05}px ${size * 0.15}px rgba(241, 69, 69, 0.2)`
+            : `0 ${size * 0.03}px ${size * 0.12}px rgba(241, 69, 69, 0.25), 0 ${size * 0.08}px ${size * 0.25}px rgba(241, 69, 69, 0.1)`
         }}
       />
 
@@ -165,11 +169,11 @@ const CircularProgress = ({
 
       {/* Center content */}
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        {/* Main amount */}
+        {/* Main amount with enhanced readability */}
         <div className={`font-bold transition-all duration-300 ${
           darkMode
             ? 'text-white group-hover:text-[#FF6B6B]'
-            : 'text-[#121212] group-hover:text-[#F14545]'
+            : 'text-[#121212] group-hover:text-[#F14545] drop-shadow-[0_1px_2px_rgba(0,0,0,0.1)]'
         }`}
         style={{ fontSize: size * 0.18 }}>
           {Math.round(animatedAmount)}€

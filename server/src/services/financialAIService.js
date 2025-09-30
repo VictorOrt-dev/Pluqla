@@ -49,10 +49,9 @@ class FinancialAIService {
 
       // Filter out null insights and sort by priority
       return insights
-        .filter(insight => insight !== null)
+        .filter((insight) => insight !== null)
         .sort((a, b) => this.getPriorityWeight(b.priority) - this.getPriorityWeight(a.priority))
         .slice(0, 5); // Limit to top 5 insights
-
     } catch (error) {
       logger.error('Error generating financial insights:', error);
       return [];
@@ -88,24 +87,24 @@ class FinancialAIService {
       if (!user) return null;
 
       // Calculate key metrics
-      const totalAssets = assets.reduce((sum, asset) => sum + asset.totalValue, 0) +
-                         accounts.reduce((sum, acc) => sum + Math.max(0, acc.balance), 0);
+      const totalAssets = assets.reduce((sum, asset) => sum + asset.totalValue, 0)
+                         + accounts.reduce((sum, acc) => sum + Math.max(0, acc.balance), 0);
 
-      const totalLiabilities = liabilities.reduce((sum, liability) => sum + liability.balance, 0) +
-                              accounts.reduce((sum, acc) => sum + Math.abs(Math.min(0, acc.balance)), 0);
+      const totalLiabilities = liabilities.reduce((sum, liability) => sum + liability.balance, 0)
+                              + accounts.reduce((sum, acc) => sum + Math.abs(Math.min(0, acc.balance)), 0);
 
       const netWorth = totalAssets - totalLiabilities;
 
       const monthlyIncome = incomes.reduce((sum, income) => {
-        const factor = income.frequency === 'weekly' ? 4.33 :
-                      income.frequency === 'annual' ? 1/12 :
-                      income.frequency === 'quarterly' ? 1/3 : 1;
+        const factor = income.frequency === 'weekly' ? 4.33
+          : income.frequency === 'annual' ? 1 / 12
+            : income.frequency === 'quarterly' ? 1 / 3 : 1;
         return sum + (income.amount * factor);
       }, 0);
 
       // Analyze spending patterns
       const spendingByCategory = transactions
-        .filter(t => t.amount < 0)
+        .filter((t) => t.amount < 0)
         .reduce((acc, t) => {
           acc[t.category] = (acc[t.category] || 0) + Math.abs(t.amount);
           return acc;
@@ -122,8 +121,8 @@ class FinancialAIService {
           monthlyIncome,
           monthlyExpenses,
           savingsRate: monthlyIncome > 0 ? ((monthlyIncome - monthlyExpenses) / monthlyIncome) * 100 : 0,
-          liquidAssets: accounts.filter(acc => ['checking', 'savings'].includes(acc.type))
-                               .reduce((sum, acc) => sum + acc.balance, 0)
+          liquidAssets: accounts.filter((acc) => ['checking', 'savings'].includes(acc.type))
+            .reduce((sum, acc) => sum + acc.balance, 0)
         },
         accounts,
         assets,
@@ -136,7 +135,6 @@ class FinancialAIService {
         age: user.age || 30, // Default age for calculations
         riskTolerance: user.riskTolerance || 'medium'
       };
-
     } catch (error) {
       logger.error('Error building financial profile:', error);
       return null;
@@ -156,11 +154,11 @@ class FinancialAIService {
 
       const totalSpending = Object.values(spendingByCategory).reduce((sum, amount) => sum + amount, 0);
       const largestCategory = Object.entries(spendingByCategory)
-        .sort(([,a], [,b]) => b - a)[0];
+        .sort(([, a], [, b]) => b - a)[0];
 
       const largestCategoryPercent = (largestCategory[1] / totalSpending) * 100;
 
-      let insight = {
+      const insight = {
         type: this.insightTypes.SPENDING_ANALYSIS,
         priority: largestCategoryPercent > 50 ? this.riskLevels.HIGH : this.riskLevels.MEDIUM,
         confidence: 0.9
@@ -207,11 +205,10 @@ class FinancialAIService {
       insight.metrics = {
         'Largest Category': `${largestCategory[0]} (${largestCategoryPercent.toFixed(1)}%)`,
         'Monthly Spending': `€${totalSpending.toFixed(0)}`,
-        'Categories': Object.keys(spendingByCategory).length
+        Categories: Object.keys(spendingByCategory).length
       };
 
       return insight;
-
     } catch (error) {
       logger.error('Error analyzing spending patterns:', error);
       return null;
@@ -223,19 +220,21 @@ class FinancialAIService {
    */
   async generateInvestmentAdvice(profile, lang) {
     try {
-      const { financial, assets, age, riskTolerance } = profile;
+      const {
+        financial, assets, age, riskTolerance
+      } = profile;
 
       if (financial.liquidAssets < 1000) {
         return null; // Not enough capital for investment advice
       }
 
-      const stockPercent = assets.filter(a => a.type === 'stock').reduce((sum, a) => sum + a.totalValue, 0) / financial.totalAssets * 100;
-      const bondPercent = assets.filter(a => a.type === 'bond').reduce((sum, a) => sum + a.totalValue, 0) / financial.totalAssets * 100;
+      const stockPercent = assets.filter((a) => a.type === 'stock').reduce((sum, a) => sum + a.totalValue, 0) / financial.totalAssets * 100;
+      const bondPercent = assets.filter((a) => a.type === 'bond').reduce((sum, a) => sum + a.totalValue, 0) / financial.totalAssets * 100;
 
       const recommendedStockPercent = Math.max(20, 100 - age);
       const stockDeviation = Math.abs(stockPercent - recommendedStockPercent);
 
-      let insight = {
+      const insight = {
         type: this.insightTypes.INVESTMENT_ADVICE,
         priority: stockDeviation > 20 ? this.riskLevels.MEDIUM : this.riskLevels.LOW,
         confidence: 0.8
@@ -253,7 +252,7 @@ class FinancialAIService {
             'Diversify across different sectors'
           ];
         } else if (stockPercent > recommendedStockPercent + 10) {
-          insight.description += `Consider rebalancing towards more conservative investments.`;
+          insight.description += 'Consider rebalancing towards more conservative investments.';
           insight.actions = [
             'Rebalance portfolio to reduce risk',
             'Add bonds or stable investments',
@@ -278,7 +277,7 @@ class FinancialAIService {
             'Diversifier entre différents secteurs'
           ];
         } else if (stockPercent > recommendedStockPercent + 10) {
-          insight.description += `Considérez rééquilibrer vers des investissements plus conservateurs.`;
+          insight.description += 'Considérez rééquilibrer vers des investissements plus conservateurs.';
           insight.actions = [
             'Rééquilibrer le portefeuille pour réduire le risque',
             'Ajouter des obligations ou investissements stables',
@@ -300,7 +299,6 @@ class FinancialAIService {
       };
 
       return insight;
-
     } catch (error) {
       logger.error('Error generating investment advice:', error);
       return null;
@@ -320,12 +318,12 @@ class FinancialAIService {
 
       const totalDebt = financial.totalLiabilities;
       const debtToIncomeRatio = financial.monthlyIncome > 0 ? (totalDebt / (financial.monthlyIncome * 12)) * 100 : 0;
-      const highInterestDebt = liabilities.filter(l => (l.interestRate || 0) > 10);
+      const highInterestDebt = liabilities.filter((l) => (l.interestRate || 0) > 10);
 
-      let insight = {
+      const insight = {
         type: this.insightTypes.DEBT_OPTIMIZATION,
-        priority: debtToIncomeRatio > 200 ? this.riskLevels.HIGH :
-                 debtToIncomeRatio > 100 ? this.riskLevels.MEDIUM : this.riskLevels.LOW,
+        priority: debtToIncomeRatio > 200 ? this.riskLevels.HIGH
+          : debtToIncomeRatio > 100 ? this.riskLevels.MEDIUM : this.riskLevels.LOW,
         confidence: 0.9
       };
 
@@ -390,7 +388,6 @@ class FinancialAIService {
       };
 
       return insight;
-
     } catch (error) {
       logger.error('Error analyzing debt situation:', error);
       return null;
@@ -422,7 +419,7 @@ class FinancialAIService {
       const recommendedSavingsRate = financial.totalLiabilities > 0 ? 15 : 20; // Lower if debt exists
       const hasEmergencyFund = financial.liquidAssets >= financial.monthlyExpenses * 3;
 
-      let insight = {
+      const insight = {
         type: this.insightTypes.SAVINGS_STRATEGY,
         priority: financial.savingsRate < 10 ? this.riskLevels.HIGH : this.riskLevels.MEDIUM,
         confidence: 0.85
@@ -489,7 +486,6 @@ class FinancialAIService {
       };
 
       return insight;
-
     } catch (error) {
       logger.error('Error optimizing savings strategy:', error);
       return null;
@@ -506,8 +502,7 @@ class FinancialAIService {
       const risks = [];
 
       // Check concentration risk
-      const singleAssetExposure = assets.reduce((max, asset) =>
-        Math.max(max, asset.totalValue / financial.totalAssets), 0) * 100;
+      const singleAssetExposure = assets.reduce((max, asset) => Math.max(max, asset.totalValue / financial.totalAssets), 0) * 100;
 
       if (singleAssetExposure > 20) {
         risks.push(lang === 'en' ? 'High concentration in single asset' : 'Forte concentration dans un seul actif');
@@ -544,7 +539,6 @@ class FinancialAIService {
           'Liquidity Ratio': `${liquidityRatio.toFixed(1)}%`
         }
       };
-
     } catch (error) {
       logger.error('Error assessing financial risks:', error);
       return null;
@@ -573,7 +567,7 @@ class FinancialAIService {
         };
       }
 
-      const behindGoals = goals.filter(g => (g.progressPercentage || 0) < 50);
+      const behindGoals = goals.filter((g) => (g.progressPercentage || 0) < 50);
 
       if (behindGoals.length > 0) {
         return {
@@ -595,7 +589,6 @@ class FinancialAIService {
       }
 
       return null;
-
     } catch (error) {
       logger.error('Error providing goal guidance:', error);
       return null;
@@ -613,9 +606,9 @@ class FinancialAIService {
            - Age: ${profile.age}
            - Risk tolerance: ${profile.riskTolerance}
            - Asset allocation: ${JSON.stringify(profile.assets.reduce((acc, a) => {
-             acc[a.type] = (acc[a.type] || 0) + a.totalValue;
-             return acc;
-           }, {}))}
+    acc[a.type] = (acc[a.type] || 0) + a.totalValue;
+    return acc;
+  }, {}))}
 
            Provide 2-3 actionable market insights in English. Format as JSON array with objects having 'title', 'description', 'priority', 'actions' fields.`
         : `Basé sur les conditions de marché actuelles et ce profil utilisateur:
@@ -623,20 +616,19 @@ class FinancialAIService {
            - Âge: ${profile.age}
            - Tolérance au risque: ${profile.riskTolerance}
            - Allocation d'actifs: ${JSON.stringify(profile.assets.reduce((acc, a) => {
-             acc[a.type] = (acc[a.type] || 0) + a.totalValue;
-             return acc;
-           }, {}))}
+    acc[a.type] = (acc[a.type] || 0) + a.totalValue;
+    return acc;
+  }, {}))}
 
            Fournissez 2-3 insights de marché actionnables en français. Format JSON array avec objets ayant les champs 'title', 'description', 'priority', 'actions'.`;
 
       const aiInsights = await aiService.getAISuggestions('financial_market', prompt, lang);
 
-      return Array.isArray(aiInsights) ? aiInsights.map(insight => ({
+      return Array.isArray(aiInsights) ? aiInsights.map((insight) => ({
         ...insight,
         type: this.insightTypes.INVESTMENT_ADVICE,
         confidence: 0.7 // AI-generated insights have lower confidence
       })) : [];
-
     } catch (error) {
       logger.error('Error generating market insights:', error);
       return [];

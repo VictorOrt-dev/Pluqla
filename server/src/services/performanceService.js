@@ -16,7 +16,7 @@ class PerformanceMonitor {
       api: new Map(), // endpoint -> { totalTime, count, slowQueries }
       database: new Map(), // query -> { totalTime, count, slowQueries }
       slowQueriesThreshold: 1000, // 1 second
-      slowApiThreshold: 2000, // 2 seconds
+      slowApiThreshold: 2000 // 2 seconds
     };
   }
 

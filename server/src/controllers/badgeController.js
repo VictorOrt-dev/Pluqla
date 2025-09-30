@@ -16,10 +16,10 @@ const badgeController = {
       });
 
       const groupedBadges = {
-        common: badges.filter(b => b.rarity === 'common'),
-        rare: badges.filter(b => b.rarity === 'rare'),
-        epic: badges.filter(b => b.rarity === 'epic'),
-        legendary: badges.filter(b => b.rarity === 'legendary')
+        common: badges.filter((b) => b.rarity === 'common'),
+        rare: badges.filter((b) => b.rarity === 'rare'),
+        epic: badges.filter((b) => b.rarity === 'epic'),
+        legendary: badges.filter((b) => b.rarity === 'legendary')
       };
 
       logger.info(`✅ ${badges.length} badges récupérés`);
@@ -28,7 +28,6 @@ const badgeController = {
         grouped: groupedBadges,
         total: badges.length
       }, 'Badges récupérés avec succès');
-
     } catch (error) {
       logger.error('Erreur getAllBadges:', error);
       return sendError(res, 'Erreur lors de la récupération des badges', 500);
@@ -75,11 +74,11 @@ const badgeController = {
         }
       });
 
-      const unlockedBadgeIds = userBadges.map(ub => ub.badgeId);
+      const unlockedBadgeIds = userBadges.map((ub) => ub.badgeId);
 
       // Formater les badges avec statut de déverrouillage
-      const badgesWithStatus = allBadges.map(badge => {
-        const userBadge = userBadges.find(ub => ub.badgeId === badge.id);
+      const badgesWithStatus = allBadges.map((badge) => {
+        const userBadge = userBadges.find((ub) => ub.badgeId === badge.id);
         const isUnlocked = unlockedBadgeIds.includes(badge.id);
 
         // Calculer le progrès vers ce badge
@@ -88,28 +87,28 @@ const badgeController = {
         let progressDescription = '';
 
         switch (badge.condition) {
-          case 'points':
-            progress = user.gamificationPoints;
-            progressMax = badge.conditionValue;
-            progressDescription = `${progress}/${progressMax} points`;
-            break;
-          case 'savings':
-            progress = user.savedAmount;
-            progressMax = badge.conditionValue;
-            progressDescription = `${progress}€/${progressMax}€ économisés`;
-            break;
-          case 'streak':
-            progress = user.streak;
-            progressMax = badge.conditionValue;
-            progressDescription = `${progress}/${progressMax} jours consécutifs`;
-            break;
-          case 'transactions':
-            progress = user._count.transactions;
-            progressMax = badge.conditionValue;
-            progressDescription = `${progress}/${progressMax} transactions`;
-            break;
-          default:
-            progressDescription = isUnlocked ? 'Débloqué' : 'Condition spéciale';
+        case 'points':
+          progress = user.gamificationPoints;
+          progressMax = badge.conditionValue;
+          progressDescription = `${progress}/${progressMax} points`;
+          break;
+        case 'savings':
+          progress = user.savedAmount;
+          progressMax = badge.conditionValue;
+          progressDescription = `${progress}€/${progressMax}€ économisés`;
+          break;
+        case 'streak':
+          progress = user.streak;
+          progressMax = badge.conditionValue;
+          progressDescription = `${progress}/${progressMax} jours consécutifs`;
+          break;
+        case 'transactions':
+          progress = user._count.transactions;
+          progressMax = badge.conditionValue;
+          progressDescription = `${progress}/${progressMax} transactions`;
+          break;
+        default:
+          progressDescription = isUnlocked ? 'Débloqué' : 'Condition spéciale';
         }
 
         return {
@@ -137,10 +136,10 @@ const badgeController = {
         completionPercentage: Math.round((userBadges.length / allBadges.length) * 100),
         totalPoints: userBadges.reduce((sum, ub) => sum + ub.badge.points, 0),
         byRarity: {
-          common: userBadges.filter(ub => ub.badge.rarity === 'common').length,
-          rare: userBadges.filter(ub => ub.badge.rarity === 'rare').length,
-          epic: userBadges.filter(ub => ub.badge.rarity === 'epic').length,
-          legendary: userBadges.filter(ub => ub.badge.rarity === 'legendary').length
+          common: userBadges.filter((ub) => ub.badge.rarity === 'common').length,
+          rare: userBadges.filter((ub) => ub.badge.rarity === 'rare').length,
+          epic: userBadges.filter((ub) => ub.badge.rarity === 'epic').length,
+          legendary: userBadges.filter((ub) => ub.badge.rarity === 'legendary').length
         }
       };
 
@@ -150,7 +149,6 @@ const badgeController = {
         stats,
         recentlyUnlocked: userBadges.slice(0, 3)
       }, 'Badges utilisateur récupérés avec succès');
-
     } catch (error) {
       logger.error('Erreur getUserBadges:', error);
       return sendError(res, 'Erreur lors de la récupération des badges utilisateur', 500);
@@ -207,23 +205,23 @@ const badgeController = {
       let conditionMet = false;
 
       switch (badge.condition) {
-        case 'points':
-          conditionMet = user.gamificationPoints >= badge.conditionValue;
-          break;
-        case 'savings':
-          conditionMet = user.savedAmount >= badge.conditionValue;
-          break;
-        case 'streak':
-          conditionMet = user.streak >= badge.conditionValue;
-          break;
-        case 'transactions':
-          conditionMet = user._count.transactions >= badge.conditionValue;
-          break;
-        case 'manual':
-          conditionMet = true; // Badge manuel
-          break;
-        default:
-          conditionMet = false;
+      case 'points':
+        conditionMet = user.gamificationPoints >= badge.conditionValue;
+        break;
+      case 'savings':
+        conditionMet = user.savedAmount >= badge.conditionValue;
+        break;
+      case 'streak':
+        conditionMet = user.streak >= badge.conditionValue;
+        break;
+      case 'transactions':
+        conditionMet = user._count.transactions >= badge.conditionValue;
+        break;
+      case 'manual':
+        conditionMet = true; // Badge manuel
+        break;
+      default:
+        conditionMet = false;
       }
 
       if (!conditionMet) {
@@ -263,7 +261,6 @@ const badgeController = {
         unlockedAt: result.unlockedAt,
         pointsEarned: badge.points
       }, 'Badge débloqué avec succès', 201);
-
     } catch (error) {
       logger.error('Erreur unlockBadge:', error);
       return sendError(res, 'Erreur lors du déverrouillage du badge', 500);
@@ -303,7 +300,7 @@ const badgeController = {
         select: { badgeId: true }
       });
 
-      const unlockedBadgeIds = userBadges.map(ub => ub.badgeId);
+      const unlockedBadgeIds = userBadges.map((ub) => ub.badgeId);
 
       // Vérifier les conditions pour chaque badge non débloqué
       const eligibleBadges = [];
@@ -316,20 +313,20 @@ const badgeController = {
         let conditionMet = false;
 
         switch (badge.condition) {
-          case 'points':
-            conditionMet = user.gamificationPoints >= badge.conditionValue;
-            break;
-          case 'savings':
-            conditionMet = user.savedAmount >= badge.conditionValue;
-            break;
-          case 'streak':
-            conditionMet = user.streak >= badge.conditionValue;
-            break;
-          case 'transactions':
-            conditionMet = user._count.transactions >= badge.conditionValue;
-            break;
-          default:
-            continue; // Ignorer les badges manuels ou avec conditions spéciales
+        case 'points':
+          conditionMet = user.gamificationPoints >= badge.conditionValue;
+          break;
+        case 'savings':
+          conditionMet = user.savedAmount >= badge.conditionValue;
+          break;
+        case 'streak':
+          conditionMet = user.streak >= badge.conditionValue;
+          break;
+        case 'transactions':
+          conditionMet = user._count.transactions >= badge.conditionValue;
+          break;
+        default:
+          continue; // Ignorer les badges manuels ou avec conditions spéciales
         }
 
         if (conditionMet) {
@@ -348,7 +345,6 @@ const badgeController = {
           transactions: user._count.transactions
         }
       }, 'Vérification des conditions terminée');
-
     } catch (error) {
       logger.error('Erreur checkBadgeConditions:', error);
       return sendError(res, 'Erreur lors de la vérification des conditions', 500);
@@ -407,7 +403,6 @@ const badgeController = {
           totalPointsEarned += badge.points;
 
           logger.info(`✅ Badge auto-débloqué: ${badge.name} pour utilisateur ${userId}`);
-
         } catch (error) {
           logger.error(`Erreur déverrouillage badge ${badge.id}:`, error);
           // Continue avec les autres badges
@@ -416,14 +411,13 @@ const badgeController = {
 
       logger.info(`✅ ${unlockedBadges.length} badges auto-débloqués pour l'utilisateur: ${userId}`);
       return sendSuccess(res, {
-        unlockedBadges: unlockedBadges.map(ub => ({
+        unlockedBadges: unlockedBadges.map((ub) => ({
           badge: ub.badge,
           unlockedAt: ub.unlockedAt
         })),
         count: unlockedBadges.length,
         totalPointsEarned
       }, 'Badges débloqués automatiquement', 201);
-
     } catch (error) {
       logger.error('Erreur autoUnlockEligibleBadges:', error);
       return sendError(res, 'Erreur lors du déverrouillage automatique', 500);
@@ -455,7 +449,7 @@ const badgeController = {
       select: { badgeId: true }
     });
 
-    const unlockedBadgeIds = userBadges.map(ub => ub.badgeId);
+    const unlockedBadgeIds = userBadges.map((ub) => ub.badgeId);
     const eligibleBadges = [];
 
     for (const badge of allBadges) {
@@ -466,18 +460,18 @@ const badgeController = {
       let conditionMet = false;
 
       switch (badge.condition) {
-        case 'points':
-          conditionMet = user.gamificationPoints >= badge.conditionValue;
-          break;
-        case 'savings':
-          conditionMet = user.savedAmount >= badge.conditionValue;
-          break;
-        case 'streak':
-          conditionMet = user.streak >= badge.conditionValue;
-          break;
-        case 'transactions':
-          conditionMet = user._count.transactions >= badge.conditionValue;
-          break;
+      case 'points':
+        conditionMet = user.gamificationPoints >= badge.conditionValue;
+        break;
+      case 'savings':
+        conditionMet = user.savedAmount >= badge.conditionValue;
+        break;
+      case 'streak':
+        conditionMet = user.streak >= badge.conditionValue;
+        break;
+      case 'transactions':
+        conditionMet = user._count.transactions >= badge.conditionValue;
+        break;
       }
 
       if (conditionMet) {
@@ -535,7 +529,6 @@ const badgeController = {
         leaderboard: formattedLeaderboard,
         total: leaderboard.length
       }, 'Classement des badges récupéré avec succès');
-
     } catch (error) {
       logger.error('Erreur getBadgeLeaderboard:', error);
       return sendError(res, 'Erreur lors de la récupération du classement', 500);

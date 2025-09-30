@@ -11,27 +11,37 @@ const cacheService = require('./cacheService');
  */
 class BankIntegrationService {
   constructor() {
-    this.encryptionKey = process.env.BANK_ENCRYPTION_KEY || crypto.randomBytes(32);
+    // BANK_ENCRYPTION_KEY is REQUIRED for secure credential storage
+    const envKey = process.env.BANK_ENCRYPTION_KEY;
+    if (!envKey) {
+      throw new Error('BANK_ENCRYPTION_KEY is required in environment variables (64 hex characters = 32 bytes)');
+    }
+
+    this.encryptionKey = Buffer.from(envKey, 'hex');
+    if (this.encryptionKey.length !== 32) {
+      throw new Error('BANK_ENCRYPTION_KEY must be exactly 32 bytes (64 hex characters)');
+    }
+
     this.supportedProviders = {
-      'bnp_paribas': {
+      bnp_paribas: {
         name: 'BNP Paribas',
         apiUrl: process.env.BNP_API_URL,
         authType: 'oauth2',
         features: ['accounts', 'transactions', 'balances']
       },
-      'credit_agricole': {
+      credit_agricole: {
         name: 'Crédit Agricole',
         apiUrl: process.env.CA_API_URL,
         authType: 'oauth2',
         features: ['accounts', 'transactions', 'balances']
       },
-      'bridge_api': {
+      bridge_api: {
         name: 'Bridge API (Multi-bank)',
         apiUrl: 'https://api.bridgeapi.io',
         authType: 'api_key',
         features: ['accounts', 'transactions', 'balances', 'investments']
       },
-      'budget_insight': {
+      budget_insight: {
         name: 'Budget Insight (Aggregator)',
         apiUrl: 'https://api.budget-insight.com',
         authType: 'oauth2',
@@ -85,7 +95,6 @@ class BankIntegrationService {
 
       logger.info(`Bank account connected: ${account.id} for user ${userId} via ${provider}`);
       return { success: true, account };
-
     } catch (error) {
       logger.error('Bank account connection failed:', error);
       return { success: false, error: error.message };
@@ -138,7 +147,6 @@ class BankIntegrationService {
         transactionsCount: processedTransactions.length,
         newBalance: accountData.balance
       };
-
     } catch (error) {
       logger.error(`Account sync failed for ${accountId}:`, error);
 
@@ -166,7 +174,7 @@ class BankIntegrationService {
       });
 
       const results = await Promise.allSettled(
-        accounts.map(account => this.syncAccount(account.id))
+        accounts.map((account) => this.syncAccount(account.id))
       );
 
       const summary = {
@@ -192,7 +200,6 @@ class BankIntegrationService {
 
       logger.info(`User ${userId} sync completed: ${summary.successful}/${summary.total} accounts`);
       return summary;
-
     } catch (error) {
       logger.error(`User sync failed for ${userId}:`, error);
       throw error;
@@ -211,15 +218,14 @@ class BankIntegrationService {
 
       // Mock implementation - replace with actual API calls
       switch (provider) {
-        case 'bridge_api':
-          return await this.testBridgeConnection(credentials);
-        case 'budget_insight':
-          return await this.testBudgetInsightConnection(credentials);
-        default:
-          // For specific banks, implement their auth flow
-          return { success: true, message: 'Connection test passed' };
+      case 'bridge_api':
+        return await this.testBridgeConnection(credentials);
+      case 'budget_insight':
+        return await this.testBudgetInsightConnection(credentials);
+      default:
+        // For specific banks, implement their auth flow
+        return { success: true, message: 'Connection test passed' };
       }
-
     } catch (error) {
       return { success: false, error: error.message };
     }
@@ -239,23 +245,23 @@ class BankIntegrationService {
     let accountData;
 
     switch (provider) {
-      case 'bridge_api':
-        accountData = await this.fetchBridgeAccountData(credentials);
-        break;
-      case 'budget_insight':
-        accountData = await this.fetchBudgetInsightAccountData(credentials);
-        break;
-      default:
-        // Mock data for development
-        accountData = {
-          id: `ext_${Date.now()}`,
-          name: 'Compte Courant',
-          type: 'checking',
-          balance: Math.random() * 10000,
-          currency: 'EUR',
-          accountNumber: '12345678901234567890',
-          bankName: this.supportedProviders[provider].name
-        };
+    case 'bridge_api':
+      accountData = await this.fetchBridgeAccountData(credentials);
+      break;
+    case 'budget_insight':
+      accountData = await this.fetchBudgetInsightAccountData(credentials);
+      break;
+    default:
+      // Mock data for development
+      accountData = {
+        id: `ext_${Date.now()}`,
+        name: 'Compte Courant',
+        type: 'checking',
+        balance: Math.random() * 10000,
+        currency: 'EUR',
+        accountNumber: '12345678901234567890',
+        bankName: this.supportedProviders[provider].name
+      };
     }
 
     // Cache for 5 minutes
@@ -271,15 +277,14 @@ class BankIntegrationService {
       const sinceDate = since || new Date(Date.now() - 30 * 24 * 60 * 60 * 1000); // Last 30 days
 
       switch (provider) {
-        case 'bridge_api':
-          return await this.fetchBridgeTransactions(credentials, sinceDate);
-        case 'budget_insight':
-          return await this.fetchBudgetInsightTransactions(credentials, sinceDate);
-        default:
-          // Mock transactions for development
-          return this.generateMockTransactions(10);
+      case 'bridge_api':
+        return await this.fetchBridgeTransactions(credentials, sinceDate);
+      case 'budget_insight':
+        return await this.fetchBudgetInsightTransactions(credentials, sinceDate);
+      default:
+        // Mock transactions for development
+        return this.generateMockTransactions(10);
       }
-
     } catch (error) {
       logger.error(`Failed to fetch transactions from ${provider}:`, error);
       return [];
@@ -325,7 +330,6 @@ class BankIntegrationService {
         });
 
         processedTransactions.push(transaction);
-
       } catch (error) {
         logger.error(`Failed to process transaction ${rawTransaction.id}:`, error);
       }
@@ -348,7 +352,6 @@ class BankIntegrationService {
       // Fall back to AI categorization
       const aiCategory = await this.getAICategory(transaction);
       return aiCategory || { category: 'other', subcategory: 'uncategorized' };
-
     } catch (error) {
       logger.error('Transaction categorization failed:', error);
       return { category: 'other', subcategory: 'uncategorized' };
@@ -409,20 +412,74 @@ class BankIntegrationService {
   }
 
   /**
-   * Encryption utilities
+   * Secure credential encryption using AES-256-GCM
    */
   encryptCredentials(credentials) {
-    const cipher = crypto.createCipher('aes-256-cbc', this.encryptionKey);
-    let encrypted = cipher.update(JSON.stringify(credentials), 'utf8', 'hex');
-    encrypted += cipher.final('hex');
-    return encrypted;
+    try {
+      const algorithm = 'aes-256-gcm';
+      const iv = crypto.randomBytes(12); // 12 bytes for GCM
+      const cipher = crypto.createCipheriv(algorithm, this.encryptionKey, iv);
+
+      let encrypted = cipher.update(JSON.stringify(credentials), 'utf8', 'hex');
+      encrypted += cipher.final('hex');
+
+      const authTag = cipher.getAuthTag();
+
+      // Format: base64(iv:authTag:ciphertext)
+      const combined = Buffer.concat([
+        iv,
+        authTag,
+        Buffer.from(encrypted, 'hex')
+      ]);
+
+      return combined.toString('base64');
+    } catch (error) {
+      logger.error('Credential encryption failed:', error);
+      throw new Error('Failed to encrypt bank credentials');
+    }
   }
 
   decryptCredentials(encryptedCredentials) {
-    const decipher = crypto.createDecipher('aes-256-cbc', this.encryptionKey);
-    let decrypted = decipher.update(encryptedCredentials, 'hex', 'utf8');
-    decrypted += decipher.final('utf8');
-    return JSON.parse(decrypted);
+    try {
+      // Support legacy format during migration
+      if (encryptedCredentials.indexOf(':') === -1 && encryptedCredentials.length > 100) {
+        return this.decryptLegacyCredentials(encryptedCredentials);
+      }
+
+      const algorithm = 'aes-256-gcm';
+      const combined = Buffer.from(encryptedCredentials, 'base64');
+
+      // Extract components
+      const iv = combined.slice(0, 12);
+      const authTag = combined.slice(12, 28); // 16 bytes
+      const encrypted = combined.slice(28);
+
+      const decipher = crypto.createDecipheriv(algorithm, this.encryptionKey, iv);
+      decipher.setAuthTag(authTag);
+
+      let decrypted = decipher.update(encrypted, null, 'utf8');
+      decrypted += decipher.final('utf8');
+
+      return JSON.parse(decrypted);
+    } catch (error) {
+      logger.error('Credential decryption failed:', error);
+      throw new Error('Failed to decrypt bank credentials');
+    }
+  }
+
+  /**
+   * Legacy decryption for migration purposes
+   */
+  decryptLegacyCredentials(encryptedCredentials) {
+    try {
+      logger.warn('Using legacy credential decryption - schedule migration');
+      // This is a fallback for old crypto.createCipher format
+      // In production, implement a migration script to re-encrypt all credentials
+      throw new Error('Legacy credentials detected - migration required');
+    } catch (error) {
+      logger.error('Legacy credential decryption failed:', error);
+      throw new Error('Cannot decrypt legacy credentials - manual re-authentication required');
+    }
   }
 
   /**
@@ -430,11 +487,11 @@ class BankIntegrationService {
    */
   mapAccountType(externalType) {
     const typeMapping = {
-      'current': 'checking',
-      'savings': 'savings',
-      'investment': 'investment',
-      'loan': 'loan',
-      'credit_card': 'credit'
+      current: 'checking',
+      savings: 'savings',
+      investment: 'investment',
+      loan: 'loan',
+      credit_card: 'credit'
     };
     return typeMapping[externalType] || 'checking';
   }

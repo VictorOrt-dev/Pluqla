@@ -13,7 +13,9 @@
  */
 
 const { body, query, file } = require('express-validator');
-const { customValidators, processValidationResults, sanitizeInputs, ValidationUtils } = require('./validationUtils');
+const {
+  customValidators, processValidationResults, sanitizeInputs, ValidationUtils
+} = require('./validationUtils');
 
 /**
  * AI Chat Validation
@@ -68,7 +70,7 @@ const validateAIChat = [
 
         // Encoding attempts
         /%3C%73%63%72%69%70%74/i, // URL encoded <script
-        /\\u003c\\u0073\\u0063\\u0072\\u0069\\u0070\\u0074/i, // Unicode encoded <script
+        /\\u003c\\u0073\\u0063\\u0072\\u0069\\u0070\\u0074/i // Unicode encoded <script
       ];
 
       for (const pattern of dangerousPatterns) {

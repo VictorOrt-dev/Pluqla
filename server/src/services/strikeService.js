@@ -75,14 +75,13 @@ class StrikeService {
         previousStreak: user.streak,
         newStreak: updatedUser.streak,
         isNewStreak,
-        lastSavingDate: lastSavingDate?.toISOString(),
+        lastSavingDate: lastSavingDate?.toISOString()
       });
 
       return {
         strike: updatedUser.streak,
         isNewStreak
       };
-
     } catch (error) {
       this.logger.error('Failed to update user strike:', error);
       throw new Error('Failed to update strike');
@@ -112,7 +111,6 @@ class StrikeService {
         strike: user.streak,
         lastSavingDate: user.lastSavingDate
       };
-
     } catch (error) {
       this.logger.error('Failed to get current strike:', error);
       throw new Error('Failed to get current strike');
@@ -179,7 +177,6 @@ class StrikeService {
         strike: user.streak,
         wasReset: false
       };
-
     } catch (error) {
       this.logger.error('Failed to check and reset strike:', error);
       throw new Error('Failed to check strike status');
@@ -212,7 +209,6 @@ class StrikeService {
         bestStreak: user.streak, // TODO: ajouter un champ bestStreak au modèle User
         lastSavingDate: user.lastSavingDate
       };
-
     } catch (error) {
       this.logger.error('Failed to get strike stats:', error);
       throw new Error('Failed to get strike statistics');

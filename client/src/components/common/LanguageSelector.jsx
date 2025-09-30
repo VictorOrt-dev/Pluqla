@@ -53,8 +53,27 @@ const LanguageSelector = ({
 
   const handleLanguageChange = async (langCode) => {
     try {
-      await changeLanguage(langCode);
+      console.log(`[LanguageSelector] 🎯 Starting language change to: ${langCode}`);
+      console.log(`[LanguageSelector] 🔒 Authentication state before change: preserved`);
+
+      const result = await changeLanguage(langCode);
       setIsOpen(false);
+
+      if (result) {
+        console.log(`[LanguageSelector] ✅ Language changed successfully to: ${langCode}`);
+        console.log(`[LanguageSelector] 🔒 Authentication state after change: should remain preserved`);
+
+        // Force a small delay to ensure the language has been set
+        setTimeout(() => {
+          // Force re-render by triggering a custom event
+          window.dispatchEvent(new CustomEvent('languageChanged', {
+            detail: { language: langCode }
+          }));
+          console.log(`[LanguageSelector] 📡 Custom languageChanged event dispatched`);
+        }, 100);
+      } else {
+        console.error(`[LanguageSelector] ❌ Failed to change language to: ${langCode}`);
+      }
 
       // Analytics event si disponible
       if (window.gtag) {
@@ -112,8 +131,8 @@ const LanguageSelector = ({
                   : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
-              <span className="mr-1">{lang.flag}</span>
-              {lang.nativeName}
+              <span className="mr-1">{lang?.flag || '🏳️'}</span>
+              {lang?.nativeName || langCode}
             </button>
           );
         })}
@@ -138,9 +157,9 @@ const LanguageSelector = ({
                   ? 'bg-blue-100 dark:bg-blue-900 scale-110'
                   : 'hover:bg-gray-100 dark:hover:bg-gray-800'
               }`}
-              title={lang.nativeName}
+              title={lang?.nativeName || langCode}
             >
-              {lang.flag}
+              {lang?.flag || '🏳️'}
             </button>
           );
         })}
@@ -155,9 +174,9 @@ const LanguageSelector = ({
         onClick={() => setIsOpen(!isOpen)}
         className={`flex items-center space-x-2 px-3 py-2 rounded-lg border transition-all ${
           darkMode
-            ? 'border-gray-700 bg-gray-900 text-white hover:bg-gray-800'
-            : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-        } ${isOpen ? 'ring-2 ring-blue-500 ring-opacity-20' : ''}`}
+            ? 'border-gray-600 bg-gray-800/50 text-white hover:bg-gray-700 hover:border-[#F14545]/50'
+            : 'border-gray-300 bg-white/90 text-gray-700 hover:bg-gray-50 hover:border-[#F14545]/40'
+        } ${isOpen ? 'ring-2 ring-[#F14545]/30 border-[#F14545]/50' : ''} backdrop-blur-sm`}
       >
         <span className="text-lg">{getCurrentLanguageData().flag}</span>
         {showLabels && (
@@ -189,13 +208,13 @@ const LanguageSelector = ({
           />
 
           {/* Menu dropdown */}
-          <div className={`absolute right-0 mt-2 w-48 rounded-lg shadow-lg border z-20 ${
+          <div className={`absolute right-0 mt-2 w-48 rounded-lg shadow-xl border z-20 ${
             darkMode
-              ? 'border-gray-700 bg-gray-900'
-              : 'border-gray-200 bg-white'
-          }`}>
+              ? 'border-gray-600 bg-gray-800/95 backdrop-blur-md'
+              : 'border-gray-200 bg-white/95 backdrop-blur-md'
+          } shadow-[#F14545]/10`}>
             <div className="py-1">
-              {supportedLanguages.map((langCode) => {
+              {supportedLanguages.filter(langCode => languages[langCode]).map((langCode) => {
                 const lang = languages[langCode];
                 const isActive = currentLang === langCode;
 
@@ -213,14 +232,14 @@ const LanguageSelector = ({
                         : 'text-gray-700 hover:bg-gray-100'
                     }`}
                   >
-                    <span className="text-lg">{lang.flag}</span>
+                    <span className="text-lg">{lang?.flag || '🏳️'}</span>
                     <div className="flex-1 text-left">
-                      <div className="font-medium">{lang.nativeName}</div>
+                      <div className="font-medium">{lang?.nativeName || langCode}</div>
                       {showLabels && (
                         <div className={`text-xs ${
                           darkMode ? 'text-gray-400' : 'text-gray-500'
                         }`}>
-                          {lang.name}
+                          {lang?.name || langCode}
                         </div>
                       )}
                     </div>

@@ -137,188 +137,179 @@ const generateRateLimitKey = (req, operationType, dimension = 'user') => {
   const prefix = `pluqla:rl:${operationType}`;
 
   switch (dimension) {
-    case 'user':
-      return `${prefix}:user:${req.user?.id || 'anonymous'}`;
-    case 'ip':
-      return `${prefix}:ip:${req.ip}`;
-    case 'apikey':
-      return `${prefix}:apikey:${req.headers['x-api-key'] || 'none'}`;
-    default:
-      return `${prefix}:combined:${req.user?.id || req.ip}`;
+  case 'user':
+    return `${prefix}:user:${req.user?.id || 'anonymous'}`;
+  case 'ip':
+    return `${prefix}:ip:${req.ip}`;
+  case 'apikey':
+    return `${prefix}:apikey:${req.headers['x-api-key'] || 'none'}`;
+  default:
+    return `${prefix}:combined:${req.user?.id || req.ip}`;
   }
 };
 
 /**
  * Enhanced rate limit handler with detailed logging
  */
-const createRateLimitHandler = (operationType) => {
-  return (req, res, next, options) => {
-    const tier = getUserSubscriptionTier(req);
-    const userAgent = req.get('User-Agent') || 'Unknown';
+const createRateLimitHandler = (operationType) => (req, res, next, options) => {
+  const tier = getUserSubscriptionTier(req);
+  const userAgent = req.get('User-Agent') || 'Unknown';
 
-    // Log rate limit violation with comprehensive context
-    logger.warn('Financial rate limit exceeded', {
-      operation: operationType,
-      tier,
-      ip: req.ip,
-      userId: req.user?.id,
-      url: req.originalUrl,
-      method: req.method,
-      userAgent,
-      remainingTime: options.windowMs,
-      timestamp: new Date().toISOString()
-    });
+  // Log rate limit violation with comprehensive context
+  logger.warn('Financial rate limit exceeded', {
+    operation: operationType,
+    tier,
+    ip: req.ip,
+    userId: req.user?.id,
+    url: req.originalUrl,
+    method: req.method,
+    userAgent,
+    remainingTime: options.windowMs,
+    timestamp: new Date().toISOString()
+  });
 
-    // Send structured error response
-    const retryAfter = Math.ceil(options.windowMs / 1000);
-    const errorMessage = tier === 'free'
-      ? `Rate limit exceeded for free tier. Upgrade to premium for higher limits. Try again in ${retryAfter} seconds.`
-      : `Rate limit exceeded for ${operationType}. Try again in ${retryAfter} seconds.`;
+  // Send structured error response
+  const retryAfter = Math.ceil(options.windowMs / 1000);
+  const errorMessage = tier === 'free'
+    ? `Rate limit exceeded for free tier. Upgrade to premium for higher limits. Try again in ${retryAfter} seconds.`
+    : `Rate limit exceeded for ${operationType}. Try again in ${retryAfter} seconds.`;
 
-    // Set rate limit headers
-    res.set({
-      'X-RateLimit-Limit': options.max,
-      'X-RateLimit-Remaining': 0,
-      'X-RateLimit-Reset': new Date(Date.now() + options.windowMs).toISOString(),
-      'Retry-After': retryAfter
-    });
+  // Set rate limit headers
+  res.set({
+    'X-RateLimit-Limit': options.max,
+    'X-RateLimit-Remaining': 0,
+    'X-RateLimit-Reset': new Date(Date.now() + options.windowMs).toISOString(),
+    'Retry-After': retryAfter
+  });
 
-    return sendError(res, errorMessage, 429);
-  };
+  return sendError(res, errorMessage, 429);
 };
 
 /**
  * Create financial rate limiter with advanced features
  */
-const createFinancialRateLimit = (operationType, options = {}) => {
-  return (req, res, next) => {
-    // Skip rate limiting for internal service calls
-    if (req.headers['x-internal-service'] === 'true') {
-      return next();
+const createFinancialRateLimit = (operationType, options = {}) => (req, res, next) => {
+  // Skip rate limiting for internal service calls
+  if (req.headers['x-internal-service'] === 'true') {
+    return next();
+  }
+
+  // Skip in development if specified
+  if (process.env.NODE_ENV === 'development' && process.env.SKIP_RATE_LIMIT === 'true') {
+    return next();
+  }
+
+  try {
+    const tier = getUserSubscriptionTier(req);
+    const tierConfig = SUBSCRIPTION_TIERS[tier];
+    const operationConfig = tierConfig[operationType];
+
+    if (!operationConfig) {
+      logger.error(`No rate limit configuration found for operation: ${operationType}`);
+      return next(); // Allow request if no config found
     }
 
-    // Skip in development if specified
-    if (process.env.NODE_ENV === 'development' && process.env.SKIP_RATE_LIMIT === 'true') {
-      return next();
-    }
+    // Create limiter with tier-specific configuration
+    const limiter = rateLimit({
+      windowMs: operationConfig.window,
+      max: operationConfig.requests,
 
-    try {
-      const tier = getUserSubscriptionTier(req);
-      const tierConfig = SUBSCRIPTION_TIERS[tier];
-      const operationConfig = tierConfig[operationType];
+      // Use Redis store in production, memory in development
+      store: redisStore || undefined,
 
-      if (!operationConfig) {
-        logger.error(`No rate limit configuration found for operation: ${operationType}`);
-        return next(); // Allow request if no config found
-      }
+      // Multi-dimensional key generation
+      keyGenerator: (req) => generateRateLimitKey(req, operationType, options.dimension || 'user'),
 
-      // Create limiter with tier-specific configuration
-      const limiter = rateLimit({
-        windowMs: operationConfig.window,
-        max: operationConfig.requests,
+      // Enhanced handler with logging
+      handler: createRateLimitHandler(operationType),
 
-        // Use Redis store in production, memory in development
-        store: redisStore || undefined,
+      // Standard headers for client consumption
+      standardHeaders: true,
+      legacyHeaders: false,
 
-        // Multi-dimensional key generation
-        keyGenerator: (req) => generateRateLimitKey(req, operationType, options.dimension || 'user'),
+      // Skip configuration
+      skipSuccessfulRequests: options.skipSuccessful || false,
+      skipFailedRequests: options.skipFailed || false,
 
-        // Enhanced handler with logging
-        handler: createRateLimitHandler(operationType),
-
-        // Standard headers for client consumption
-        standardHeaders: true,
-        legacyHeaders: false,
-
-        // Skip configuration
-        skipSuccessfulRequests: options.skipSuccessful || false,
-        skipFailedRequests: options.skipFailed || false,
-
-        // Skip function for background processes
-        skip: (req) => {
-          // Skip for system health checks
-          if (req.path === '/health' || req.path === '/status') {
-            return true;
-          }
-
-          // Skip for background job endpoints
-          if (req.headers['x-background-job'] === 'true') {
-            return true;
-          }
-
-          return false;
-        },
-
-        // Custom message
-        message: {
-          error: `Rate limit exceeded for ${operationType} operations`,
-          tier,
-          retryAfter: Math.ceil(operationConfig.window / 1000),
-          upgradeMessage: tier === 'free' ? 'Upgrade to premium for higher limits' : null
+      // Skip function for background processes
+      skip: (req) => {
+        // Skip for system health checks
+        if (req.path === '/health' || req.path === '/status') {
+          return true;
         }
-      });
 
-      limiter(req, res, next);
-    } catch (error) {
-      logger.error('Rate limiting error:', error);
-      // Fail open - allow request if rate limiting fails
-      next();
-    }
-  };
+        // Skip for background job endpoints
+        if (req.headers['x-background-job'] === 'true') {
+          return true;
+        }
+
+        return false;
+      },
+
+      // Custom message
+      message: {
+        error: `Rate limit exceeded for ${operationType} operations`,
+        tier,
+        retryAfter: Math.ceil(operationConfig.window / 1000),
+        upgradeMessage: tier === 'free' ? 'Upgrade to premium for higher limits' : null
+      }
+    });
+
+    limiter(req, res, next);
+  } catch (error) {
+    logger.error('Rate limiting error:', error);
+    // Fail open - allow request if rate limiting fails
+    next();
+  }
 };
 
 /**
  * Multi-dimensional rate limiting (combines user + IP limits)
  */
-const createMultiDimensionalRateLimit = (operationType, options = {}) => {
-  return async (req, res, next) => {
-    try {
-      // Create promises for different dimensions
-      const dimensions = ['user', 'ip'];
-      if (req.headers['x-api-key']) {
-        dimensions.push('apikey');
-      }
-
-      const limitPromises = dimensions.map(dimension => {
-        return new Promise((resolve, reject) => {
-          const limiter = createFinancialRateLimit(operationType, { ...options, dimension });
-
-          // Create mock response to capture rate limit result
-          const mockRes = {
-            ...res,
-            status: (code) => ({ json: () => reject({ status: code, dimension }) }),
-            set: () => {},
-            headersSent: false
-          };
-
-          limiter(req, mockRes, (err) => {
-            if (err) reject({ error: err, dimension });
-            else resolve(dimension);
-          });
-        });
-      });
-
-      // Wait for all dimensions to pass
-      await Promise.all(limitPromises);
-      next();
-
-    } catch (rateLimitError) {
-      // If any dimension fails, block the request
-      logger.warn(`Multi-dimensional rate limit failed for ${rateLimitError.dimension}:`, rateLimitError);
-
-      const tier = getUserSubscriptionTier(req);
-      const retryAfter = 60; // Default retry after 1 minute
-
-      res.set({
-        'X-RateLimit-Limit': 'MULTI',
-        'X-RateLimit-Remaining': 0,
-        'X-RateLimit-Reset': new Date(Date.now() + (retryAfter * 1000)).toISOString(),
-        'Retry-After': retryAfter
-      });
-
-      return sendError(res, `Rate limit exceeded. Multiple limits enforced for security.`, 429);
+const createMultiDimensionalRateLimit = (operationType, options = {}) => async (req, res, next) => {
+  try {
+    // Create promises for different dimensions
+    const dimensions = ['user', 'ip'];
+    if (req.headers['x-api-key']) {
+      dimensions.push('apikey');
     }
-  };
+
+    const limitPromises = dimensions.map((dimension) => new Promise((resolve, reject) => {
+      const limiter = createFinancialRateLimit(operationType, { ...options, dimension });
+
+      // Create mock response to capture rate limit result
+      const mockRes = {
+        ...res,
+        status: (code) => ({ json: () => reject({ status: code, dimension }) }),
+        set: () => {},
+        headersSent: false
+      };
+
+      limiter(req, mockRes, (err) => {
+        if (err) reject({ error: err, dimension });
+        else resolve(dimension);
+      });
+    }));
+
+    // Wait for all dimensions to pass
+    await Promise.all(limitPromises);
+    next();
+  } catch (rateLimitError) {
+    // If any dimension fails, block the request
+    logger.warn(`Multi-dimensional rate limit failed for ${rateLimitError.dimension}:`, rateLimitError);
+
+    const tier = getUserSubscriptionTier(req);
+    const retryAfter = 60; // Default retry after 1 minute
+
+    res.set({
+      'X-RateLimit-Limit': 'MULTI',
+      'X-RateLimit-Remaining': 0,
+      'X-RateLimit-Reset': new Date(Date.now() + (retryAfter * 1000)).toISOString(),
+      'Retry-After': retryAfter
+    });
+
+    return sendError(res, 'Rate limit exceeded. Multiple limits enforced for security.', 429);
+  }
 };
 
 /**
@@ -399,7 +390,6 @@ const createBurstRateLimit = (operationType, options = {}) => {
           }
         }
       }
-
     } catch (error) {
       logger.error('Burst rate limiting error:', error);
       next(); // Fail open
@@ -419,7 +409,7 @@ const createProgressiveRateLimit = (operationType) => {
 
     // Increase window time based on violation count
     const baseWindow = SUBSCRIPTION_TIERS.free[operationType]?.window || 15 * 60 * 1000;
-    const multiplier = Math.min(Math.pow(2, violations), 16); // Max 16x multiplier
+    const multiplier = Math.min(2 ** violations, 16); // Max 16x multiplier
     const adjustedWindow = baseWindow * multiplier;
 
     // Create limiter with adjusted window
@@ -469,9 +459,7 @@ const financialRateLimiters = {
 /**
  * Rate limit configuration utility
  */
-const getRateLimitConfig = (tier, operation) => {
-  return SUBSCRIPTION_TIERS[tier]?.[operation] || SUBSCRIPTION_TIERS.free[operation];
-};
+const getRateLimitConfig = (tier, operation) => SUBSCRIPTION_TIERS[tier]?.[operation] || SUBSCRIPTION_TIERS.free[operation];
 
 /**
  * Health check for rate limiting system

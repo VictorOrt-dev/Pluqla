@@ -2,6 +2,7 @@ const OpenAI = require('openai');
 const Anthropic = require('@anthropic-ai/sdk');
 const logger = require('../utils/logger');
 const cacheService = require('./cacheService');
+const { recordAIRequest, recordAICacheHit } = require('./monitoringService');
 
 class AIService {
   constructor() {
@@ -35,6 +36,7 @@ class AIService {
 
       if (cached && Array.isArray(cached)) {
         logger.info(`Suggestions IA récupérées du cache pour ${userId}, catégorie: ${category}`);
+        recordAICacheHit('suggestions');
         return cached;
       }
 
@@ -42,10 +44,22 @@ class AIService {
 
       // Tenter d'utiliser l'IA externe
       if (this.openai || this.anthropic) {
+        const provider = this.openai ? 'openai' : 'anthropic';
+        const startTime = Date.now();
+
         try {
           const aiSuggestions = await this.generateAISuggestions(category, context, language);
           suggestions = Array.isArray(aiSuggestions) ? aiSuggestions : [];
+
+          const duration = (Date.now() - startTime) / 1000;
+          recordAIRequest(provider, 'suggestions', true, duration);
         } catch (aiError) {
+          const duration = (Date.now() - startTime) / 1000;
+          const errorType = aiError.status === 429 ? 'rate_limit' :
+                           aiError.message?.includes('timeout') ? 'timeout' :
+                           'api_error';
+
+          recordAIRequest(provider, 'suggestions', false, duration, errorType);
           logger.warn('Erreur IA externe, fallback vers suggestions statiques:', aiError.message);
           suggestions = [];
         }
@@ -70,7 +84,6 @@ class AIService {
 
       logger.info(`${safeSuggestions.length} suggestions générées pour ${userId}, catégorie: ${category}`);
       return safeSuggestions;
-
     } catch (error) {
       // SECURITY FIX: Never log AI service errors that could contain API keys
       logger.logError(error, {
@@ -137,7 +150,6 @@ class AIService {
 
       // Si aucun service IA n'est configuré
       return [];
-
     } catch (error) {
       // SECURITY FIX: CRITICAL - Never log external AI API errors (contain API keys)
       logger.logError(new Error('AI API request failed'), {
@@ -233,22 +245,21 @@ class AIService {
 
       // Valider et nettoyer les suggestions
       const validSuggestions = suggestions
-        .filter(s => s && typeof s === 'object' && s.title && s.description)
-        .map(s => ({
+        .filter((s) => s && typeof s === 'object' && s.title && s.description)
+        .map((s) => ({
           id: `ai_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           title: String(s.title).substring(0, 100),
           description: String(s.description).substring(0, 500),
           estimatedSavings: parseFloat(s.estimatedSavings) || 0,
           difficulty: ['facile', 'moyen', 'difficile'].includes(s.difficulty) ? s.difficulty : 'moyen',
           timeframe: s.timeframe || '1 semaine',
-          category: category,
+          category,
           source: 'ai',
           createdAt: new Date().toISOString()
         }))
         .slice(0, 5); // Maximum 5 suggestions
 
       return validSuggestions;
-
     } catch (error) {
       // SECURITY FIX: Don't log AI response parsing errors (could contain prompts/API data)
       logger.logError(new Error('AI response parsing failed'), {
@@ -278,11 +289,11 @@ class AIService {
     }
 
     try {
-      const userAnswers = context.userAnswers;
-      const age = userAnswers.find(a => a.key === 'age')?.value;
-      const budget = userAnswers.find(a => a.key === 'monthlyBudget')?.value;
+      const { userAnswers } = context;
+      const age = userAnswers.find((a) => a.key === 'age')?.value;
+      const budget = userAnswers.find((a) => a.key === 'monthlyBudget')?.value;
 
-      return suggestions.map(suggestion => {
+      return suggestions.map((suggestion) => {
         if (!suggestion || typeof suggestion !== 'object') {
           return suggestion;
         }
@@ -342,7 +353,7 @@ class AIService {
       return suggestions
         .sort(() => Math.random() - 0.5) // Mélanger
         .slice(0, 5) // Prendre 5 suggestions
-        .map(s => ({
+        .map((s) => ({
           ...s,
           id: `fallback_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           source: 'fallback',
@@ -575,7 +586,6 @@ class AIService {
 
       const analysis = response.choices[0]?.message?.content;
       return this.parseImageAnalysis(analysis, analysisType);
-
     } catch (error) {
       logger.error('Erreur analyse image IA:', error);
       return this.getDefaultImageAnalysis(analysisType);
@@ -759,7 +769,6 @@ module.exports = {
       return `Merci pour votre question ! Je ne peux pas vous répondre précisément pour le moment,
               mais je vous recommande de consulter nos suggestions d'économies dans l'application.
               N'hésitez pas à réessayer dans quelques minutes.`;
-
     } catch (error) {
       logger.error('Erreur processAIChat:', error);
       return `Désolé, je ne peux pas traiter votre demande pour le moment.

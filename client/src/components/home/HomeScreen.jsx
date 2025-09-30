@@ -32,10 +32,14 @@ const HomeScreen = ({
     <div className={`min-h-screen flex flex-col transition-all duration-300 ${
       darkMode
         ? 'pluqla-bg-dark'
-        : 'bg-gradient-to-br from-[#F9F9F9] via-white to-[#FFF5F5]'
+        : 'bg-gradient-to-b from-[#FAFAFA] via-[#F9F9F9] to-[#F5F5F5]'
     }`}
     style={!darkMode ? {
-      backgroundImage: 'radial-gradient(circle at 20% 80%, rgba(241, 69, 69, 0.03) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(241, 69, 69, 0.02) 0%, transparent 50%)'
+      backgroundImage: `
+        linear-gradient(135deg, rgba(241, 69, 69, 0.02) 0%, transparent 50%),
+        radial-gradient(ellipse at 25% 25%, rgba(241, 69, 69, 0.03) 0%, transparent 60%),
+        radial-gradient(ellipse at 75% 75%, rgba(241, 69, 69, 0.02) 0%, transparent 60%)
+      `
     } : {}}>
       {/* Header simplifié */}
       <Header
@@ -58,7 +62,7 @@ const HomeScreen = ({
             goal={userData.monthlyGoal || 1000}
             darkMode={darkMode}
             animated={true}
-            clickable={true}
+            clickable={false}
           />
         </div>
 
@@ -69,12 +73,12 @@ const HomeScreen = ({
           />
         </div>
 
-        {/* Indicateur de niveau minimaliste en bas */}
+        {/* Enhanced level indicator with premium light mode styling */}
         <div className="mt-8 text-center">
           <div className={`inline-flex items-center space-x-3 px-5 py-3 rounded-2xl shadow-lg border transition-all duration-300 hover:scale-105 ${
             darkMode
               ? 'bg-gradient-to-r from-gray-800 to-gray-700 border-[#F14545]/20 shadow-[0_8px_24px_rgba(241,69,69,0.2)] hover:shadow-[0_12px_32px_rgba(241,69,69,0.3)]'
-              : 'bg-gradient-to-r from-white to-[#FFFAFA] border-[#F14545]/10 shadow-[0_8px_24px_rgba(241,69,69,0.1)] hover:shadow-[0_12px_32px_rgba(241,69,69,0.15)]'
+              : 'bg-gradient-to-r from-white/95 to-[#FAFAFA]/90 border-[#F14545]/15 shadow-[0_4px_16px_rgba(241,69,69,0.12)] hover:shadow-[0_8px_24px_rgba(241,69,69,0.18)] backdrop-blur-sm'
           }`}>
             <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-lg relative" style={{ background: 'var(--pluqla-gradient-main)' }}>
               {/* Effet de glow sur le badge niveau */}

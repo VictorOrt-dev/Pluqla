@@ -14,19 +14,22 @@ const router = express.Router();
 router.use(authenticateToken);
 
 // Routes des strikes avec validation et sécurité
-router.get('/current',
+router.get(
+  '/current',
   rateLimit.standard, // Standard rate limit
   validateCurrentStrike, // Input validation
   strikeController.getCurrentStrike
 );
 
-router.get('/stats',
+router.get(
+  '/stats',
   rateLimit.standard, // Standard rate limit
   validateStrikeStats, // Input validation
   strikeController.getStrikeStats
 );
 
-router.post('/check-reset',
+router.post(
+  '/check-reset',
   rateLimit.strict, // Strict rate limit for critical operations
   validateCheckReset, // Input validation
   strikeController.checkAndResetStrike

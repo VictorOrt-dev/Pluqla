@@ -103,7 +103,6 @@ const categoryController = {
         success: true,
         data: categoryStats
       });
-
     } catch (error) {
       logger.error('Erreur getAllCategories:', error);
       res.status(500).json({
@@ -243,7 +242,7 @@ const categoryController = {
             count: yearlyStats._count.id || 0
           }
         },
-        recentTransactions: recentTransactions.map(t => ({
+        recentTransactions: recentTransactions.map((t) => ({
           id: t.id,
           amount: t.amount,
           description: t.description,
@@ -261,7 +260,6 @@ const categoryController = {
         success: true,
         data: categoryDetails
       });
-
     } catch (error) {
       logger.error('Erreur getCategoryDetails:', error);
       res.status(500).json({
@@ -325,10 +323,10 @@ const categoryController = {
         })
       ]);
 
-      const favoriteIds = new Set(userFavorites.map(f => f.recipeId));
+      const favoriteIds = new Set(userFavorites.map((f) => f.recipeId));
 
       // Enrichir les recettes
-      const enrichedRecipes = recipes.map(recipe => ({
+      const enrichedRecipes = recipes.map((recipe) => ({
         id: recipe.id,
         title: recipe.title,
         description: recipe.description,
@@ -365,7 +363,6 @@ const categoryController = {
           totalCount: enrichedRecipes.length
         }
       });
-
     } catch (error) {
       logger.error('Erreur getRecipes:', error);
       res.status(500).json({
@@ -548,7 +545,7 @@ const categoryController = {
           ...preferences
         },
         lastUpdated: categoryAnswers.length > 0
-          ? Math.max(...categoryAnswers.map(a => new Date(a.updatedAt).getTime()))
+          ? Math.max(...categoryAnswers.map((a) => new Date(a.updatedAt).getTime()))
           : null
       };
 
@@ -556,7 +553,6 @@ const categoryController = {
         success: true,
         data: categoryPreferences
       });
-
     } catch (error) {
       logger.error('Erreur getCategoryPreferences:', error);
       res.status(500).json({

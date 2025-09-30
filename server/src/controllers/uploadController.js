@@ -95,7 +95,6 @@ const uploadController = {
           size: avatarImage.size
         }
       });
-
     } catch (error) {
       logger.error('Erreur uploadAvatar:', error);
       // Nettoyer le fichier en cas d'erreur
@@ -204,7 +203,6 @@ const uploadController = {
           canAnalyze: true
         }
       });
-
     } catch (error) {
       logger.error('Erreur uploadReceipt:', error);
       if (req.file?.path) {
@@ -323,7 +321,6 @@ const uploadController = {
           storageLimit
         }
       });
-
     } catch (error) {
       logger.error('Erreur uploadGeneral:', error);
       if (req.file?.path) {
@@ -469,7 +466,6 @@ const uploadController = {
           freedSpace: file.size
         }
       });
-
     } catch (error) {
       logger.error('Erreur deleteFile:', error);
       res.status(500).json({
@@ -500,18 +496,18 @@ const uploadController = {
       const filters = { userId };
       if (type) {
         switch (type) {
-          case 'avatar':
-            filters.originalName = { contains: 'avatar' };
-            break;
-          case 'receipt':
-            filters.originalName = { contains: 'receipt' };
-            break;
-          case 'image':
-            filters.mimetype = { startsWith: 'image/' };
-            break;
-          case 'pdf':
-            filters.mimetype = 'application/pdf';
-            break;
+        case 'avatar':
+          filters.originalName = { contains: 'avatar' };
+          break;
+        case 'receipt':
+          filters.originalName = { contains: 'receipt' };
+          break;
+        case 'image':
+          filters.mimetype = { startsWith: 'image/' };
+          break;
+        case 'pdf':
+          filters.mimetype = 'application/pdf';
+          break;
         }
       }
 
@@ -544,7 +540,7 @@ const uploadController = {
       ]);
 
       // Enrichir les données des fichiers
-      const enrichedFiles = files.map(file => ({
+      const enrichedFiles = files.map((file) => ({
         ...file,
         url: `/api/upload/file/${file.id}`,
         thumbnailUrl: file.mimetype.startsWith('image/')
@@ -583,7 +579,6 @@ const uploadController = {
           }
         }
       });
-
     } catch (error) {
       logger.error('Erreur getUserFiles:', error);
       res.status(500).json({
@@ -739,7 +734,7 @@ const uploadController = {
         percentage: usagePercentage,
         fileCount: storageStats._count.id || 0,
         isPremium: user.isPremium,
-        breakdown: filesByType.map(type => ({
+        breakdown: filesByType.map((type) => ({
           mimetype: type.mimetype,
           size: type._sum.size || 0,
           count: type._count.id || 0,
@@ -761,7 +756,6 @@ const uploadController = {
         success: true,
         data: quota
       });
-
     } catch (error) {
       logger.error('Erreur getStorageQuota:', error);
       res.status(500).json({
@@ -779,7 +773,7 @@ const uploadController = {
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+    return `${Math.round((bytes / k ** i) * 100) / 100} ${sizes[i]}`;
   },
 
   _getFileType(file) {

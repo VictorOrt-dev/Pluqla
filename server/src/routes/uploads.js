@@ -15,7 +15,7 @@ router.use(authenticateToken);
 const fileIdValidation = [
   param('id')
     .isUUID()
-    .withMessage('ID de fichier invalide'),
+    .withMessage('ID de fichier invalide')
 ];
 
 const imageQueryValidation = [
@@ -34,77 +34,88 @@ const imageQueryValidation = [
   query('format')
     .optional()
     .isIn(['jpeg', 'png', 'webp'])
-    .withMessage('Format non supporté'),
+    .withMessage('Format non supporté')
 ];
 
 // Routes pour l'upload d'images
-router.post('/avatar',
+router.post(
+  '/avatar',
   rateLimit.upload,
   upload.single('avatar'),
   uploadController.uploadAvatar
 );
 
-router.post('/receipt',
+router.post(
+  '/receipt',
   rateLimit.upload,
   upload.single('receipt'),
   uploadController.uploadReceipt
 );
 
-router.post('/clothing',
+router.post(
+  '/clothing',
   rateLimit.upload,
   upload.single('clothing'),
   uploadController.uploadClothingImage
 );
 
-router.post('/general',
+router.post(
+  '/general',
   rateLimit.upload,
   upload.single('image'),
   uploadController.uploadGeneral
 );
 
 // Routes pour l'upload multiple
-router.post('/multiple',
+router.post(
+  '/multiple',
   rateLimit.upload,
   upload.array('images', 5), // Maximum 5 images
   uploadController.uploadMultiple
 );
 
 // Routes pour récupérer les fichiers
-router.get('/:id',
+router.get(
+  '/:id',
   fileIdValidation,
   handleValidationErrors,
   uploadController.getFile
 );
 
-router.get('/:id/download',
+router.get(
+  '/:id/download',
   fileIdValidation,
   handleValidationErrors,
   uploadController.downloadFile
 );
 
 // Routes pour les images avec transformation
-router.get('/:id/image',
+router.get(
+  '/:id/image',
   fileIdValidation,
   imageQueryValidation,
   handleValidationErrors,
   uploadController.getResizedImage
 );
 
-router.get('/:id/thumbnail',
+router.get(
+  '/:id/thumbnail',
   fileIdValidation,
   handleValidationErrors,
   uploadController.getThumbnail
 );
 
 // Routes pour la gestion des fichiers
-router.delete('/:id',
+router.delete(
+  '/:id',
   rateLimit.standard,
   fileIdValidation,
   handleValidationErrors,
   uploadController.deleteFile
 );
 
-router.get('/user/files',
+router.get(
+  '/user/files',
   query('type').optional().isIn(['image', 'document', 'receipt']),
   query('page').optional().isInt({ min: 1 }),
   query('limit').optional().isInt({ min: 1, max: 50 }),
@@ -113,13 +124,15 @@ router.get('/user/files',
 );
 
 // Routes pour les métadonnées des fichiers
-router.get('/:id/metadata',
+router.get(
+  '/:id/metadata',
   fileIdValidation,
   handleValidationErrors,
   uploadController.getFileMetadata
 );
 
-router.put('/:id/metadata',
+router.put(
+  '/:id/metadata',
   rateLimit.standard,
   fileIdValidation,
   handleValidationErrors,
@@ -127,60 +140,70 @@ router.put('/:id/metadata',
 );
 
 // Routes pour la validation et l'analyse des fichiers
-router.post('/:id/analyze',
+router.post(
+  '/:id/analyze',
   rateLimit.ai,
   fileIdValidation,
   handleValidationErrors,
   uploadController.analyzeFile
 );
 
-router.get('/:id/analysis',
+router.get(
+  '/:id/analysis',
   fileIdValidation,
   handleValidationErrors,
   uploadController.getFileAnalysis
 );
 
 // Routes pour les statistiques d'upload
-router.get('/stats/usage',
+router.get(
+  '/stats/usage',
   uploadController.getUploadStats
 );
 
-router.get('/stats/storage',
+router.get(
+  '/stats/storage',
   uploadController.getStorageStats
 );
 
 // Routes pour le nettoyage et la maintenance
-router.delete('/cleanup/temp',
+router.delete(
+  '/cleanup/temp',
   rateLimit.admin,
   uploadController.cleanupTempFiles
 );
 
-router.delete('/cleanup/orphaned',
+router.delete(
+  '/cleanup/orphaned',
   rateLimit.admin,
   uploadController.cleanupOrphanedFiles
 );
 
 // Routes pour la configuration d'upload
-router.get('/config',
+router.get(
+  '/config',
   uploadController.getUploadConfig
 );
 
 // Routes pour les liens de partage temporaires
-router.post('/:id/share',
+router.post(
+  '/:id/share',
   rateLimit.standard,
   fileIdValidation,
   handleValidationErrors,
   uploadController.createShareLink
 );
 
-router.get('/share/:token',
+router.get(
+  '/share/:token',
   param('token').isAlphanumeric(),
   handleValidationErrors,
   uploadController.getSharedFile
 );
 
 // Route pour vérifier l'espace de stockage disponible
-router.get('/storage/quota',
+router.get(
+  '/storage/quota',
   uploadController.getStorageQuota
 );
 

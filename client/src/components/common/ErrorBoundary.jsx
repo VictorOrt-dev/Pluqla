@@ -8,7 +8,7 @@
  */
 
 import React from 'react';
-import { secureLogger } from '../../utils/secureLogger';
+import secureLogger from '../../utils/secureLogger';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {

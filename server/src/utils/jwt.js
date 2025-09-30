@@ -49,10 +49,10 @@ validateJWTSecret(process.env.JWT_EMAIL_SECRET, 'JWT_EMAIL_SECRET');
 validateJWTSecret(process.env.JWT_PASSWORD_RESET_SECRET, 'JWT_PASSWORD_RESET_SECRET');
 
 // Only assign after validation passes
-const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
-const JWT_EMAIL_SECRET = process.env.JWT_EMAIL_SECRET;
-const JWT_PASSWORD_RESET_SECRET = process.env.JWT_PASSWORD_RESET_SECRET;
+const { JWT_SECRET } = process.env;
+const { JWT_REFRESH_SECRET } = process.env;
+const { JWT_EMAIL_SECRET } = process.env;
+const { JWT_PASSWORD_RESET_SECRET } = process.env;
 
 /**
  * Génère un token d'accès JWT

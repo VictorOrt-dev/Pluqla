@@ -7,21 +7,21 @@ import React, { memo, forwardRef } from 'react';
 import { useThemedClasses } from '../../contexts/ThemeContext';
 
 const BUTTON_VARIANTS = {
-  primary: 'bg-red-500 hover:bg-red-600 text-white border-red-500',
-  secondary: 'bg-gray-500 hover:bg-gray-600 text-white border-gray-500',
-  success: 'bg-green-500 hover:bg-green-600 text-white border-green-500',
-  danger: 'bg-red-500 hover:bg-red-600 text-white border-red-500',
-  warning: 'bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-500',
-  ghost: 'bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700',
-  outline: 'bg-transparent hover:bg-blue-50 dark:hover:bg-blue-900/20 text-red-600 dark:text-red-400 border-red-500'
+  primary: 'bg-[#F14545] hover:bg-[#D73030] text-white border-[#F14545] shadow-sm hover:shadow-md transition-all duration-200 hover:-translate-y-0.5',
+  secondary: 'bg-gray-100 hover:bg-gray-200 text-gray-900 border-gray-300 shadow-sm hover:shadow',
+  success: 'bg-green-600 hover:bg-green-700 text-white border-green-600 shadow-sm hover:shadow-md',
+  danger: 'bg-red-600 hover:bg-red-700 text-white border-red-600 shadow-sm hover:shadow-md',
+  warning: 'bg-amber-500 hover:bg-amber-600 text-white border-amber-500 shadow-sm hover:shadow-md',
+  ghost: 'bg-transparent hover:bg-gray-50 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 border-transparent hover:border-gray-200',
+  outline: 'bg-transparent hover:bg-[#F14545]/10 dark:hover:bg-[#F14545]/20 text-[#F14545] dark:text-[#FF6B6B] border-[#F14545] hover:border-[#D73030]'
 };
 
 const BUTTON_SIZES = {
-  xs: 'px-2 py-1 text-xs',
-  sm: 'px-3 py-1.5 text-sm',
-  md: 'px-4 py-2 text-sm',
-  lg: 'px-6 py-3 text-base',
-  xl: 'px-8 py-4 text-lg'
+  xs: 'px-3 py-1.5 text-xs min-h-[32px]',
+  sm: 'px-4 py-2 text-sm min-h-[40px]',
+  md: 'px-6 py-3 text-base min-h-[48px]',
+  lg: 'px-8 py-4 text-base min-h-[56px]',
+  xl: 'px-10 py-5 text-lg min-h-[64px]'
 };
 
 const Button = memo(forwardRef(({
@@ -40,7 +40,7 @@ const Button = memo(forwardRef(({
 }, ref) => {
   const { cx } = useThemedClasses();
 
-  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95';
+  const baseClasses = 'inline-flex items-center justify-center font-medium rounded-lg border transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F14545] disabled:opacity-50 disabled:cursor-not-allowed active:scale-95';
 
   const variantClasses = BUTTON_VARIANTS[variant] || BUTTON_VARIANTS.primary;
   const sizeClasses = BUTTON_SIZES[size] || BUTTON_SIZES.md;

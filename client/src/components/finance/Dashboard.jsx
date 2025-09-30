@@ -31,8 +31,6 @@ const Dashboard = ({ darkMode }) => {
       setError(null);
 
       const endpoint = `/financial/summary?lang=${i18n.language}&period=month`;
-      console.log('[DEBUG] Fetching financial summary from:', endpoint);
-
       const result = await apiCall(endpoint);
       const data = result.data || result;
       setFinancialData(data);

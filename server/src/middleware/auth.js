@@ -51,7 +51,6 @@ const authenticateToken = async (req, res, next) => {
     // Ajouter l'utilisateur à la requête
     req.user = user;
     next();
-
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {
       return res.status(401).json({
@@ -124,7 +123,7 @@ const requireAdmin = async (req, res, next) => {
 
 // Middleware pour vérifier l'abonnement premium
 const requirePremium = (req, res, next) => {
-  const subscription = req.user.subscription;
+  const { subscription } = req.user;
 
   if (!subscription || subscription.status !== 'active' || subscription.plan === 'free') {
     return res.status(403).json({

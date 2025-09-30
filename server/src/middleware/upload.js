@@ -5,7 +5,7 @@ const logger = require('../utils/logger');
 
 // Configuration de stockage
 const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
+  destination(req, file, cb) {
     const uploadPath = process.env.UPLOAD_PATH || './uploads';
 
     // Créer le dossier s'il n'existe pas
@@ -15,9 +15,9 @@ const storage = multer.diskStorage({
 
     cb(null, uploadPath);
   },
-  filename: function (req, file, cb) {
+  filename(req, file, cb) {
     // Générer un nom unique pour le fichier
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1E9)}`;
     const extension = path.extname(file.originalname);
     cb(null, `${file.fieldname}-${uniqueSuffix}${extension}`);
   }
@@ -45,12 +45,12 @@ const fileFilter = (req, file, cb) => {
 
 // Configuration multer
 const upload = multer({
-  storage: storage,
-  fileFilter: fileFilter,
+  storage,
+  fileFilter,
   limits: {
     fileSize: parseInt(process.env.UPLOAD_MAX_SIZE?.replace('mb', ''), 10) * 1024 * 1024 || 10 * 1024 * 1024, // 10MB par défaut
-    files: 5, // Maximum 5 fichiers
-  },
+    files: 5 // Maximum 5 fichiers
+  }
 });
 
 // Middleware pour gérer les erreurs d'upload
@@ -59,40 +59,40 @@ const handleUploadError = (error, req, res, next) => {
     logger.warn('Erreur Multer:', error);
 
     switch (error.code) {
-      case 'LIMIT_FILE_SIZE':
-        return res.status(400).json({
-          error: 'Fichier trop volumineux',
-          message: `La taille du fichier ne doit pas dépasser ${process.env.UPLOAD_MAX_SIZE || '10mb'}`,
-        });
-      case 'LIMIT_FILE_COUNT':
-        return res.status(400).json({
-          error: 'Trop de fichiers',
-          message: 'Vous ne pouvez télécharger que 5 fichiers à la fois',
-        });
-      case 'LIMIT_UNEXPECTED_FILE':
-        return res.status(400).json({
-          error: 'Champ inattendu',
-          message: 'Le nom du champ de fichier n\'est pas autorisé',
-        });
-      default:
-        return res.status(400).json({
-          error: 'Erreur de téléchargement',
-          message: error.message,
-        });
+    case 'LIMIT_FILE_SIZE':
+      return res.status(400).json({
+        error: 'Fichier trop volumineux',
+        message: `La taille du fichier ne doit pas dépasser ${process.env.UPLOAD_MAX_SIZE || '10mb'}`
+      });
+    case 'LIMIT_FILE_COUNT':
+      return res.status(400).json({
+        error: 'Trop de fichiers',
+        message: 'Vous ne pouvez télécharger que 5 fichiers à la fois'
+      });
+    case 'LIMIT_UNEXPECTED_FILE':
+      return res.status(400).json({
+        error: 'Champ inattendu',
+        message: 'Le nom du champ de fichier n\'est pas autorisé'
+      });
+    default:
+      return res.status(400).json({
+        error: 'Erreur de téléchargement',
+        message: error.message
+      });
     }
   }
 
   if (error.status === 400) {
     return res.status(400).json({
       error: 'Type de fichier non autorisé',
-      message: error.message,
+      message: error.message
     });
   }
 
   logger.error('Erreur d\'upload non gérée:', error);
   return res.status(500).json({
     error: 'Erreur serveur',
-    message: 'Impossible de traiter le fichier',
+    message: 'Impossible de traiter le fichier'
   });
 };
 
@@ -104,7 +104,7 @@ const cleanupFiles = (req, res, next) => {
   const cleanup = () => {
     if (req.files) {
       const files = Array.isArray(req.files) ? req.files : Object.values(req.files).flat();
-      files.forEach(file => {
+      files.forEach((file) => {
         try {
           if (fs.existsSync(file.path)) {
             fs.unlinkSync(file.path);
@@ -127,14 +127,14 @@ const cleanupFiles = (req, res, next) => {
   };
 
   // Override des méthodes de réponse pour nettoyer en cas d'erreur
-  res.send = function(data) {
+  res.send = function (data) {
     if (res.statusCode >= 400) {
       cleanup();
     }
     return originalSend.call(this, data);
   };
 
-  res.json = function(data) {
+  res.json = function (data) {
     if (res.statusCode >= 400) {
       cleanup();
     }
@@ -151,7 +151,7 @@ const validateUpload = (req, res, next) => {
     if (!req.file && (!req.files || req.files.length === 0)) {
       return res.status(400).json({
         error: 'Aucun fichier fourni',
-        message: 'Vous devez fournir au moins un fichier',
+        message: 'Vous devez fournir au moins un fichier'
       });
     }
 
@@ -162,7 +162,7 @@ const validateUpload = (req, res, next) => {
       if (!file || !file.filename) {
         return res.status(400).json({
           error: 'Fichier invalide',
-          message: 'Un des fichiers est corrompu ou invalide',
+          message: 'Un des fichiers est corrompu ou invalide'
         });
       }
 
@@ -170,7 +170,7 @@ const validateUpload = (req, res, next) => {
       logger.info(`Fichier uploadé: ${file.originalname} -> ${file.filename}`, {
         size: file.size,
         mimetype: file.mimetype,
-        userId: req.user?.id,
+        userId: req.user?.id
       });
     }
 
@@ -179,7 +179,7 @@ const validateUpload = (req, res, next) => {
     logger.error('Erreur de validation d\'upload:', error);
     res.status(500).json({
       error: 'Erreur serveur',
-      message: 'Impossible de valider le fichier uploadé',
+      message: 'Impossible de valider le fichier uploadé'
     });
   }
 };
@@ -191,7 +191,7 @@ module.exports = {
     cleanupFiles,
     upload.single(fieldName),
     handleUploadError,
-    validateUpload,
+    validateUpload
   ],
 
   // Upload de plusieurs fichiers avec le même nom de champ
@@ -199,7 +199,7 @@ module.exports = {
     cleanupFiles,
     upload.array(fieldName, maxCount),
     handleUploadError,
-    validateUpload,
+    validateUpload
   ],
 
   // Upload de plusieurs fichiers avec des noms de champs différents
@@ -207,7 +207,7 @@ module.exports = {
     cleanupFiles,
     upload.fields(fields),
     handleUploadError,
-    validateUpload,
+    validateUpload
   ],
 
   // Upload générique sans validation (pour des cas spéciaux)
@@ -216,5 +216,5 @@ module.exports = {
   // Middlewares utilitaires
   handleUploadError,
   cleanupFiles,
-  validateUpload,
+  validateUpload
 };

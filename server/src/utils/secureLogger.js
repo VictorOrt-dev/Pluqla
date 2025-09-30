@@ -20,7 +20,7 @@ const levels = {
   http: 3,
   verbose: 4,
   debug: 5,
-  silly: 6,
+  silly: 6
 };
 
 // Couleurs pour la console
@@ -31,7 +31,7 @@ const colors = {
   http: 'magenta',
   verbose: 'cyan',
   debug: 'blue',
-  silly: 'gray',
+  silly: 'gray'
 };
 
 winston.addColors(colors);
@@ -56,7 +56,7 @@ const SENSITIVE_PATTERNS = {
   crypto: /(private_key|cert|certificate)/i,
 
   // User PII
-  pii: /(ssn|social|credit|card)/i,
+  pii: /(ssn|social|credit|card)/i
 };
 
 /**
@@ -82,7 +82,7 @@ const SENSITIVE_VALUE_PATTERNS = {
   emailPassword: /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}:[^\s]+/g,
 
   // Generic secrets (32+ chars alphanumeric)
-  genericSecret: /[A-Za-z0-9]{32,}/g,
+  genericSecret: /[A-Za-z0-9]{32,}/g
 };
 
 /**
@@ -109,7 +109,7 @@ const sanitizeObject = (obj, depth = 0) => {
 
   // Handle arrays
   if (Array.isArray(obj)) {
-    return obj.map(item => sanitizeObject(item, depth + 1));
+    return obj.map((item) => sanitizeObject(item, depth + 1));
   }
 
   // Handle Error objects specially
@@ -131,9 +131,7 @@ const sanitizeObject = (obj, depth = 0) => {
     const lowerKey = key.toLowerCase();
 
     // Check if key is sensitive
-    const isSensitiveKey = Object.values(SENSITIVE_PATTERNS).some(pattern =>
-      pattern.test(lowerKey)
-    );
+    const isSensitiveKey = Object.values(SENSITIVE_PATTERNS).some((pattern) => pattern.test(lowerKey));
 
     if (isSensitiveKey) {
       sanitized[key] = maskSensitiveValue(value);
@@ -166,9 +164,8 @@ const sanitizeValue = (value) => {
         const end = match.substring(match.length - 4);
         const middle = '*'.repeat(Math.min(match.length - 8, 20));
         return `${start}${middle}${end}`;
-      } else {
-        return '*'.repeat(match.length);
       }
+      return '*'.repeat(match.length);
     });
   });
 
@@ -221,8 +218,8 @@ const sanitizeHeaders = (headers) => {
     'x-refresh-token'
   ];
 
-  sensitiveHeaders.forEach(header => {
-    Object.keys(sanitized).forEach(key => {
+  sensitiveHeaders.forEach((header) => {
+    Object.keys(sanitized).forEach((key) => {
       if (key.toLowerCase() === header) {
         sanitized[key] = '[REDACTED]';
       }
@@ -245,7 +242,7 @@ const sanitizeRequestBody = (body) => {
   // Additional request body sanitization
   if (typeof sanitized === 'object' && sanitized !== null) {
     // Mask password fields
-    ['password', 'newPassword', 'confirmPassword', 'currentPassword'].forEach(field => {
+    ['password', 'newPassword', 'confirmPassword', 'currentPassword'].forEach((field) => {
       if (sanitized[field]) {
         sanitized[field] = '[REDACTED]';
       }
@@ -262,7 +259,9 @@ const consoleFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.colorize({ all: true }),
   winston.format.printf((info) => {
-    const { timestamp, level, message, ...meta } = info;
+    const {
+      timestamp, level, message, ...meta
+    } = info;
 
     // Sanitize all metadata
     const sanitizedMeta = sanitizeObject(meta);
@@ -296,8 +295,8 @@ const transports = [
   // Console (toujours actif)
   new winston.transports.Console({
     format: consoleFormat,
-    level: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
-  }),
+    level: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug')
+  })
 ];
 
 // Fichiers de log (uniquement si activé et sécurisés)
@@ -309,7 +308,7 @@ if (process.env.LOG_FILE_ENABLED === 'true') {
       format: fileFormat,
       level: 'info',
       maxsize: 5242880, // 5MB
-      maxFiles: 5,
+      maxFiles: 5
     })
   );
 
@@ -320,7 +319,7 @@ if (process.env.LOG_FILE_ENABLED === 'true') {
       format: fileFormat,
       level: 'error',
       maxsize: 5242880, // 5MB
-      maxFiles: 5,
+      maxFiles: 5
     })
   );
 }
@@ -329,7 +328,7 @@ if (process.env.LOG_FILE_ENABLED === 'true') {
 const secureLogger = winston.createLogger({
   levels,
   transports,
-  exitOnError: false,
+  exitOnError: false
 });
 
 /**
@@ -352,7 +351,7 @@ secureLogger.logRequest = (req, res, responseTime) => {
     responseTime: `${responseTime}ms`,
     userId: req.user?.id,
     // Headers are automatically sanitized
-    headers: sanitizeHeaders(req.headers),
+    headers: sanitizeHeaders(req.headers)
   });
 };
 
@@ -365,7 +364,7 @@ secureLogger.logError = (error, context = {}) => {
   secureLogger.error('Application Error', {
     error: sanitizeObject(error),
     context: sanitizeObject(context),
-    timestamp: new Date().toISOString(),
+    timestamp: new Date().toISOString()
   });
 };
 
@@ -383,7 +382,7 @@ secureLogger.logAuth = (action, email, success, meta = {}) => {
     email: email ? `***@${email.split('@')[1] || 'unknown'}` : 'unknown',
     success,
     timestamp: new Date().toISOString(),
-    meta: sanitizeObject(meta),
+    meta: sanitizeObject(meta)
   });
 };
 
@@ -401,7 +400,7 @@ secureLogger.logTransaction = (userId, transaction, action = 'created') => {
     amount: transaction.amount,
     category: transaction.category,
     // Don't log sensitive transaction details
-    timestamp: new Date().toISOString(),
+    timestamp: new Date().toISOString()
   });
 };
 
@@ -419,7 +418,7 @@ secureLogger.logAI = (userId, category, success, meta = {}) => {
     success,
     timestamp: new Date().toISOString(),
     // Meta is sanitized to remove any API keys or sensitive prompts
-    meta: sanitizeObject(meta),
+    meta: sanitizeObject(meta)
   });
 };
 
@@ -432,7 +431,7 @@ secureLogger.logSecurity = (event, details = {}) => {
   secureLogger.warn('Security Event', {
     event,
     details: sanitizeObject(details),
-    timestamp: new Date().toISOString(),
+    timestamp: new Date().toISOString()
   });
 };
 
@@ -451,7 +450,7 @@ const originalDebug = secureLogger.debug;
  * @param {string} message - Error message
  * @param {any} data - Data to log
  */
-secureLogger.error = function(message, data) {
+secureLogger.error = function (message, data) {
   const sanitizedMessage = sanitizeValue(message);
   const sanitizedData = sanitizeObject(data);
   return originalError.call(this, sanitizedMessage, sanitizedData);
@@ -462,7 +461,7 @@ secureLogger.error = function(message, data) {
  * @param {string} message - Info message
  * @param {any} data - Data to log
  */
-secureLogger.info = function(message, data) {
+secureLogger.info = function (message, data) {
   const sanitizedMessage = sanitizeValue(message);
   const sanitizedData = sanitizeObject(data);
   return originalInfo.call(this, sanitizedMessage, sanitizedData);
@@ -473,7 +472,7 @@ secureLogger.info = function(message, data) {
  * @param {string} message - Warning message
  * @param {any} data - Data to log
  */
-secureLogger.warn = function(message, data) {
+secureLogger.warn = function (message, data) {
   const sanitizedMessage = sanitizeValue(message);
   const sanitizedData = sanitizeObject(data);
   return originalWarn.call(this, sanitizedMessage, sanitizedData);
@@ -484,7 +483,7 @@ secureLogger.warn = function(message, data) {
  * @param {string} message - Debug message
  * @param {any} data - Data to log
  */
-secureLogger.debug = function(message, data) {
+secureLogger.debug = function (message, data) {
   if (process.env.NODE_ENV !== 'production') {
     const sanitizedMessage = sanitizeValue(message);
     const sanitizedData = sanitizeObject(data);

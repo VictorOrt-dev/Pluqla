@@ -99,7 +99,6 @@ router.get('/health', authenticateToken, async (req, res) => {
         }
       }
     });
-
   } catch (error) {
     logger.error('Failed to get system health:', error);
     res.status(500).json({

@@ -15,8 +15,8 @@
  */
 
 const { body, header } = require('express-validator');
-const { customValidators, processValidationResults, sanitizeInputs } = require('./validationUtils');
 const rateLimit = require('express-rate-limit');
+const { customValidators, processValidationResults, sanitizeInputs } = require('./validationUtils');
 
 /**
  * User Registration Validation
@@ -63,14 +63,14 @@ const validateRegistration = [
       return true;
     }),
 
-  // Name validation
+  // Name validation (more flexible)
   body('name')
     .notEmpty()
     .withMessage('Name is required')
     .isLength({ min: 1, max: 100 })
     .withMessage('Name must be between 1 and 100 characters')
-    .matches(/^[a-zA-ZÀ-ÿ\s'-]{1,100}$/)
-    .withMessage('Name can only contain letters, spaces, hyphens, and apostrophes')
+    .matches(/^[a-zA-ZÀ-ÿ0-9\s'.-]{1,100}$/)
+    .withMessage('Name can only contain letters, numbers, spaces, periods, hyphens, and apostrophes')
     .custom(customValidators.isSafe),
 
   // Optional terms acceptance
@@ -79,10 +79,9 @@ const validateRegistration = [
     .isBoolean()
     .withMessage('Terms acceptance must be true or false'),
 
-  // Security headers validation
+  // Security headers validation (optional for better UX)
   header('user-agent')
-    .notEmpty()
-    .withMessage('User-Agent header is required for security')
+    .optional()
     .isLength({ max: 1000 })
     .withMessage('User-Agent header too long'),
 
@@ -125,10 +124,11 @@ const validateLogin = [
     .isBoolean()
     .withMessage('Remember me must be true or false'),
 
-  // Security headers
+  // Security headers (optional for better UX)
   header('user-agent')
-    .notEmpty()
-    .withMessage('User-Agent header required for security'),
+    .optional()
+    .isLength({ max: 1000 })
+    .withMessage('User-Agent header too long'),
 
   // Process validation results
   processValidationResults
@@ -155,10 +155,11 @@ const validateTokenRefresh = [
     .withMessage('Invalid JWT token format')
     .custom(customValidators.isSafe),
 
-  // Security context
+  // Security context (optional for better UX)
   header('user-agent')
-    .notEmpty()
-    .withMessage('User-Agent header required'),
+    .optional()
+    .isLength({ max: 1000 })
+    .withMessage('User-Agent header too long'),
 
   processValidationResults
 ];
@@ -189,10 +190,11 @@ const validateForgotPassword = [
     .isIn(['fr', 'en', 'es'])
     .withMessage('Language must be one of: fr, en, es'),
 
-  // Security headers
+  // Security headers (optional for better UX)
   header('user-agent')
-    .notEmpty()
-    .withMessage('User-Agent header required'),
+    .optional()
+    .isLength({ max: 1000 })
+    .withMessage('User-Agent header too long'),
 
   processValidationResults
 ];
@@ -238,10 +240,11 @@ const validatePasswordReset = [
       return true;
     }),
 
-  // Security headers
+  // Security headers (optional for better UX)
   header('user-agent')
-    .notEmpty()
-    .withMessage('User-Agent header required'),
+    .optional()
+    .isLength({ max: 1000 })
+    .withMessage('User-Agent header too long'),
 
   processValidationResults
 ];

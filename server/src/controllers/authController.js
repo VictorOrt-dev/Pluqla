@@ -12,6 +12,8 @@ const refreshTokenService = require('../services/refreshTokenService');
 const { recordAuthAttempt, recordUserRegistration } = require('../services/monitoringService');
 const { validatePassword } = require('../middleware/passwordPolicy');
 const authLockoutService = require('../services/authLockoutService');
+const { metrics } = require('../monitoring/metrics');
+const { recordFailedLogin, recordAccountLockout } = require('../monitoring/alerting');
 
 class AuthController {
   async register(req, res) {
@@ -116,6 +118,9 @@ class AuthController {
   }
 
   async login(req, res) {
+    const loginStartTime = process.hrtime();
+    let authResult = 'failure';
+
     try {
       const { email, password } = req.body;
       const ipAddress = req.ip || req.connection.remoteAddress;
@@ -139,7 +144,17 @@ class AuthController {
       const lockStatus = await authLockoutService.isLocked(lockoutKey, ipAddress);
 
       if (lockStatus.locked) {
+        metrics.recordLoginAttempt('failure', 'email');
+        metrics.recordFailedLoginByIp(ipAddress, 'account_locked');
+        if (user) {
+          metrics.recordFailedLoginByUser(user.id, 'account_locked');
+          recordAccountLockout(user.id); // Trigger alert if threshold exceeded
+        }
         recordAuthAttempt('password', false, 'account_locked');
+
+        // TIMING ATTACK MITIGATION: Normalize response time
+        await this._normalizeResponseTime(loginStartTime);
+
         return sendError(res, 'Trop de tentatives de connexion. Veuillez réessayer plus tard.', 403, 'account_locked', {
           remainingTime: lockStatus.remainingTime,
           lockedUntil: lockStatus.lockedUntil
@@ -149,16 +164,37 @@ class AuthController {
       if (!user) {
         // SECURITY: Record failed attempt even if user doesn't exist (prevents enumeration)
         await authLockoutService.recordFailedAttempt(lockoutKey, ipAddress);
+        metrics.recordLoginAttempt('failure', 'email');
+        metrics.recordFailedLoginByIp(ipAddress, 'invalid_credentials');
+        recordFailedLogin(ipAddress); // Trigger alert if threshold exceeded
         recordAuthAttempt('password', false, 'user_not_found');
+
+        // TIMING ATTACK MITIGATION: Perform dummy bcrypt to normalize timing
+        await bcrypt.compare(password || 'dummy', '$2a$12$dummy.hash.to.prevent.timing.attack.detection.here');
+        await this._normalizeResponseTime(loginStartTime);
+
         return sendError(res, 'Email ou mot de passe incorrect', 401, 'invalid_credentials');
       }
 
       // Vérifier le mot de passe
+      const passwordCheckStart = process.hrtime();
       const isPasswordValid = await bcrypt.compare(password, user.password);
+      const [pwSeconds, pwNanoseconds] = process.hrtime(passwordCheckStart);
+      const pwDuration = pwSeconds + pwNanoseconds / 1e9;
+      metrics.recordAuthTiming('password_check', isPasswordValid ? 'valid' : 'invalid', pwDuration);
+
       if (!isPasswordValid) {
         // SECURITY: Record failed login attempt
         await authLockoutService.recordFailedAttempt(user.id, ipAddress);
+        metrics.recordLoginAttempt('failure', 'email');
+        metrics.recordFailedLoginByIp(ipAddress, 'invalid_credentials');
+        metrics.recordFailedLoginByUser(user.id, 'invalid_credentials');
+        recordFailedLogin(ipAddress); // Trigger alert if threshold exceeded
         recordAuthAttempt('password', false, 'invalid_password');
+
+        // TIMING ATTACK MITIGATION: Normalize response time
+        await this._normalizeResponseTime(loginStartTime);
+
         return sendError(res, 'Email ou mot de passe incorrect', 401, 'invalid_credentials');
       }
 
@@ -167,7 +203,13 @@ class AuthController {
 
       // Vérifier si le compte est actif
       if (user.status !== 'active') {
+        metrics.recordLoginAttempt('failure', 'email');
+        metrics.recordFailedLoginByUser(user.id, 'account_disabled');
         recordAuthAttempt('password', false, 'account_disabled');
+
+        // TIMING ATTACK MITIGATION: Normalize response time
+        await this._normalizeResponseTime(loginStartTime);
+
         return sendError(res, 'Votre compte a été désactivé. Contactez le support.', 403, 'account_disabled');
       }
 
@@ -175,9 +217,12 @@ class AuthController {
       const { accessToken, refreshToken } = generateTokens(user.id);
 
       // SECURITY FIX: Store refresh token securely with metadata
-      const ipAddress = req.ip || req.connection.remoteAddress;
       const userAgent = req.get('User-Agent');
       await refreshTokenService.storeRefreshToken(refreshToken, user.id, ipAddress, userAgent);
+
+      // SESSION FIXATION PREVENTION: Record session creation with new tokens
+      metrics.recordSessionCreation('jwt');
+      metrics.recordSessionFixationPrevention('login');
 
       // Mettre à jour la dernière connexion
       await prisma.user.update({
@@ -191,7 +236,14 @@ class AuthController {
       logger.info(`Connexion réussie pour: ${user.email}`);
 
       // Record successful login
+      authResult = 'success';
+      metrics.recordLoginAttempt('success', 'email');
       recordAuthAttempt('password', true);
+
+      // Record total login timing
+      const [totalSeconds, totalNanoseconds] = process.hrtime(loginStartTime);
+      const totalDuration = totalSeconds + totalNanoseconds / 1e9;
+      metrics.recordAuthTiming('login_total', 'success', totalDuration);
 
       return sendSuccess(res, {
         user: userResponse,
@@ -200,6 +252,7 @@ class AuthController {
       }, 'Connexion réussie');
     } catch (error) {
       // Record login failure
+      metrics.recordLoginAttempt('failure', 'email');
       recordAuthAttempt('password', false, 'login_error');
 
       // SECURITY FIX: Use secure error logging to prevent JWT/credential exposure
@@ -209,7 +262,31 @@ class AuthController {
         errorName: error.name,
         errorMessage: error.message
       });
+
+      // TIMING ATTACK MITIGATION: Normalize response time even on error
+      await this._normalizeResponseTime(loginStartTime);
+
       return sendError(res, 'Impossible de se connecter', 500, 'login_error');
+    } finally {
+      // Always record timing metric
+      const [seconds, nanoseconds] = process.hrtime(loginStartTime);
+      const duration = seconds + nanoseconds / 1e9;
+      metrics.recordAuthTiming('login_total', authResult, duration);
+    }
+  }
+
+  /**
+   * TIMING ATTACK MITIGATION
+   * Ensures login responses take a consistent minimum time (200ms baseline)
+   * This prevents attackers from using timing differences to enumerate users
+   */
+  async _normalizeResponseTime(startTime, targetMs = 200) {
+    const [seconds, nanoseconds] = process.hrtime(startTime);
+    const elapsedMs = (seconds * 1000) + (nanoseconds / 1e6);
+    const remainingMs = Math.max(0, targetMs - elapsedMs);
+
+    if (remainingMs > 0) {
+      await new Promise(resolve => setTimeout(resolve, remainingMs));
     }
   }
 
@@ -224,6 +301,9 @@ class AuthController {
           if (decoded && decoded.jti && decoded.userId) {
             // Révoquer le token de manière sécurisée
             await refreshTokenService.revokeRefreshTokenByJti(decoded.jti, decoded.userId);
+
+            // Record session deletion
+            metrics.recordSessionDeletion('jwt', 'logout');
           }
         } catch (decodeError) {
           // SECURITY FIX: Never log refresh token details
@@ -247,6 +327,7 @@ class AuthController {
       const { refreshToken } = req.body;
 
       if (!refreshToken) {
+        metrics.recordJwtValidationFailure('missing');
         return sendError(res, 'Refresh token requis', 401, 'token_missing');
       }
 
@@ -262,8 +343,14 @@ class AuthController {
       );
 
       if (!rotationResult.valid) {
+        metrics.recordJwtValidationFailure('invalid');
         return sendError(res, 'Refresh token expiré ou invalide', 401, 'invalid_refresh_token');
       }
+
+      // SESSION FIXATION PREVENTION: Old token rotated, new session created
+      metrics.recordSessionDeletion('jwt', 'invalidated');
+      metrics.recordSessionCreation('jwt');
+      metrics.recordSessionFixationPrevention('token_refresh');
 
       return sendSuccess(res, {
         tokens: rotationResult.tokens
@@ -275,6 +362,7 @@ class AuthController {
         errorType: error.name || 'unknown',
         hasToken: !!req.body.refreshToken
       });
+      metrics.recordJwtValidationFailure('error');
       return sendError(res, 'Impossible de renouveler le token', 401, 'refresh_token_error');
     }
   }
@@ -316,6 +404,9 @@ class AuthController {
         // Log security event (without exposing email or token)
         logger.info(`Password reset requested from IP ${ipAddress} for user ${user.id}`);
 
+        // Record password reset request
+        metrics.recordPasswordReset('success');
+
         return sendSuccess(
           res,
           { resetId }, // Return reset ID for optional tracking
@@ -327,6 +418,7 @@ class AuthController {
           userId: user.id,
           errorType: tokenError.name || 'unknown'
         });
+        metrics.recordPasswordReset('failure');
         return sendError(res, 'Impossible de traiter la demande actuellement', 500, 'reset_token_error');
       }
     } catch (error) {
@@ -387,7 +479,8 @@ class AuthController {
           }
         });
 
-        // Invalidate all existing refresh tokens for security
+        // SESSION FIXATION PREVENTION: Invalidate all existing refresh tokens for security
+        // This forces re-authentication and prevents session hijacking
         await refreshTokenService.revokeAllUserTokens(userId);
 
         // Clean up any other password reset tokens for this user
@@ -401,6 +494,11 @@ class AuthController {
       });
 
       await transaction;
+
+      // SESSION FIXATION PREVENTION: All sessions invalidated after password change
+      metrics.recordSessionFixationPrevention('password_reset');
+      metrics.recordSessionDeletion('jwt', 'password_reset');
+      metrics.recordPasswordReset('success');
 
       // Log successful password reset (without exposing sensitive data)
       logger.info(`Password reset completed for user ${userId} from IP ${ipAddress}`);

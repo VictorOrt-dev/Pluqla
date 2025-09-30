@@ -21,7 +21,7 @@ const router = express.Router();
  */
 router.post(
   '/verify',
-  rateLimit.createRateLimit({
+  rateLimit.createLimiter({
     windowMs: 15 * 60 * 1000, // 15 minutes
     max: 10, // 10 attempts per 15 minutes
     keyGenerator: (req) => `sca_verify_${req.user?.id || req.ip}`,

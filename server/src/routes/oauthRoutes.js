@@ -21,7 +21,8 @@ router.use(monitorSuspiciousActivity);
  * @desc Initiate OAuth2 authorization flow
  * @access Private
  */
-router.post('/authorize',
+router.post(
+  '/authorize',
   authenticateToken,
   rateLimit.financial.payments, // Financial-grade rate limiting for OAuth authorization
   [
@@ -41,7 +42,8 @@ router.post('/authorize',
  * @desc Handle OAuth2 callback and exchange code for token
  * @access Public (but requires valid state)
  */
-router.post('/callback',
+router.post(
+  '/callback',
   rateLimit.financial.payments, // Financial-grade rate limiting for OAuth callbacks
   [
     body('code')
@@ -66,7 +68,8 @@ router.post('/callback',
  * @desc Disconnect OAuth provider and revoke tokens
  * @access Private
  */
-router.delete('/disconnect/:provider',
+router.delete(
+  '/disconnect/:provider',
   authenticateToken,
   rateLimit.financial.transactions, // Standard financial rate limiting for disconnections
   [
@@ -82,7 +85,8 @@ router.delete('/disconnect/:provider',
  * @desc Get OAuth connection status for user
  * @access Private
  */
-router.get('/status',
+router.get(
+  '/status',
   authenticateToken,
   rateLimit.financial.apiCalls, // API call rate limiting for status checks
   oauthController.getConnectionStatus
@@ -93,7 +97,8 @@ router.get('/status',
  * @desc Refresh OAuth tokens for a provider
  * @access Private
  */
-router.post('/refresh/:provider',
+router.post(
+  '/refresh/:provider',
   authenticateToken,
   rateLimit.financial.payments, // Financial-grade rate limiting for token refresh
   [
@@ -109,7 +114,8 @@ router.post('/refresh/:provider',
  * @desc Record user consent for financial data aggregation
  * @access Private
  */
-router.post('/consent',
+router.post(
+  '/consent',
   authenticateToken,
   rateLimit.financial.subscriptions, // Subscription-level rate limiting for consent management
   [
@@ -130,7 +136,9 @@ router.post('/consent',
   async (req, res) => {
     try {
       const userId = req.user.id;
-      const { consentType, granted, purpose, legalBasis = 'consent' } = req.body;
+      const {
+        consentType, granted, purpose, legalBasis = 'consent'
+      } = req.body;
 
       const gdprService = require('../services/gdprService');
 
@@ -161,7 +169,6 @@ router.post('/consent',
           recordedAt: consent.createdAt
         }
       });
-
     } catch (error) {
       console.error('Consent recording failed:', error);
       res.status(500).json({
@@ -178,7 +185,8 @@ router.post('/consent',
  * @desc Get user's current consent status
  * @access Private
  */
-router.get('/consent',
+router.get(
+  '/consent',
   authenticateToken,
   rateLimit.financial.apiCalls, // API call rate limiting for consent status
   async (req, res) => {
@@ -194,10 +202,9 @@ router.get('/consent',
         data: {
           consents: consentStatus,
           hasFinancialAggregationConsent: consentStatus.financial_aggregation?.granted || false,
-          lastUpdated: Math.max(...Object.values(consentStatus).map(c => new Date(c.createdAt).getTime()))
+          lastUpdated: Math.max(...Object.values(consentStatus).map((c) => new Date(c.createdAt).getTime()))
         }
       });
-
     } catch (error) {
       console.error('Consent status retrieval failed:', error);
       res.status(500).json({
@@ -214,7 +221,8 @@ router.get('/consent',
  * @desc Get available OAuth providers and their capabilities
  * @access Private
  */
-router.get('/providers',
+router.get(
+  '/providers',
   authenticateToken,
   rateLimit.financial.apiCalls, // API call rate limiting for provider information
   (req, res) => {
@@ -255,10 +263,9 @@ router.get('/providers',
         data: {
           providers,
           totalProviders: providers.length,
-          psd2Compliant: providers.every(p => p.psd2Compliant)
+          psd2Compliant: providers.every((p) => p.psd2Compliant)
         }
       });
-
     } catch (error) {
       console.error('Provider list retrieval failed:', error);
       res.status(500).json({

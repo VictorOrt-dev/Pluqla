@@ -14,7 +14,7 @@ router.use(authenticateToken);
 const categoryParamValidation = [
   param('category')
     .isIn(['alimentation', 'habits', 'activite', 'deplacement'])
-    .withMessage('Catégorie invalide'),
+    .withMessage('Catégorie invalide')
 ];
 
 const preferencesValidation = [
@@ -28,7 +28,7 @@ const preferencesValidation = [
   body('preferences.priority')
     .optional()
     .isInt({ min: 1, max: 5 })
-    .withMessage('Priorité entre 1 et 5'),
+    .withMessage('Priorité entre 1 et 5')
 ];
 
 const budgetValidation = [
@@ -38,21 +38,24 @@ const budgetValidation = [
   body('alertThreshold')
     .optional()
     .isFloat({ min: 0, max: 1 })
-    .withMessage('Seuil d\'alerte entre 0 et 1'),
+    .withMessage('Seuil d\'alerte entre 0 et 1')
 ];
 
 // Routes pour obtenir les informations des catégories
-router.get('/',
+router.get(
+  '/',
   categoryController.getAllCategories
 );
 
-router.get('/:category',
+router.get(
+  '/:category',
   categoryParamValidation,
   handleValidationErrors,
   categoryController.getCategoryDetails
 );
 
-router.get('/:category/stats',
+router.get(
+  '/:category/stats',
   categoryParamValidation,
   query('period').optional().isIn(['week', 'month', 'quarter', 'year']),
   handleValidationErrors,
@@ -60,7 +63,8 @@ router.get('/:category/stats',
 );
 
 // Routes pour l'alimentation
-router.get('/alimentation/recipes',
+router.get(
+  '/alimentation/recipes',
   query('diet').optional().isIn(['vegetarian', 'vegan', 'gluten_free', 'keto', 'mediterranean']),
   query('budget').optional().isIn(['low', 'medium', 'high']),
   query('difficulty').optional().isIn(['easy', 'medium', 'hard']),
@@ -69,14 +73,16 @@ router.get('/alimentation/recipes',
   categoryController.getRecipes
 );
 
-router.get('/alimentation/stores',
+router.get(
+  '/alimentation/stores',
   query('location').optional().isString(),
   query('type').optional().isIn(['supermarket', 'organic', 'discount', 'local']),
   handleValidationErrors,
   categoryController.getNearbyStores
 );
 
-router.post('/alimentation/meal-plan',
+router.post(
+  '/alimentation/meal-plan',
   rateLimit.standard,
   body('duration').isIn(['week', 'month']),
   body('budget').optional().isFloat({ min: 0 }),
@@ -86,14 +92,16 @@ router.post('/alimentation/meal-plan',
 );
 
 // Routes pour les habitudes
-router.get('/habits/recommendations',
+router.get(
+  '/habits/recommendations',
   query('type').optional().isIn(['eco', 'health', 'productivity', 'financial']),
   query('difficulty').optional().isIn(['easy', 'medium', 'hard']),
   handleValidationErrors,
   categoryController.getHabitRecommendations
 );
 
-router.post('/habits/track',
+router.post(
+  '/habits/track',
   rateLimit.standard,
   body('habitId').isUUID(),
   body('completed').isBoolean(),
@@ -102,12 +110,14 @@ router.post('/habits/track',
   categoryController.trackHabit
 );
 
-router.get('/habits/streaks',
+router.get(
+  '/habits/streaks',
   categoryController.getHabitStreaks
 );
 
 // Routes pour les activités
-router.get('/activite/suggestions',
+router.get(
+  '/activite/suggestions',
   query('type').optional().isIn(['indoor', 'outdoor', 'cultural', 'sport', 'social']),
   query('budget').optional().isIn(['free', 'low', 'medium', 'high']),
   query('duration').optional().isIn(['short', 'medium', 'long']),
@@ -116,7 +126,8 @@ router.get('/activite/suggestions',
   categoryController.getActivitySuggestions
 );
 
-router.get('/activite/events',
+router.get(
+  '/activite/events',
   query('location').optional().isString(),
   query('date').optional().isISO8601(),
   query('category').optional().isString(),
@@ -124,7 +135,8 @@ router.get('/activite/events',
   categoryController.getNearbyEvents
 );
 
-router.post('/activite/bookmark',
+router.post(
+  '/activite/bookmark',
   rateLimit.standard,
   body('activityId').isUUID(),
   body('bookmarked').isBoolean(),
@@ -133,7 +145,8 @@ router.post('/activite/bookmark',
 );
 
 // Routes pour les déplacements
-router.get('/deplacement/routes',
+router.get(
+  '/deplacement/routes',
   query('origin').isString(),
   query('destination').isString(),
   query('mode').optional().isIn(['walking', 'cycling', 'public_transport', 'car', 'mixed']),
@@ -142,7 +155,8 @@ router.get('/deplacement/routes',
   categoryController.getRouteOptions
 );
 
-router.post('/deplacement/calculate',
+router.post(
+  '/deplacement/calculate',
   rateLimit.standard,
   body('origin').isString(),
   body('destination').isString(),
@@ -151,20 +165,23 @@ router.post('/deplacement/calculate',
   categoryController.calculateTransportCosts
 );
 
-router.get('/deplacement/subscriptions',
+router.get(
+  '/deplacement/subscriptions',
   query('location').optional().isString(),
   handleValidationErrors,
   categoryController.getTransportSubscriptions
 );
 
 // Routes pour la configuration des catégories
-router.get('/:category/preferences',
+router.get(
+  '/:category/preferences',
   categoryParamValidation,
   handleValidationErrors,
   categoryController.getCategoryPreferences
 );
 
-router.put('/:category/preferences',
+router.put(
+  '/:category/preferences',
   rateLimit.standard,
   categoryParamValidation,
   preferencesValidation,
@@ -172,7 +189,8 @@ router.put('/:category/preferences',
   categoryController.updateCategoryPreferences
 );
 
-router.put('/:category/budget',
+router.put(
+  '/:category/budget',
   rateLimit.standard,
   categoryParamValidation,
   budgetValidation,
@@ -180,14 +198,16 @@ router.put('/:category/budget',
   categoryController.setCategoryBudget
 );
 
-router.get('/:category/budget/status',
+router.get(
+  '/:category/budget/status',
   categoryParamValidation,
   handleValidationErrors,
   categoryController.getBudgetStatus
 );
 
 // Routes pour les objectifs par catégorie
-router.post('/:category/goals',
+router.post(
+  '/:category/goals',
   rateLimit.standard,
   categoryParamValidation,
   body('title').trim().isLength({ min: 1, max: 100 }),
@@ -199,13 +219,15 @@ router.post('/:category/goals',
   categoryController.createCategoryGoal
 );
 
-router.get('/:category/goals',
+router.get(
+  '/:category/goals',
   categoryParamValidation,
   handleValidationErrors,
   categoryController.getCategoryGoals
 );
 
-router.put('/:category/goals/:goalId',
+router.put(
+  '/:category/goals/:goalId',
   rateLimit.standard,
   categoryParamValidation,
   param('goalId').isUUID(),
@@ -214,7 +236,8 @@ router.put('/:category/goals/:goalId',
 );
 
 // Routes pour les rapports par catégorie
-router.get('/:category/report',
+router.get(
+  '/:category/report',
   categoryParamValidation,
   query('startDate').optional().isISO8601(),
   query('endDate').optional().isISO8601(),
@@ -224,14 +247,16 @@ router.get('/:category/report',
 );
 
 // Routes pour les comparaisons entre catégories
-router.get('/compare/spending',
+router.get(
+  '/compare/spending',
   query('categories').optional().isString(),
   query('period').optional().isIn(['week', 'month', 'quarter', 'year']),
   handleValidationErrors,
   categoryController.compareCategories
 );
 
-router.get('/compare/savings-potential',
+router.get(
+  '/compare/savings-potential',
   categoryController.compareSavingsPotential
 );
 

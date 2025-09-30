@@ -18,10 +18,10 @@ const logger = require('./logger');
  * Generates a cryptographically secure random token
  * @returns {string} 32-character hex token
  */
-const generateSecureToken = () => {
+const generateSecureToken = () =>
   // Generate 16 random bytes (128 bits) and convert to hex
-  return crypto.randomBytes(16).toString('hex');
-};
+  crypto.randomBytes(16).toString('hex')
+;
 
 /**
  * Hash a token using bcrypt with salt rounds 12
@@ -86,7 +86,7 @@ const createPasswordResetToken = async (userId, ipAddress = null, userAgent = nu
       // Clean up any existing unused tokens for this user
       await prisma.passwordReset.deleteMany({
         where: {
-          userId: userId,
+          userId,
           OR: [
             { used: false, expiresAt: { lt: new Date() } }, // Expired tokens
             { used: true, createdAt: { lt: new Date(Date.now() - 24 * 60 * 60 * 1000) } } // Used tokens older than 24h
@@ -113,7 +113,6 @@ const createPasswordResetToken = async (userId, ipAddress = null, userAgent = nu
         token: plainToken,
         resetId: passwordReset.id
       };
-
     } catch (error) {
       logger.error(`Error creating password reset token for user ${userId}:`, error);
       throw error;
@@ -183,7 +182,6 @@ const verifyPasswordResetToken = async (plainToken, ipAddress = null, userAgent 
       logger.warn(`Invalid password reset token attempted from IP ${ipAddress}`);
 
       return { valid: false };
-
     } catch (error) {
       logger.error('Error verifying password reset token:', error);
       return { valid: false }; // Fail secure
@@ -242,10 +240,14 @@ const getPasswordResetStats = async (userId = null) => {
       })
     ]);
 
-    return { active, expired, used, total: active + expired + used };
+    return {
+      active, expired, used, total: active + expired + used
+    };
   } catch (error) {
     logger.error('Error getting password reset stats:', error);
-    return { active: 0, expired: 0, used: 0, total: 0 };
+    return {
+      active: 0, expired: 0, used: 0, total: 0
+    };
   }
 };
 

@@ -1,0 +1,671 @@
+{
+  "dashboard": {
+    "title": "Pluqla Authentication & Security Monitoring",
+    "tags": ["security", "authentication", "prometheus"],
+    "timezone": "browser",
+    "editable": true,
+    "fiscalYearStartMonth": 0,
+    "graphTooltip": 1,
+    "id": null,
+    "links": [],
+    "panels": [
+      {
+        "type": "row",
+        "title": "Authentication Overview",
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 0
+        },
+        "id": 1
+      },
+      {
+        "type": "stat",
+        "title": "Total Login Attempts (Last Hour)",
+        "targets": [
+          {
+            "expr": "sum(increase(pluqla_auth_login_attempts_total[1h]))",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 0,
+          "y": 1
+        },
+        "id": 2,
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 100
+                },
+                {
+                  "color": "red",
+                  "value": 500
+                }
+              ]
+            },
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "type": "stat",
+        "title": "Login Success Rate",
+        "targets": [
+          {
+            "expr": "100 * sum(rate(pluqla_auth_login_attempts_total{status=\"success\"}[5m])) / sum(rate(pluqla_auth_login_attempts_total[5m]))",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 6,
+          "y": 1
+        },
+        "id": 3,
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "red",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 80
+                },
+                {
+                  "color": "green",
+                  "value": 95
+                }
+              ]
+            },
+            "unit": "percent",
+            "max": 100,
+            "min": 0
+          }
+        }
+      },
+      {
+        "type": "stat",
+        "title": "Account Lockouts (Last Hour)",
+        "targets": [
+          {
+            "expr": "sum(increase(pluqla_auth_account_lockouts_total[1h]))",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 12,
+          "y": 1
+        },
+        "id": 4,
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 5
+                },
+                {
+                  "color": "red",
+                  "value": 20
+                }
+              ]
+            },
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "type": "stat",
+        "title": "Currently Locked Accounts",
+        "targets": [
+          {
+            "expr": "pluqla_auth_locked_accounts_current",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 18,
+          "y": 1
+        },
+        "id": 5,
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 5
+                },
+                {
+                  "color": "red",
+                  "value": 10
+                }
+              ]
+            },
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "type": "graph",
+        "title": "Login Attempts Over Time",
+        "targets": [
+          {
+            "expr": "sum by(status) (rate(pluqla_auth_login_attempts_total[5m]))",
+            "legendFormat": "{{status}}",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 9
+        },
+        "id": 6,
+        "legend": {
+          "show": true
+        },
+        "lines": true,
+        "fill": 1,
+        "linewidth": 2,
+        "yaxes": [
+          {
+            "format": "short",
+            "logBase": 1,
+            "show": true
+          },
+          {
+            "format": "short",
+            "logBase": 1,
+            "show": true
+          }
+        ]
+      },
+      {
+        "type": "graph",
+        "title": "Failed Login Reasons",
+        "targets": [
+          {
+            "expr": "sum by(reason) (rate(pluqla_auth_failed_logins_by_ip_total[5m]))",
+            "legendFormat": "{{reason}}",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 9
+        },
+        "id": 7,
+        "legend": {
+          "show": true
+        },
+        "lines": true,
+        "fill": 1,
+        "linewidth": 2
+      },
+      {
+        "type": "row",
+        "title": "Session Management",
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 17
+        },
+        "id": 8
+      },
+      {
+        "type": "stat",
+        "title": "Active Sessions",
+        "targets": [
+          {
+            "expr": "sum(pluqla_session_active_current)",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 6,
+          "x": 0,
+          "y": 18
+        },
+        "id": 9,
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "thresholds"
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "yellow",
+                  "value": 1000
+                },
+                {
+                  "color": "red",
+                  "value": 5000
+                }
+              ]
+            },
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "type": "graph",
+        "title": "Session Creation Rate",
+        "targets": [
+          {
+            "expr": "sum by(type) (rate(pluqla_session_creation_total[5m]))",
+            "legendFormat": "{{type}}",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 9,
+          "x": 6,
+          "y": 18
+        },
+        "id": 10
+      },
+      {
+        "type": "graph",
+        "title": "Session Deletion Reasons",
+        "targets": [
+          {
+            "expr": "sum by(reason) (rate(pluqla_session_deletion_total[5m]))",
+            "legendFormat": "{{reason}}",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 9,
+          "x": 15,
+          "y": 18
+        },
+        "id": 11
+      },
+      {
+        "type": "graph",
+        "title": "Session Cleanup Performance",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(pluqla_session_cleanup_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "p95",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(pluqla_session_cleanup_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "p50",
+            "refId": "B"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 26
+        },
+        "id": 12,
+        "yaxes": [
+          {
+            "format": "s",
+            "label": "Duration",
+            "logBase": 1,
+            "show": true
+          }
+        ]
+      },
+      {
+        "type": "stat",
+        "title": "Session Fixation Prevention Events",
+        "targets": [
+          {
+            "expr": "sum(increase(pluqla_session_fixation_prevention_total[1h]))",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 26
+        },
+        "id": 13
+      },
+      {
+        "type": "row",
+        "title": "API Performance & Security",
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 34
+        },
+        "id": 14
+      },
+      {
+        "type": "graph",
+        "title": "API Request Rate by Route",
+        "targets": [
+          {
+            "expr": "sum by(route) (rate(pluqla_http_requests_total[5m]))",
+            "legendFormat": "{{route}}",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 35
+        },
+        "id": 15
+      },
+      {
+        "type": "graph",
+        "title": "API Response Time (p95)",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(pluqla_http_request_duration_seconds_bucket[5m])) by (le, route))",
+            "legendFormat": "{{route}}",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 35
+        },
+        "id": 16,
+        "yaxes": [
+          {
+            "format": "s",
+            "label": "Response Time",
+            "logBase": 1,
+            "show": true
+          }
+        ]
+      },
+      {
+        "type": "graph",
+        "title": "API Error Rate",
+        "targets": [
+          {
+            "expr": "sum by(error_type) (rate(pluqla_api_errors_total[5m]))",
+            "legendFormat": "{{error_type}}",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 43
+        },
+        "id": 17
+      },
+      {
+        "type": "graph",
+        "title": "Rate Limit Hits",
+        "targets": [
+          {
+            "expr": "sum by(endpoint) (rate(pluqla_rate_limit_hits_total[5m]))",
+            "legendFormat": "{{endpoint}}",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 43
+        },
+        "id": 18
+      },
+      {
+        "type": "row",
+        "title": "Security Events",
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 51
+        },
+        "id": 19
+      },
+      {
+        "type": "graph",
+        "title": "JWT Validation Failures",
+        "targets": [
+          {
+            "expr": "sum by(reason) (rate(pluqla_jwt_validation_failures_total[5m]))",
+            "legendFormat": "{{reason}}",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 52
+        },
+        "id": 20
+      },
+      {
+        "type": "graph",
+        "title": "Suspicious Activity",
+        "targets": [
+          {
+            "expr": "sum by(type) (rate(pluqla_security_suspicious_activity_total[5m]))",
+            "legendFormat": "{{type}}",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 52
+        },
+        "id": 21
+      },
+      {
+        "type": "graph",
+        "title": "Authentication Timing (Timing Attack Detection)",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(pluqla_auth_timing_seconds_bucket{operation=\"login_total\"}[5m])) by (le, result))",
+            "legendFormat": "{{result}} p95",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(pluqla_auth_timing_seconds_bucket{operation=\"login_total\"}[5m])) by (le, result))",
+            "legendFormat": "{{result}} p50",
+            "refId": "B"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 24,
+          "x": 0,
+          "y": 60
+        },
+        "id": 22,
+        "yaxes": [
+          {
+            "format": "s",
+            "label": "Duration",
+            "logBase": 1,
+            "show": true
+          }
+        ],
+        "alert": {
+          "name": "Authentication Timing Variance Alert",
+          "message": "Potential timing attack detected: timing variance exceeds 50ms threshold",
+          "conditions": [
+            {
+              "evaluator": {
+                "params": [0.05],
+                "type": "gt"
+              },
+              "operator": {
+                "type": "and"
+              },
+              "query": {
+                "params": ["A", "5m", "now"]
+              },
+              "reducer": {
+                "params": [],
+                "type": "diff_abs"
+              },
+              "type": "query"
+            }
+          ],
+          "frequency": "1m",
+          "handler": 1,
+          "notifications": []
+        }
+      },
+      {
+        "type": "row",
+        "title": "System Resources",
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 68
+        },
+        "id": 23
+      },
+      {
+        "type": "graph",
+        "title": "CPU Usage",
+        "targets": [
+          {
+            "expr": "rate(pluqla_process_cpu_seconds_total[1m]) * 100",
+            "legendFormat": "CPU %",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 69
+        },
+        "id": 24,
+        "yaxes": [
+          {
+            "format": "percent",
+            "label": "CPU",
+            "show": true
+          }
+        ]
+      },
+      {
+        "type": "graph",
+        "title": "Memory Usage",
+        "targets": [
+          {
+            "expr": "pluqla_process_resident_memory_bytes / 1024 / 1024",
+            "legendFormat": "Memory (MB)",
+            "refId": "A"
+          }
+        ],
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 69
+        },
+        "id": 25,
+        "yaxes": [
+          {
+            "format": "deckbytes",
+            "label": "Memory",
+            "show": true
+          }
+        ]
+      }
+    ],
+    "schemaVersion": 36,
+    "style": "dark",
+    "templating": {
+      "list": []
+    },
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "timepicker": {
+      "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"]
+    },
+    "refresh": "30s"
+  }
+}

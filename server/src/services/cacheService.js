@@ -31,7 +31,7 @@ class CacheService {
         value,
         createdAt: Date.now(),
         expiresAt,
-        accessed: 0,
+        accessed: 0
       });
 
       // Programmer l'expiration automatique
@@ -228,7 +228,7 @@ class CacheService {
       }
 
       // Supprimer les clés expirées
-      toDelete.forEach(key => this.delete(key));
+      toDelete.forEach((key) => this.delete(key));
 
       // Si encore trop d'éléments, supprimer les moins utilisés
       if (this.cache.size >= this.maxSize) {
@@ -237,7 +237,7 @@ class CacheService {
           .sort((a, b) => a.accessed - b.accessed);
 
         const toRemove = items.slice(0, Math.floor(this.maxSize * 0.1)); // Supprimer 10%
-        toRemove.forEach(item => this.delete(item.key));
+        toRemove.forEach((item) => this.delete(item.key));
       }
 
       if (toDelete.length > 0) {
@@ -257,10 +257,10 @@ class CacheService {
 
     return {
       totalItems: this.cache.size,
-      expiredItems: items.filter(item => now > item.expiresAt).length,
+      expiredItems: items.filter((item) => now > item.expiresAt).length,
       totalAccesses: items.reduce((sum, item) => sum + item.accessed, 0),
       averageAge: items.length > 0 ? items.reduce((sum, item) => sum + (now - item.createdAt), 0) / items.length / 1000 : 0,
-      memoryUsage: this.estimateMemoryUsage(),
+      memoryUsage: this.estimateMemoryUsage()
     };
   }
 

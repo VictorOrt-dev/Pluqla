@@ -27,8 +27,8 @@ class AnalyticsService {
         properties: {
           ...properties,
           userAgent: properties.userAgent || 'unknown',
-          ip: properties.ip || 'unknown',
-        },
+          ip: properties.ip || 'unknown'
+        }
       };
 
       // Ajouter l'événement en mémoire
@@ -41,7 +41,7 @@ class AnalyticsService {
 
       logger.info(`📊 Analytics event tracked: ${eventType}`, {
         userId,
-        properties: Object.keys(properties),
+        properties: Object.keys(properties)
       });
 
       return event;
@@ -57,7 +57,7 @@ class AnalyticsService {
   trackPageView(userId, page, properties = {}) {
     return this.trackEvent('page_view', userId, {
       page,
-      ...properties,
+      ...properties
     });
   }
 
@@ -67,7 +67,7 @@ class AnalyticsService {
   trackUserAction(userId, action, properties = {}) {
     return this.trackEvent('user_action', userId, {
       action,
-      ...properties,
+      ...properties
     });
   }
 
@@ -78,7 +78,7 @@ class AnalyticsService {
     return this.trackEvent('saving_transaction', userId, {
       amount,
       category,
-      ...properties,
+      ...properties
     });
   }
 
@@ -88,7 +88,7 @@ class AnalyticsService {
   trackAISuggestionUsed(userId, suggestionType, properties = {}) {
     return this.trackEvent('ai_suggestion_used', userId, {
       suggestionType,
-      ...properties,
+      ...properties
     });
   }
 
@@ -98,7 +98,7 @@ class AnalyticsService {
   trackUserRegistration(userId, method = 'email', properties = {}) {
     return this.trackEvent('user_registration', userId, {
       method,
-      ...properties,
+      ...properties
     });
   }
 
@@ -108,7 +108,7 @@ class AnalyticsService {
   trackUserLogin(userId, method = 'email', properties = {}) {
     return this.trackEvent('user_login', userId, {
       method,
-      ...properties,
+      ...properties
     });
   }
 
@@ -117,7 +117,7 @@ class AnalyticsService {
    */
   getUserEvents(userId, limit = 50) {
     return this.events
-      .filter(event => event.userId === userId)
+      .filter((event) => event.userId === userId)
       .slice(-limit)
       .reverse();
   }
@@ -131,19 +131,19 @@ class AnalyticsService {
     const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
     const todayEvents = this.events.filter(
-      event => new Date(event.timestamp) >= oneDayAgo
+      (event) => new Date(event.timestamp) >= oneDayAgo
     );
 
     const weekEvents = this.events.filter(
-      event => new Date(event.timestamp) >= oneWeekAgo
+      (event) => new Date(event.timestamp) >= oneWeekAgo
     );
 
     const uniqueUsersToday = new Set(
-      todayEvents.map(event => event.userId).filter(Boolean)
+      todayEvents.map((event) => event.userId).filter(Boolean)
     ).size;
 
     const uniqueUsersWeek = new Set(
-      weekEvents.map(event => event.userId).filter(Boolean)
+      weekEvents.map((event) => event.userId).filter(Boolean)
     ).size;
 
     return {
@@ -152,7 +152,7 @@ class AnalyticsService {
       weekEvents: weekEvents.length,
       uniqueUsersToday,
       uniqueUsersWeek,
-      topEventTypes: this.getTopEventTypes(),
+      topEventTypes: this.getTopEventTypes()
     };
   }
 
@@ -162,7 +162,7 @@ class AnalyticsService {
   getTopEventTypes(limit = 10) {
     const eventTypeCounts = {};
 
-    this.events.forEach(event => {
+    this.events.forEach((event) => {
       eventTypeCounts[event.type] = (eventTypeCounts[event.type] || 0) + 1;
     });
 
@@ -182,9 +182,9 @@ class AnalyticsService {
     let totalSavings = 0;
     let aiSuggestionsUsed = 0;
 
-    userEvents.forEach(event => {
+    userEvents.forEach((event) => {
       if (event.type === 'user_action') {
-        const action = event.properties.action;
+        const { action } = event.properties;
         actionCounts[action] = (actionCounts[action] || 0) + 1;
       }
 
@@ -203,7 +203,7 @@ class AnalyticsService {
       totalSavings,
       aiSuggestionsUsed,
       firstSeen: userEvents.length > 0 ? userEvents[userEvents.length - 1].timestamp : null,
-      lastSeen: userEvents.length > 0 ? userEvents[0].timestamp : null,
+      lastSeen: userEvents.length > 0 ? userEvents[0].timestamp : null
     };
   }
 
@@ -216,7 +216,7 @@ class AnalyticsService {
 
     const originalLength = this.events.length;
     this.events = this.events.filter(
-      event => new Date(event.timestamp) >= cutoffDate
+      (event) => new Date(event.timestamp) >= cutoffDate
     );
 
     const removedCount = originalLength - this.events.length;
@@ -251,8 +251,8 @@ class AnalyticsService {
       metadata: {
         exportedAt: new Date().toISOString(),
         totalEvents: this.events.length,
-        isEnabled: this.isEnabled,
-      },
+        isEnabled: this.isEnabled
+      }
     };
   }
 

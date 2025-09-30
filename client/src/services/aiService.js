@@ -109,17 +109,18 @@ class AIService {
     const timeoutId = setTimeout(() => controller.abort(), AI_CONFIG.REQUEST_TIMEOUT);
 
     try {
-      // Placeholder pour appel OpenAI réel
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      // SECURITY FIX: Use secure backend proxy instead of direct API calls
+      const token = localStorage.getItem('accessToken');
+      const response = await fetch('/api/ai-proxy/chat', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${process.env.REACT_APP_OPENAI_KEY}`,
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
+          prompt,
           model: 'gpt-3.5-turbo',
-          messages: [{ role: 'user', content: prompt }],
-          max_tokens: 500,
+          maxTokens: 500,
           temperature: 0.7
         }),
         signal: controller.signal
@@ -128,11 +129,14 @@ class AIService {
       clearTimeout(timeoutId);
 
       if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(`AI proxy error: ${response.status} - ${errorData.message || 'Unknown error'}`);
       }
 
       const data = await response.json();
-      return this.parseAIResponse(data.choices[0].message.content, category);
+      // Backend proxy returns response in data.data.response
+      const content = data.data?.response || data.response || 'AI response generated';
+      return this.parseAIResponse(content, category);
 
     } catch (error) {
       clearTimeout(timeoutId);

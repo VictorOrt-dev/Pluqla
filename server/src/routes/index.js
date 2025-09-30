@@ -6,7 +6,9 @@ const router = express.Router();
 const authRoutes = require('./auth'); // ✅ Essential for login
 const userRoutes = require('./users'); // ✅ Re-enabled - all methods implemented
 const transactionRoutes = require('./transactions'); // ✅ Re-enabled - createBulkTransactions implemented
-const aiRoutes = require('./ai'); // ✅ Re-enabled
+const aiRoutes = require('./ai'); // ⚠️ LEGACY: Will be replaced by secure AI system
+const aiRoutesV2 = require('./aiRoutes'); // 🤖 NEW: Provider-agnostic AI system
+// const secureAiRoutes = require('./secureAi'); // 🔒 SECURE: Migration-ready AI endpoints (DISABLED: Better Auth not working with SQLite)
 const analyticsRoutes = require('./analytics'); // ✅ Re-enabled
 const uploadRoutes = require('./uploads'); // ✅ Re-enabled
 const categoryRoutes = require('./categories'); // ✅ Re-enabled
@@ -31,7 +33,9 @@ router.get('/health', (req, res) => {
 router.use('/auth', authRoutes); // ✅ Essential for login
 router.use('/users', userRoutes); // ✅ All methods implemented including uploadProfilePicture
 router.use('/transactions', transactionRoutes); // ✅ All methods implemented including createBulkTransactions
-router.use('/ai', aiRoutes); // ✅ All methods implemented
+router.use('/ai', aiRoutes); // ⚠️ LEGACY: All methods implemented but insecure
+router.use('/ai-v2', aiRoutesV2); // 🤖 NEW: Provider-agnostic AI endpoints
+// router.use('/ai-secure', secureAiRoutes); // 🔒 SECURE: Migration-ready secure AI endpoints (DISABLED)
 router.use('/analytics', analyticsRoutes); // ✅ All methods implemented
 router.use('/uploads', uploadRoutes); // ✅ All methods implemented
 router.use('/categories', categoryRoutes); // ✅ All methods implemented

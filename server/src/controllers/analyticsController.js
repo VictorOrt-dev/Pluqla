@@ -26,7 +26,9 @@ const analyticsController = {
       }
 
       const userId = req.user?.id;
-      const { type, eventName, properties = {}, sessionId } = req.body;
+      const {
+        type, eventName, properties = {}, sessionId
+      } = req.body;
 
       // Support both 'type' and 'eventName' for backward compatibility
       const eventType = type || eventName;
@@ -74,7 +76,6 @@ const analyticsController = {
           timestamp: event.timestamp
         }
       });
-
     } catch (error) {
       logger.error('Erreur trackEvent:', error);
       res.status(500).json({
@@ -103,22 +104,22 @@ const analyticsController = {
       }
 
       // Calculer la date de début selon la période
-      let startDate = new Date();
+      const startDate = new Date();
       switch (period) {
-        case '7d':
-          startDate.setDate(startDate.getDate() - 7);
-          break;
-        case '30d':
-          startDate.setDate(startDate.getDate() - 30);
-          break;
-        case '90d':
-          startDate.setDate(startDate.getDate() - 90);
-          break;
-        case '1y':
-          startDate.setFullYear(startDate.getFullYear() - 1);
-          break;
-        default:
-          startDate.setDate(startDate.getDate() - 30);
+      case '7d':
+        startDate.setDate(startDate.getDate() - 7);
+        break;
+      case '30d':
+        startDate.setDate(startDate.getDate() - 30);
+        break;
+      case '90d':
+        startDate.setDate(startDate.getDate() - 90);
+        break;
+      case '1y':
+        startDate.setFullYear(startDate.getFullYear() - 1);
+        break;
+      default:
+        startDate.setDate(startDate.getDate() - 30);
       }
 
       // Construire les filtres
@@ -150,15 +151,15 @@ const analyticsController = {
           where: whereClause,
           _count: { type: true }
         }),
-        // Statistiques quotidiennes
+        // Statistiques quotidiennes (PostgreSQL compatible)
         prisma.$queryRaw`
           SELECT
             DATE(timestamp) as date,
             type,
             COUNT(*) as count
           FROM analytics_events
-          WHERE userId = ${userId}
-            AND timestamp >= ${startDate.toISOString()}
+          WHERE "userId" = ${userId}
+            AND timestamp >= ${startDate.toISOString()}::timestamp
           GROUP BY DATE(timestamp), type
           ORDER BY date DESC
         `
@@ -167,16 +168,16 @@ const analyticsController = {
       const analytics = {
         period,
         totalEvents: events.length,
-        eventTypes: eventCounts.map(ec => ({
+        eventTypes: eventCounts.map((ec) => ({
           type: ec.type,
           count: ec._count.type
         })),
-        dailyBreakdown: dailyStats.map(stat => ({
+        dailyBreakdown: dailyStats.map((stat) => ({
           date: stat.date,
           type: stat.type,
           count: parseInt(stat.count)
         })),
-        recentEvents: events.slice(0, 20).map(event => ({
+        recentEvents: events.slice(0, 20).map((event) => ({
           id: event.id,
           type: event.type,
           timestamp: event.timestamp,
@@ -191,7 +192,6 @@ const analyticsController = {
         success: true,
         data: analytics
       });
-
     } catch (error) {
       logger.error('Erreur getAnalytics:', error);
       res.status(500).json({
@@ -221,20 +221,21 @@ const analyticsController = {
 
       // Période de comparaison
       const now = new Date();
-      let startDate, compareStartDate;
+      let startDate; let
+        compareStartDate;
 
       switch (period) {
-        case '7d':
-          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-          compareStartDate = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
-          break;
-        case '30d':
-          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-          compareStartDate = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
-          break;
-        default:
-          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-          compareStartDate = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+      case '7d':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        compareStartDate = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+        break;
+      case '30d':
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        compareStartDate = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        compareStartDate = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
       }
 
       // Récupérer les données de l'utilisateur et ses stats
@@ -324,7 +325,7 @@ const analyticsController = {
           isPremium: user.isPremium,
           nextLevelPoints: (user.level * 1000) - user.gamificationPoints
         },
-        categoryBreakdown: transactionStats.map(stat => ({
+        categoryBreakdown: transactionStats.map((stat) => ({
           category: stat.category,
           amount: stat._sum.amount || 0,
           count: stat._count.id || 0,
@@ -332,7 +333,7 @@ const analyticsController = {
         })),
         engagement: {
           totalEvents: eventStats.reduce((sum, event) => sum + event._count.type, 0),
-          eventBreakdown: eventStats.map(event => ({
+          eventBreakdown: eventStats.map((event) => ({
             type: event.type,
             count: event._count.type
           }))
@@ -347,7 +348,6 @@ const analyticsController = {
         success: true,
         data: dashboard
       });
-
     } catch (error) {
       logger.error('Erreur getDashboard:', error);
       res.status(500).json({
@@ -461,7 +461,6 @@ const analyticsController = {
           newLevel: levelUp ? newLevel : user.level
         }
       });
-
     } catch (error) {
       logger.error('Erreur awardPoints:', error);
       res.status(500).json({
@@ -548,45 +547,45 @@ const analyticsController = {
       const { period = '30d' } = req.query;
 
       // Calculer la période
-      let startDate = new Date();
+      const startDate = new Date();
       switch (period) {
-        case '7d':
-          startDate.setDate(startDate.getDate() - 7);
-          break;
-        case '30d':
-          startDate.setDate(startDate.getDate() - 30);
-          break;
-        case '90d':
-          startDate.setDate(startDate.getDate() - 90);
-          break;
-        default:
-          startDate.setDate(startDate.getDate() - 30);
+      case '7d':
+        startDate.setDate(startDate.getDate() - 7);
+        break;
+      case '30d':
+        startDate.setDate(startDate.getDate() - 30);
+        break;
+      case '90d':
+        startDate.setDate(startDate.getDate() - 90);
+        break;
+      default:
+        startDate.setDate(startDate.getDate() - 30);
       }
 
       // Récupérer les métriques d'engagement
       const [analyticsEvents, transactions, sessionStats] = await Promise.all([
-        // Événements par jour
+        // Événements par jour (PostgreSQL compatible)
         prisma.$queryRaw`
           SELECT
             DATE(timestamp) as date,
-            COUNT(DISTINCT sessionId) as sessions,
+            COUNT(DISTINCT "sessionId") as sessions,
             COUNT(*) as events
           FROM analytics_events
-          WHERE userId = ${userId}
-            AND timestamp >= ${startDate.toISOString()}
+          WHERE "userId" = ${userId}
+            AND timestamp >= ${startDate.toISOString()}::timestamp
           GROUP BY DATE(timestamp)
           ORDER BY date DESC
         `,
-        // Activité des transactions
+        // Activité des transactions (PostgreSQL compatible)
         prisma.$queryRaw`
           SELECT
-            DATE(createdAt) as date,
+            DATE("createdAt") as date,
             COUNT(*) as transactions,
             SUM(amount) as total_amount
           FROM transactions
-          WHERE userId = ${userId}
-            AND createdAt >= ${startDate.toISOString()}
-          GROUP BY DATE(createdAt)
+          WHERE "userId" = ${userId}
+            AND "createdAt" >= ${startDate.toISOString()}::timestamp
+          GROUP BY DATE("createdAt")
           ORDER BY date DESC
         `,
         // Statistiques de session
@@ -604,11 +603,11 @@ const analyticsController = {
 
       // Calculer les métriques d'engagement
       const totalEvents = analyticsEvents.reduce((sum, day) => sum + parseInt(day.events || 0), 0);
-      const totalSessions = [...new Set(sessionStats.map(s => s.sessionId))].length;
+      const totalSessions = [...new Set(sessionStats.map((s) => s.sessionId))].length;
       const totalDays = analyticsEvents.length;
 
       // Calculer la durée moyenne des sessions
-      const sessionDurations = sessionStats.map(session => {
+      const sessionDurations = sessionStats.map((session) => {
         const start = new Date(session._min.timestamp);
         const end = new Date(session._max.timestamp);
         return (end - start) / 1000; // en secondes
@@ -628,12 +627,12 @@ const analyticsController = {
           eventsPerSession: totalSessions > 0 ? Math.round(totalEvents / totalSessions * 100) / 100 : 0,
           averageSessionDuration: Math.round(averageSessionDuration * 100) / 100
         },
-        dailyActivity: analyticsEvents.map(day => ({
+        dailyActivity: analyticsEvents.map((day) => ({
           date: day.date,
           sessions: parseInt(day.sessions || 0),
           events: parseInt(day.events || 0)
         })),
-        transactionActivity: transactions.map(day => ({
+        transactionActivity: transactions.map((day) => ({
           date: day.date,
           transactions: parseInt(day.transactions || 0),
           amount: parseFloat(day.total_amount || 0)
@@ -649,7 +648,6 @@ const analyticsController = {
         success: true,
         data: metrics
       });
-
     } catch (error) {
       logger.error('Erreur getEngagementMetrics:', error);
       res.status(500).json({

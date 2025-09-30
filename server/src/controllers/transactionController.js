@@ -60,7 +60,7 @@ const transactionController = {
       // Tracker l'événement
       analyticsService.trackEvent('transactions_viewed', userId, {
         page: parseInt(page),
-        filters: Object.keys(filters).filter(key => key !== 'userId')
+        filters: Object.keys(filters).filter((key) => key !== 'userId')
       });
 
       res.json({
@@ -77,7 +77,6 @@ const transactionController = {
           }
         }
       });
-
     } catch (error) {
       logger.error('Erreur getTransactions:', error);
       res.status(500).json({
@@ -104,7 +103,9 @@ const transactionController = {
       }
 
       const userId = req.user.id;
-      const { amount, category, description, type = 'saving', date } = req.body;
+      const {
+        amount, category, description, type = 'saving', date
+      } = req.body;
 
       // Validation business rules
       const validCategories = ['alimentation', 'habits', 'activite', 'deplacement'];
@@ -158,7 +159,7 @@ const transactionController = {
         }
 
         // Le streak sera géré après la transaction
-        let newStreak = user.streak;
+        const newStreak = user.streak;
 
         // Mettre à jour l'utilisateur (le streak est déjà mis à jour par strikeService)
         await tx.user.update({
@@ -224,7 +225,6 @@ const transactionController = {
           newStreak: result.newStreak
         }
       });
-
     } catch (error) {
       logger.error('Erreur createTransaction:', error);
       res.status(500).json({
@@ -252,7 +252,9 @@ const transactionController = {
 
       const { id } = req.params;
       const userId = req.user.id;
-      const { amount, category, description, type, date } = req.body;
+      const {
+        amount, category, description, type, date
+      } = req.body;
 
       // Vérifier que la transaction existe et appartient à l'utilisateur
       const existingTransaction = await prisma.transaction.findFirst({
@@ -349,7 +351,6 @@ const transactionController = {
         message: 'Transaction mise à jour avec succès',
         data: result
       });
-
     } catch (error) {
       logger.error('Erreur updateTransaction:', error);
       res.status(500).json({
@@ -416,7 +417,6 @@ const transactionController = {
         success: true,
         message: 'Transaction supprimée avec succès'
       });
-
     } catch (error) {
       logger.error('Erreur deleteTransaction:', error);
       res.status(500).json({
@@ -451,7 +451,6 @@ const transactionController = {
         success: true,
         data: transaction
       });
-
     } catch (error) {
       logger.error('Erreur getTransactionById:', error);
       res.status(500).json({
@@ -484,30 +483,30 @@ const transactionController = {
       const now = new Date();
 
       switch (period) {
-        case 'week':
-          dateFilter = {
-            createdAt: {
-              gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-            }
-          };
-          break;
-        case 'month':
-          dateFilter = {
-            createdAt: {
-              gte: new Date(now.getFullYear(), now.getMonth(), 1)
-            }
-          };
-          break;
-        case 'year':
-          dateFilter = {
-            createdAt: {
-              gte: new Date(now.getFullYear(), 0, 1)
-            }
-          };
-          break;
-        default:
-          // Toutes les transactions
-          break;
+      case 'week':
+        dateFilter = {
+          createdAt: {
+            gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+          }
+        };
+        break;
+      case 'month':
+        dateFilter = {
+          createdAt: {
+            gte: new Date(now.getFullYear(), now.getMonth(), 1)
+          }
+        };
+        break;
+      case 'year':
+        dateFilter = {
+          createdAt: {
+            gte: new Date(now.getFullYear(), 0, 1)
+          }
+        };
+        break;
+      default:
+        // Toutes les transactions
+        break;
       }
 
       // Récupérer les statistiques
@@ -554,17 +553,17 @@ const transactionController = {
           count: totalStats._count.id || 0,
           average: totalStats._avg.amount || 0
         },
-        byCategory: categoryStats.map(cat => ({
+        byCategory: categoryStats.map((cat) => ({
           category: cat.category,
           amount: cat._sum.amount || 0,
           count: cat._count.id || 0
         })),
-        byType: typeStats.map(type => ({
+        byType: typeStats.map((type) => ({
           type: type.type,
           amount: type._sum.amount || 0,
           count: type._count.id || 0
         })),
-        trends: recentTrends.map(trend => ({
+        trends: recentTrends.map((trend) => ({
           date: trend.date,
           amount: trend._sum.amount || 0,
           count: trend._count.id || 0
@@ -581,7 +580,6 @@ const transactionController = {
         success: true,
         data: stats
       });
-
     } catch (error) {
       logger.error('Erreur getTransactionStats:', error);
       res.status(500).json({
@@ -611,7 +609,6 @@ const transactionController = {
         success: true,
         data: transactions
       });
-
     } catch (error) {
       logger.error('Erreur getRecentTransactions:', error);
       res.status(500).json({
@@ -632,7 +629,7 @@ const transactionController = {
       const { startDate, endDate } = req.query;
 
       // Construire les filtres de date
-      let dateFilter = {};
+      const dateFilter = {};
       if (startDate || endDate) {
         dateFilter.createdAt = {};
         if (startDate) dateFilter.createdAt.gte = new Date(startDate);
@@ -661,16 +658,16 @@ const transactionController = {
             }
           }
         }),
-        // Tendance mensuelle
+        // Tendance mensuelle (PostgreSQL compatible)
         prisma.$queryRaw`
           SELECT
-            strftime('%Y-%m', date) as month,
+            TO_CHAR(date, 'YYYY-MM') as month,
             SUM(amount) as total_amount,
             COUNT(*) as transaction_count
           FROM transactions
-          WHERE userId = ${userId}
-            AND date >= date('now', '-12 months')
-          GROUP BY strftime('%Y-%m', date)
+          WHERE "userId" = ${userId}
+            AND date >= NOW() - INTERVAL '12 months'
+          GROUP BY TO_CHAR(date, 'YYYY-MM')
           ORDER BY month ASC
         `
       ]);
@@ -685,13 +682,13 @@ const transactionController = {
           minAmount: summary._min.amount || 0,
           maxAmount: summary._max.amount || 0
         },
-        topCategories: topCategories.map(cat => ({
+        topCategories: topCategories.map((cat) => ({
           category: cat.category,
           amount: cat._sum.amount || 0,
           count: cat._count.id || 0,
           average: (cat._sum.amount || 0) / (cat._count.id || 1)
         })),
-        monthlyTrend: monthlyTrend.map(month => ({
+        monthlyTrend: monthlyTrend.map((month) => ({
           month: month.month,
           amount: parseFloat(month.total_amount) || 0,
           count: parseInt(month.transaction_count) || 0
@@ -705,7 +702,6 @@ const transactionController = {
         success: true,
         data: result
       });
-
     } catch (error) {
       logger.error('Erreur getTransactionSummary:', error);
       res.status(500).json({
@@ -747,17 +743,17 @@ const transactionController = {
           _sum: { amount: true },
           _count: { id: true }
         }),
-        // Stats par jour
+        // Stats par jour (PostgreSQL compatible)
         prisma.$queryRaw`
           SELECT
-            DATE(createdAt) as day,
+            DATE("createdAt") as day,
             SUM(amount) as daily_amount,
             COUNT(*) as daily_count
           FROM transactions
-          WHERE userId = ${userId}
-            AND createdAt >= ${startOfMonth.toISOString()}
-            AND createdAt <= ${endOfMonth.toISOString()}
-          GROUP BY DATE(createdAt)
+          WHERE "userId" = ${userId}
+            AND "createdAt" >= ${startOfMonth.toISOString()}::timestamp
+            AND "createdAt" <= ${endOfMonth.toISOString()}::timestamp
+          GROUP BY DATE("createdAt")
           ORDER BY day ASC
         `,
         // Objectif mensuel de l'utilisateur
@@ -801,15 +797,15 @@ const transactionController = {
           averageDaily: daysPassed > 0 ? monthlyAmount / daysPassed : 0,
           projectedDaily: dailyNeeded
         },
-        dailyBreakdown: dailyStats.map(day => ({
+        dailyBreakdown: dailyStats.map((day) => ({
           date: day.day,
           amount: parseFloat(day.daily_amount) || 0,
           transactions: parseInt(day.daily_count) || 0
         })),
         insights: {
           isOnTrack: progressPercentage >= ((daysPassed / daysInMonth) * 100),
-          bestDay: dailyStats.reduce((max, day) =>
-            (parseFloat(day.daily_amount) || 0) > (parseFloat(max?.daily_amount) || 0) ? day : max,
+          bestDay: dailyStats.reduce(
+            (max, day) => ((parseFloat(day.daily_amount) || 0) > (parseFloat(max?.daily_amount) || 0) ? day : max),
             dailyStats[0]
           ),
           averagePerTransaction: monthStats._count.id > 0 ? monthlyAmount / monthStats._count.id : 0
@@ -820,7 +816,6 @@ const transactionController = {
         success: true,
         data: stats
       });
-
     } catch (error) {
       logger.error('Erreur getMonthlyStats:', error);
       res.status(500).json({
@@ -845,30 +840,30 @@ const transactionController = {
       const now = new Date();
 
       switch (period) {
-        case 'week':
-          dateFilter = {
-            createdAt: {
-              gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-            }
-          };
-          break;
-        case 'month':
-          dateFilter = {
-            createdAt: {
-              gte: new Date(now.getFullYear(), now.getMonth(), 1)
-            }
-          };
-          break;
-        case 'year':
-          dateFilter = {
-            createdAt: {
-              gte: new Date(now.getFullYear(), 0, 1)
-            }
-          };
-          break;
+      case 'week':
+        dateFilter = {
+          createdAt: {
+            gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+          }
+        };
+        break;
+      case 'month':
+        dateFilter = {
+          createdAt: {
+            gte: new Date(now.getFullYear(), now.getMonth(), 1)
+          }
+        };
+        break;
+      case 'year':
+        dateFilter = {
+          createdAt: {
+            gte: new Date(now.getFullYear(), 0, 1)
+          }
+        };
+        break;
       }
 
-      let whereClause = { userId, ...dateFilter };
+      const whereClause = { userId, ...dateFilter };
       if (category) {
         whereClause.category = category;
       }
@@ -891,14 +886,14 @@ const transactionController = {
           }),
           prisma.$queryRaw`
             SELECT
-              DATE(createdAt) as date,
+              DATE("createdAt") as date,
               SUM(amount) as amount,
               COUNT(*) as count
             FROM transactions
-            WHERE userId = ${userId}
+            WHERE "userId" = ${userId}
               AND category = ${category}
-              AND createdAt >= date('now', '-30 days')
-            GROUP BY DATE(createdAt)
+              AND "createdAt" >= NOW() - INTERVAL '30 days'
+            GROUP BY DATE("createdAt")
             ORDER BY date ASC
           `
         ]);
@@ -914,7 +909,7 @@ const transactionController = {
             maxAmount: stats._max.amount || 0
           },
           recentTransactions,
-          trends: trends.map(trend => ({
+          trends: trends.map((trend) => ({
             date: trend.date,
             amount: parseFloat(trend.amount) || 0,
             count: parseInt(trend.count) || 0
@@ -946,8 +941,8 @@ const transactionController = {
               lt: period === 'week'
                 ? new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
                 : period === 'month'
-                ? new Date(now.getFullYear(), now.getMonth() - 1, 1)
-                : new Date(now.getFullYear() - 1, 0, 1)
+                  ? new Date(now.getFullYear(), now.getMonth() - 1, 1)
+                  : new Date(now.getFullYear() - 1, 0, 1)
             }
           },
           _sum: { amount: true },
@@ -960,8 +955,8 @@ const transactionController = {
       const result = {
         period,
         totalAmount,
-        categories: categoryStats.map(cat => {
-          const previousPeriod = comparison.find(c => c.category === cat.category);
+        categories: categoryStats.map((cat) => {
+          const previousPeriod = comparison.find((c) => c.category === cat.category);
           const currentAmount = cat._sum.amount || 0;
           const previousAmount = previousPeriod?._sum.amount || 0;
           const growth = previousAmount > 0 ? ((currentAmount - previousAmount) / previousAmount) * 100 : 0;
@@ -982,7 +977,6 @@ const transactionController = {
         success: true,
         data: result
       });
-
     } catch (error) {
       logger.error('Erreur getCategoryStats:', error);
       res.status(500).json({
@@ -1000,7 +994,9 @@ const transactionController = {
   async exportTransactions(req, res) {
     try {
       const userId = req.user.id;
-      const { format = 'csv', startDate, endDate, category } = req.query;
+      const {
+        format = 'csv', startDate, endDate, category
+      } = req.query;
 
       // Construire les filtres
       const filters = { userId };
@@ -1033,7 +1029,7 @@ const transactionController = {
         let csv = '\ufeffDate,Catégorie,Type,Montant,Description\n'; // \ufeff pour BOM UTF-8
 
         // Données
-        transactions.forEach(transaction => {
+        transactions.forEach((transaction) => {
           const date = new Date(transaction.createdAt).toLocaleDateString('fr-FR');
           const description = `"${transaction.description.replace(/"/g, '""')}"`; // Échapper les guillemets
           csv += `${date},${transaction.category},${transaction.type},${transaction.amount},${description}\n`;
@@ -1050,7 +1046,7 @@ const transactionController = {
           filters,
           totalTransactions: transactions.length,
           totalAmount: transactions.reduce((sum, t) => sum + t.amount, 0),
-          transactions: transactions.map(t => ({
+          transactions: transactions.map((t) => ({
             id: t.id,
             date: t.date,
             createdAt: t.createdAt,
@@ -1065,7 +1061,6 @@ const transactionController = {
       }
 
       logger.info(`Transactions exportées: ${transactions.length} transactions (${format})`);
-
     } catch (error) {
       logger.error('Erreur exportTransactions:', error);
       res.status(500).json({
@@ -1133,7 +1128,6 @@ const transactionController = {
           progressPercentage: Math.round((updatedUser.savedAmount / updatedUser.monthlyGoal) * 100)
         }
       });
-
     } catch (error) {
       logger.error('Erreur createSavingsGoal:', error);
       res.status(500).json({
@@ -1218,8 +1212,8 @@ const transactionController = {
         insights: {
           isOnTrack: progressPercentage >= ((daysPassed / daysInMonth) * 100),
           status: progressPercentage >= 100 ? 'completed'
-                : progressPercentage >= 75 ? 'on_track'
-                : progressPercentage >= 50 ? 'behind'
+            : progressPercentage >= 75 ? 'on_track'
+              : progressPercentage >= 50 ? 'behind'
                 : 'far_behind',
           projectedTotal: daysPassed > 0 ? (monthlyProgress / daysPassed) * daysInMonth : 0
         }
@@ -1229,7 +1223,6 @@ const transactionController = {
         success: true,
         data: goalData
       });
-
     } catch (error) {
       logger.error('Erreur getSavingsGoals:', error);
       res.status(500).json({
@@ -1297,7 +1290,6 @@ const transactionController = {
           progressPercentage: Math.round((updatedUser.savedAmount / updatedUser.monthlyGoal) * 100)
         }
       });
-
     } catch (error) {
       logger.error('Erreur updateSavingsGoal:', error);
       res.status(500).json({
@@ -1337,7 +1329,6 @@ const transactionController = {
         success: true,
         message: 'Objectif d\'économie supprimé avec succès'
       });
-
     } catch (error) {
       logger.error('Erreur deleteSavingsGoal:', error);
       res.status(500).json({
@@ -1390,7 +1381,9 @@ const transactionController = {
       let totalPoints = 0;
 
       transactions.forEach((transaction, index) => {
-        const { amount, category, description, type = 'saving', date } = transaction;
+        const {
+          amount, category, description, type = 'saving', date
+        } = transaction;
 
         if (!amount || isNaN(amount) || amount <= 0 || amount > 10000) {
           validationErrors.push(`Transaction ${index + 1}: Le montant doit être entre 0.01€ et 10,000€`);
@@ -1424,7 +1417,9 @@ const transactionController = {
         const createdTransactions = [];
 
         for (const transactionData of transactions) {
-          const { amount, category, description, type = 'saving', date } = transactionData;
+          const {
+            amount, category, description, type = 'saving', date
+          } = transactionData;
 
           const transaction = await tx.transaction.create({
             data: {
@@ -1498,7 +1493,7 @@ const transactionController = {
         count: transactions.length,
         totalAmount: totalSavingsAmount,
         pointsEarned: result.pointsEarned,
-        categories: [...new Set(transactions.map(t => t.category))]
+        categories: [...new Set(transactions.map((t) => t.category))]
       });
 
       logger.info(`Transactions bulk créées pour l'utilisateur ${userId}: ${transactions.length} transactions, ${totalSavingsAmount}€ total`);
@@ -1514,7 +1509,6 @@ const transactionController = {
           newStreak: result.newStreak
         }
       });
-
     } catch (error) {
       logger.error('Erreur createBulkTransactions:', error);
       res.status(500).json({

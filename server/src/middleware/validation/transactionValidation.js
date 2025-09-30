@@ -15,7 +15,9 @@
  */
 
 const { body, query, param } = require('express-validator');
-const { customValidators, processValidationResults, sanitizeInputs, ValidationUtils } = require('./validationUtils');
+const {
+  customValidators, processValidationResults, sanitizeInputs, ValidationUtils
+} = require('./validationUtils');
 
 /**
  * Transaction Creation Validation
@@ -93,7 +95,7 @@ const validateTransactionCreate = [
       const fraudPatterns = ['test', 'hack', 'exploit', 'injection', 'script'];
       const lowerValue = value.toLowerCase();
 
-      if (fraudPatterns.some(pattern => lowerValue.includes(pattern))) {
+      if (fraudPatterns.some((pattern) => lowerValue.includes(pattern))) {
         throw new Error('Description contains potentially harmful content');
       }
 

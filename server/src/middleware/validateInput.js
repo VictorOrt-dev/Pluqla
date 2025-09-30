@@ -1,4 +1,6 @@
-const { body, validationResult, param, query } = require('express-validator');
+const {
+  body, validationResult, param, query
+} = require('express-validator');
 const logger = require('../utils/logger');
 
 /**
@@ -8,22 +10,22 @@ const handleValidationErrors = (req, res, next) => {
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
-    const formattedErrors = errors.array().map(error => ({
+    const formattedErrors = errors.array().map((error) => ({
       field: error.path || error.param,
       message: error.msg,
-      value: error.value,
+      value: error.value
     }));
 
     logger.warn('Validation errors:', {
       path: req.path,
       method: req.method,
-      errors: formattedErrors,
+      errors: formattedErrors
     });
 
     return res.status(400).json({
       error: 'Validation failed',
       message: 'Les données fournies ne sont pas valides',
-      details: formattedErrors,
+      details: formattedErrors
     });
   }
 
@@ -45,7 +47,7 @@ const authValidators = {
     body('password')
       .isLength({ min: 6 })
       .withMessage('Le mot de passe doit contenir au moins 6 caractères'),
-      // Validation simplifiée pour les tests
+    // Validation simplifiée pour les tests
 
     body('name')
       .trim()
@@ -54,7 +56,7 @@ const authValidators = {
       .matches(/^[a-zA-ZÀ-ÿ\s-']+$/)
       .withMessage('Le nom ne peut contenir que des lettres, espaces, tirets et apostrophes'),
 
-    handleValidationErrors,
+    handleValidationErrors
   ],
 
   login: [
@@ -67,7 +69,7 @@ const authValidators = {
       .notEmpty()
       .withMessage('Mot de passe requis'),
 
-    handleValidationErrors,
+    handleValidationErrors
   ],
 
   resetPassword: [
@@ -76,7 +78,7 @@ const authValidators = {
       .withMessage('Email invalide')
       .normalizeEmail(),
 
-    handleValidationErrors,
+    handleValidationErrors
   ],
 
   updatePassword: [
@@ -90,7 +92,7 @@ const authValidators = {
       .matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/)
       .withMessage('Le mot de passe doit contenir au moins une minuscule, une majuscule et un chiffre'),
 
-    handleValidationErrors,
+    handleValidationErrors
   ],
 
   refreshToken: [
@@ -98,8 +100,8 @@ const authValidators = {
       .notEmpty()
       .withMessage('Refresh token requis'),
 
-    handleValidationErrors,
-  ],
+    handleValidationErrors
+  ]
 };
 
 /**
@@ -120,7 +122,7 @@ const userValidators = {
       .isFloat({ min: 0, max: 100000 })
       .withMessage('L\'objectif mensuel doit être entre 0 et 100 000'),
 
-    handleValidationErrors,
+    handleValidationErrors
   ],
 
   updateAnswers: [
@@ -134,7 +136,7 @@ const userValidators = {
       .isLength({ max: 500 })
       .withMessage('Chaque réponse ne peut dépasser 500 caractères'),
 
-    handleValidationErrors,
+    handleValidationErrors
   ],
 
   userId: [
@@ -144,8 +146,8 @@ const userValidators = {
       .isLength({ min: 20, max: 30 })
       .withMessage('Format d\'ID utilisateur invalide'),
 
-    handleValidationErrors,
-  ],
+    handleValidationErrors
+  ]
 };
 
 /**
@@ -171,7 +173,7 @@ const transactionValidators = {
       .isIn(['saving', 'expense', 'goal'])
       .withMessage('Type de transaction invalide'),
 
-    handleValidationErrors,
+    handleValidationErrors
   ],
 
   update: [
@@ -190,7 +192,7 @@ const transactionValidators = {
       .isLength({ min: 3, max: 200 })
       .withMessage('La description doit contenir entre 3 et 200 caractères'),
 
-    handleValidationErrors,
+    handleValidationErrors
   ],
 
   transactionId: [
@@ -198,8 +200,8 @@ const transactionValidators = {
       .isString()
       .withMessage('ID de transaction invalide'),
 
-    handleValidationErrors,
-  ],
+    handleValidationErrors
+  ]
 };
 
 /**
@@ -227,8 +229,8 @@ const paginationValidators = {
       .isIn(['asc', 'desc'])
       .withMessage('Ordre de tri invalide (asc ou desc)'),
 
-    handleValidationErrors,
-  ],
+    handleValidationErrors
+  ]
 };
 
 /**
@@ -241,8 +243,8 @@ const uploadValidators = {
       .isIn(['alimentation', 'habits', 'activite', 'deplacement'])
       .withMessage('Catégorie invalide'),
 
-    handleValidationErrors,
-  ],
+    handleValidationErrors
+  ]
 };
 
 /**
@@ -259,7 +261,7 @@ const aiValidators = {
       .isInt({ min: 1, max: 20 })
       .withMessage('La limite doit être entre 1 et 20'),
 
-    handleValidationErrors,
+    handleValidationErrors
   ],
 
   feedback: [
@@ -277,8 +279,8 @@ const aiValidators = {
       .isLength({ max: 500 })
       .withMessage('Le commentaire ne peut dépasser 500 caractères'),
 
-    handleValidationErrors,
-  ],
+    handleValidationErrors
+  ]
 };
 
 /**
@@ -291,7 +293,7 @@ const validateId = (paramName = 'id') => [
     .isLength({ min: 20, max: 30 })
     .withMessage(`Format de ${paramName} invalide`),
 
-  handleValidationErrors,
+  handleValidationErrors
 ];
 
 /**
@@ -300,7 +302,7 @@ const validateId = (paramName = 'id') => [
 const sanitizeText = (fieldName, options = {}) => {
   const { min = 1, max = 255, optional = false } = options;
 
-  let validator = optional ? body(fieldName).optional() : body(fieldName);
+  const validator = optional ? body(fieldName).optional() : body(fieldName);
 
   return validator
     .trim()
@@ -318,5 +320,5 @@ module.exports = {
   uploadValidators,
   aiValidators,
   validateId,
-  sanitizeText,
+  sanitizeText
 };
