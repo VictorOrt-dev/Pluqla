@@ -1,13 +1,17 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { v4: uuidv4 } = require('uuid');
 const { prisma } = require('../lib/prisma'); // FIXED: Use singleton to prevent connection pool exhaustion
 const logger = require('../utils/logger');
-const { generateTokens, verifyRefreshToken, generateEmailVerificationToken } = require('../utils/jwt');
+const { generateTokens, verifyRefreshToken } = require('../utils/jwt');
 const emailService = require('../services/emailService');
-const { v4: uuidv4 } = require('uuid');
+const { generateEmailVerificationToken, hashEmailToken } = require('../utils/emailTokenUtils');
 const { sendSuccess, sendError } = require('../utils/responseHelper');
 const { createPasswordResetToken, verifyPasswordResetToken } = require('../utils/tokenUtils');
 const refreshTokenService = require('../services/refreshTokenService');
+const { recordAuthAttempt, recordUserRegistration } = require('../services/monitoringService');
+const { validatePassword } = require('../middleware/passwordPolicy');
+const authLockoutService = require('../services/authLockoutService');
 
 class AuthController {
   async register(req, res) {
@@ -24,6 +28,14 @@ class AuthController {
         userAgent: req.get('User-Agent')
       });
 
+      // SECURITY: Validate password complexity
+      const passwordValidation = validatePassword(password);
+      if (!passwordValidation.valid) {
+        return sendError(res, 'Le mot de passe ne respecte pas les exigences de sécurité', 400, 'weak_password', {
+          errors: passwordValidation.errors
+        });
+      }
+
       // Vérifier si l'utilisateur existe déjà
       const existingUser = await prisma.user.findUnique({
         where: { email }
@@ -37,8 +49,8 @@ class AuthController {
       const saltRounds = 12;
       const hashedPassword = await bcrypt.hash(password, saltRounds);
 
-      // Générer le token de vérification d'email (simple UUID)
-      const emailVerificationToken = uuidv4();
+      // SECURITY FIX: Generate secure hashed email verification token
+      const { plainToken, hashedToken } = generateEmailVerificationToken();
 
       // Créer l'utilisateur
       const user = await prisma.user.create({
@@ -46,7 +58,7 @@ class AuthController {
           email,
           password: hashedPassword,
           name,
-          emailVerificationToken: emailVerificationToken, // Store plain token for lookup
+          emailVerificationToken: hashedToken, // Store hashed token for security
           createdAt: new Date(),
           updatedAt: new Date()
         },
@@ -62,14 +74,14 @@ class AuthController {
       // Générer les tokens JWT
       const { accessToken, refreshToken } = generateTokens(user.id);
 
-      // TEMPORARY FIX: Comment out refresh token storage for database schema issue
-      // const ipAddress = req.ip || req.connection.remoteAddress;
-      // const userAgent = req.get('User-Agent');
-      // await refreshTokenService.storeRefreshToken(refreshToken, user.id, ipAddress, userAgent);
+      // SECURITY FIX: Store refresh token securely with metadata
+      const ipAddress = req.ip || req.connection.remoteAddress;
+      const userAgent = req.get('User-Agent');
+      await refreshTokenService.storeRefreshToken(refreshToken, user.id, ipAddress, userAgent);
 
       // Envoyer l'email de vérification si le service email est configuré
       try {
-        await emailService.sendVerificationEmail(user.email, emailVerificationToken);
+        await emailService.sendVerificationEmail(user.email, plainToken);
       } catch (emailError) {
         logger.warn('Impossible d\'envoyer l\'email de vérification:', emailError.message);
         // Ne pas faire échouer l'inscription si l'email échoue
@@ -77,13 +89,16 @@ class AuthController {
 
       logger.info(`Nouvel utilisateur créé: ${user.email}`);
 
+      // Record user registration metric
+      recordUserRegistration('email');
+      recordAuthAttempt('email', true);
+
       return sendSuccess(res, {
         user,
         token: accessToken,
         refreshToken,
         needsEmailVerification: true
       }, 'Compte créé avec succès', 201);
-
     } catch (error) {
       // SECURITY FIX: Use secure error logging to prevent JWT/password exposure
       logger.error('Registration error', {
@@ -92,6 +107,10 @@ class AuthController {
         errorName: error.name,
         errorMessage: error.message
       });
+
+      // Record registration failure
+      recordAuthAttempt('email', false, 'registration_error');
+
       return sendError(res, 'Impossible de créer le compte', 500, 'registration_error');
     }
   }
@@ -99,13 +118,14 @@ class AuthController {
   async login(req, res) {
     try {
       const { email, password } = req.body;
+      const ipAddress = req.ip || req.connection.remoteAddress;
 
       // Log des données reçues (sans le mot de passe)
       logger.info('[LOGIN] Tentative connexion', {
         email: email ? 'fourni' : 'manquant',
         password: password ? 'fourni' : 'manquant',
         passwordLength: password ? password.length : 0,
-        ip: req.ip,
+        ip: ipAddress,
         userAgent: req.get('User-Agent')
       });
 
@@ -114,28 +134,50 @@ class AuthController {
         where: { email }
       });
 
+      // SECURITY: Check lockout status (use email hash for unknown users to prevent enumeration)
+      const lockoutKey = user ? user.id : `ip:${ipAddress}`;
+      const lockStatus = await authLockoutService.isLocked(lockoutKey, ipAddress);
+
+      if (lockStatus.locked) {
+        recordAuthAttempt('password', false, 'account_locked');
+        return sendError(res, 'Trop de tentatives de connexion. Veuillez réessayer plus tard.', 403, 'account_locked', {
+          remainingTime: lockStatus.remainingTime,
+          lockedUntil: lockStatus.lockedUntil
+        });
+      }
+
       if (!user) {
+        // SECURITY: Record failed attempt even if user doesn't exist (prevents enumeration)
+        await authLockoutService.recordFailedAttempt(lockoutKey, ipAddress);
+        recordAuthAttempt('password', false, 'user_not_found');
         return sendError(res, 'Email ou mot de passe incorrect', 401, 'invalid_credentials');
       }
 
       // Vérifier le mot de passe
       const isPasswordValid = await bcrypt.compare(password, user.password);
       if (!isPasswordValid) {
+        // SECURITY: Record failed login attempt
+        await authLockoutService.recordFailedAttempt(user.id, ipAddress);
+        recordAuthAttempt('password', false, 'invalid_password');
         return sendError(res, 'Email ou mot de passe incorrect', 401, 'invalid_credentials');
       }
 
+      // SECURITY: Clear failed attempts after successful login
+      await authLockoutService.clearFailedAttempts(user.id, ipAddress);
+
       // Vérifier si le compte est actif
       if (user.status !== 'active') {
+        recordAuthAttempt('password', false, 'account_disabled');
         return sendError(res, 'Votre compte a été désactivé. Contactez le support.', 403, 'account_disabled');
       }
 
       // Générer les tokens JWT
       const { accessToken, refreshToken } = generateTokens(user.id);
 
-      // TEMPORARY FIX: Comment out refresh token storage for database schema issue
-      // const ipAddress = req.ip || req.connection.remoteAddress;
-      // const userAgent = req.get('User-Agent');
-      // await refreshTokenService.storeRefreshToken(refreshToken, user.id, ipAddress, userAgent);
+      // SECURITY FIX: Store refresh token securely with metadata
+      const ipAddress = req.ip || req.connection.remoteAddress;
+      const userAgent = req.get('User-Agent');
+      await refreshTokenService.storeRefreshToken(refreshToken, user.id, ipAddress, userAgent);
 
       // Mettre à jour la dernière connexion
       await prisma.user.update({
@@ -148,13 +190,18 @@ class AuthController {
 
       logger.info(`Connexion réussie pour: ${user.email}`);
 
+      // Record successful login
+      recordAuthAttempt('password', true);
+
       return sendSuccess(res, {
         user: userResponse,
         token: accessToken,
         refreshToken
       }, 'Connexion réussie');
-
     } catch (error) {
+      // Record login failure
+      recordAuthAttempt('password', false, 'login_error');
+
       // SECURITY FIX: Use secure error logging to prevent JWT/credential exposure
       logger.error('Login error', {
         action: 'login',
@@ -189,7 +236,6 @@ class AuthController {
       }
 
       return sendSuccess(res, null, 'Déconnexion réussie');
-
     } catch (error) {
       logger.error('Erreur lors de la déconnexion:', error);
       return sendError(res, 'Erreur lors de la déconnexion', 500, 'logout_error');
@@ -222,7 +268,6 @@ class AuthController {
       return sendSuccess(res, {
         tokens: rotationResult.tokens
       }, 'Tokens renouvelés avec succès');
-
     } catch (error) {
       // SECURITY FIX: Never log refresh token data
       logger.logSecurity('refresh_token_error', {
@@ -247,13 +292,13 @@ class AuthController {
       // Toujours retourner succès pour éviter l'énumération d'emails
       if (!user) {
         // Add delay to prevent timing attacks
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
         return sendSuccess(res, null, 'Si cet email existe, un lien de réinitialisation a été envoyé');
       }
 
       // Vérifier si le compte est actif
       if (user.status !== 'active') {
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
         return sendSuccess(res, null, 'Si cet email existe, un lien de réinitialisation a été envoyé');
       }
 
@@ -271,11 +316,11 @@ class AuthController {
         // Log security event (without exposing email or token)
         logger.info(`Password reset requested from IP ${ipAddress} for user ${user.id}`);
 
-        return sendSuccess(res,
+        return sendSuccess(
+          res,
           { resetId }, // Return reset ID for optional tracking
           'Si cet email existe, un lien de réinitialisation a été envoyé'
         );
-
       } catch (tokenError) {
         // SECURITY FIX: Never log reset token details
         logger.logSecurity('password_reset_token_creation_error', {
@@ -284,7 +329,6 @@ class AuthController {
         });
         return sendError(res, 'Impossible de traiter la demande actuellement', 500, 'reset_token_error');
       }
-
     } catch (error) {
       // SECURITY FIX: Don't log password reset details
       logger.error('Forgot password error', {
@@ -317,7 +361,7 @@ class AuthController {
         return sendError(res, 'Token de réinitialisation invalide ou expiré', 400, 'invalid_token');
       }
 
-      const userId = tokenResult.userId;
+      const { userId } = tokenResult;
 
       // Get user details
       const user = await prisma.user.findUnique({
@@ -348,7 +392,7 @@ class AuthController {
 
         // Clean up any other password reset tokens for this user
         await prisma.passwordReset.deleteMany({
-          where: { userId: userId }
+          where: { userId }
         });
 
         return true;
@@ -361,11 +405,11 @@ class AuthController {
       // Log successful password reset (without exposing sensitive data)
       logger.info(`Password reset completed for user ${userId} from IP ${ipAddress}`);
 
-      return sendSuccess(res,
+      return sendSuccess(
+        res,
         null,
         'Mot de passe réinitialisé avec succès. Veuillez vous reconnecter.'
       );
-
     } catch (error) {
       logger.error('Erreur lors de la réinitialisation du mot de passe:', error);
       return sendError(res, 'Impossible de réinitialiser le mot de passe', 500, 'reset_password_error');
@@ -376,8 +420,11 @@ class AuthController {
     try {
       const { token } = req.params;
 
+      // SECURITY FIX: Hash the incoming token before database lookup
+      const hashedToken = hashEmailToken(token);
+
       const user = await prisma.user.findFirst({
-        where: { emailVerificationToken: token }
+        where: { emailVerificationToken: hashedToken }
       });
 
       if (!user) {
@@ -407,7 +454,6 @@ class AuthController {
       res.json({
         message: 'Email vérifié avec succès'
       });
-
     } catch (error) {
       logger.error('Erreur lors de la vérification email:', error);
       res.status(500).json({
@@ -448,7 +494,6 @@ class AuthController {
         message: 'Token valide',
         user
       });
-
     } catch (error) {
       logger.error('Erreur lors de la vérification du token:', error);
       res.status(401).json({
@@ -478,23 +523,22 @@ class AuthController {
         });
       }
 
-      // Générer un nouveau token de vérification
-      const verificationToken = uuidv4();
+      // SECURITY FIX: Générer un nouveau token de vérification sécurisé
+      const { plainToken, hashedToken } = generateEmailVerificationToken();
 
       await prisma.user.update({
         where: { id: user.id },
         data: {
-          emailVerificationToken: verificationToken,
+          emailVerificationToken: hashedToken,
           updatedAt: new Date()
         }
       });
 
-      await emailService.sendVerificationEmail(email, verificationToken);
+      await emailService.sendVerificationEmail(email, plainToken);
 
       res.json({
         message: 'Si cet email existe, un nouveau lien de vérification a été envoyé'
       });
-
     } catch (error) {
       logger.error('Erreur lors du renvoi de vérification:', error);
       res.status(500).json({
@@ -512,7 +556,9 @@ class AuthController {
       // Get user with password
       const user = await prisma.user.findUnique({
         where: { id: userId },
-        select: { id: true, email: true, password: true, status: true }
+        select: {
+          id: true, email: true, password: true, status: true
+        }
       });
 
       if (!user || user.status !== 'active') {
@@ -558,7 +604,6 @@ class AuthController {
       logger.info(`Password changed successfully for user ${userId}`);
 
       return sendSuccess(res, null, 'Mot de passe modifié avec succès. Veuillez vous reconnecter.');
-
     } catch (error) {
       logger.error('Change password error', {
         action: 'change_password',
