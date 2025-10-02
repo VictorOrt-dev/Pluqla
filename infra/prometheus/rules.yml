@@ -1,0 +1,274 @@
+groups:
+  - name: pluqla_api_alerts
+    interval: 30s
+    rules:
+      # High 5xx Error Rate
+      - alert: High5xxErrorRate
+        expr: |
+          (
+            sum(rate(pluqla_http_5xx_errors_total[5m]))
+            /
+            sum(rate(pluqla_http_requests_total[5m]))
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "High 5xx error rate detected"
+          description: "5xx error rate is {{ $value | humanizePercentage }} over the last 5 minutes"
+
+      # High API Latency P95
+      - alert: HighLatencyP95
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(pluqla_http_request_duration_seconds_bucket[5m])) by (le)
+          ) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "High API latency (P95)"
+          description: "95th percentile latency is {{ $value }}s over the last 5 minutes"
+
+      # High API Latency P99
+      - alert: HighLatencyP99
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(pluqla_http_request_duration_seconds_bucket[5m])) by (le)
+          ) > 1.0
+        for: 5m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "Critical API latency (P99)"
+          description: "99th percentile latency is {{ $value }}s over the last 5 minutes"
+
+      # API Down
+      - alert: APIDown
+        expr: up{job="pluqla-api"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "Pluqla API is down"
+          description: "The Pluqla API has been down for more than 1 minute"
+
+  - name: pluqla_auth_alerts
+    interval: 30s
+    rules:
+      # High Authentication Failure Rate
+      - alert: HighAuthFailureRate
+        expr: |
+          (
+            sum(rate(pluqla_auth_failure_total[5m]))
+            /
+            sum(rate(pluqla_auth_success_total[5m]) + rate(pluqla_auth_failure_total[5m]))
+          ) > 0.2
+        for: 5m
+        labels:
+          severity: warning
+          component: auth
+        annotations:
+          summary: "High authentication failure rate"
+          description: "Auth failure rate is {{ $value | humanizePercentage }} over the last 5 minutes"
+
+      # Auth Failure Spike
+      - alert: AuthFailureSpike
+        expr: |
+          (
+            rate(pluqla_auth_failure_total[5m])
+            >
+            (avg_over_time(rate(pluqla_auth_failure_total[5m])[1h:5m]) * 3)
+          )
+        for: 5m
+        labels:
+          severity: critical
+          component: auth
+        annotations:
+          summary: "Authentication failure spike detected"
+          description: "Auth failures are 3x higher than usual ({{ $value }} failures/sec)"
+
+  - name: pluqla_session_alerts
+    interval: 30s
+    rules:
+      # Session Spike
+      - alert: SessionSpike
+        expr: |
+          (
+            increase(pluqla_active_sessions[10m]) > 50
+          )
+        for: 5m
+        labels:
+          severity: warning
+          component: sessions
+        annotations:
+          summary: "Unusual session growth detected"
+          description: "Active sessions increased by {{ $value }} in the last 10 minutes"
+
+      # Session Concurrency Rejections
+      - alert: SessionConcurrencyRejections
+        expr: rate(pluqla_session_concurrency_rejected_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: sessions
+        annotations:
+          summary: "High session concurrency rejections"
+          description: "{{ $value }} sessions/sec being rejected due to concurrency limits"
+
+  - name: pluqla_database_alerts
+    interval: 30s
+    rules:
+      # High Database Connection Usage
+      - alert: HighDBConnectionUsage
+        expr: |
+          (
+            pluqla_db_connection_pool_used
+            /
+            pluqla_db_connection_pool_size
+          ) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "High database connection pool usage"
+          description: "DB connection pool is {{ $value | humanizePercentage }} utilized"
+
+      # Database Connection Pool Exhausted
+      - alert: DBConnectionPoolExhausted
+        expr: |
+          (
+            pluqla_db_connection_pool_used
+            /
+            pluqla_db_connection_pool_size
+          ) >= 0.95
+        for: 2m
+        labels:
+          severity: critical
+          component: database
+        annotations:
+          summary: "Database connection pool nearly exhausted"
+          description: "DB connection pool is {{ $value | humanizePercentage }} utilized - risk of connection exhaustion"
+
+      # Slow Database Queries
+      - alert: SlowDatabaseQueries
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(pluqla_db_query_duration_seconds_bucket[5m])) by (le, operation)
+          ) > 1.0
+        for: 5m
+        labels:
+          severity: warning
+          component: database
+        annotations:
+          summary: "Slow database queries detected"
+          description: "P95 database query duration is {{ $value }}s for operation {{ $labels.operation }}"
+
+      # High Database Error Rate
+      - alert: HighDBErrorRate
+        expr: rate(pluqla_db_query_errors_total[5m]) > 0.01
+        for: 5m
+        labels:
+          severity: critical
+          component: database
+        annotations:
+          summary: "High database error rate"
+          description: "Database errors occurring at {{ $value }}/sec"
+
+  - name: pluqla_ai_alerts
+    interval: 30s
+    rules:
+      # High AI Error Rate
+      - alert: HighAIErrorRate
+        expr: |
+          (
+            sum(rate(pluqla_ai_errors_total[5m]))
+            /
+            sum(rate(pluqla_ai_requests_total[5m]))
+          ) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: ai
+        annotations:
+          summary: "High AI API error rate"
+          description: "AI error rate is {{ $value | humanizePercentage }}"
+
+      # AI Request Timeout
+      - alert: AIRequestTimeout
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(pluqla_ai_request_duration_seconds_bucket[5m])) by (le, provider)
+          ) > 30
+        for: 5m
+        labels:
+          severity: warning
+          component: ai
+        annotations:
+          summary: "AI requests timing out"
+          description: "P95 AI request duration is {{ $value }}s for provider {{ $labels.provider }}"
+
+  - name: pluqla_compliance_alerts
+    interval: 30s
+    rules:
+      # High GDPR Request Volume
+      - alert: HighGDPRRequestVolume
+        expr: rate(pluqla_gdpr_requests_total[1h]) > 10
+        for: 30m
+        labels:
+          severity: warning
+          component: compliance
+        annotations:
+          summary: "Unusual GDPR request volume"
+          description: "GDPR requests occurring at {{ $value }}/hour - potential data breach indicator"
+
+      # High SCA Failure Rate
+      - alert: HighSCAFailureRate
+        expr: |
+          (
+            sum(rate(pluqla_sca_challenges_total{status="failed"}[5m]))
+            /
+            sum(rate(pluqla_sca_challenges_total[5m]))
+          ) > 0.3
+        for: 10m
+        labels:
+          severity: warning
+          component: compliance
+        annotations:
+          summary: "High SCA challenge failure rate"
+          description: "SCA failure rate is {{ $value | humanizePercentage }}"
+
+  - name: pluqla_system_alerts
+    interval: 30s
+    rules:
+      # High Memory Usage
+      - alert: HighMemoryUsage
+        expr: |
+          (
+            process_resident_memory_bytes{job="pluqla-api"}
+            /
+            1024 / 1024 / 1024
+          ) > 1.5
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "High memory usage"
+          description: "API server using {{ $value }}GB of memory"
+
+      # High CPU Usage
+      - alert: HighCPUUsage
+        expr: rate(process_cpu_seconds_total{job="pluqla-api"}[5m]) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+          component: system
+        annotations:
+          summary: "High CPU usage"
+          description: "API server CPU usage is {{ $value | humanizePercentage }}"

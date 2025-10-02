@@ -1,0 +1,58 @@
+# Prometheus Configuration for Pluqla Backend
+# Includes SLO-based alerting rules and Grafana integration
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'pluqla-production'
+    environment: 'prod'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            - 'alertmanager:9093'
+
+# Load alerting rules
+rule_files:
+  - 'alerts.yml'
+  - 'rules/*.yml'
+
+# Scrape configurations
+scrape_configs:
+  # Pluqla Backend API
+  - job_name: 'pluqla-api'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets:
+          - 'api:3004'
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: instance
+        replacement: 'pluqla-api'
+
+  # PostgreSQL Exporter
+  - job_name: 'postgresql'
+    static_configs:
+      - targets:
+          - 'postgres-exporter:9187'
+
+  # Redis Exporter
+  - job_name: 'redis'
+    static_configs:
+      - targets:
+          - 'redis-exporter:9121'
+
+  # Node Exporter (system metrics)
+  - job_name: 'node'
+    static_configs:
+      - targets:
+          - 'node-exporter:9100'
+
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets:
+          - 'localhost:9090'

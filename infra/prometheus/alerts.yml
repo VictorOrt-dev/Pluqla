@@ -1,0 +1,330 @@
+###############################################################################
+# PROMETHEUS ALERTING RULES - PLUQLA BACKEND
+#
+# SLO-based alerts for production monitoring and incident response.
+#
+# Alert Levels:
+# - Critical: Immediate action required (P0)
+# - Warning: Investigation needed (P1)
+# - Info: Awareness only (P2)
+#
+# Integration:
+# - Prometheus: Include this file in prometheus.yml
+# - Grafana: Link dashboards to alerts
+# - PagerDuty/Slack: Route by severity
+###############################################################################
+
+groups:
+  ###########################################################################
+  # SLO: LATENCY & PERFORMANCE
+  ###########################################################################
+  - name: latency_slo
+    interval: 30s
+    rules:
+      # CRITICAL: P95 latency > 1000ms (1s)
+      - alert: HighP95LatencyCritical
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, route)) > 1
+        for: 5m
+        labels:
+          severity: critical
+          component: api
+          slo: latency
+        annotations:
+          summary: "Critical: P95 latency exceeds 1000ms"
+          description: "Route {{ $labels.route }} has P95 latency of {{ $value | humanizeDuration }} (threshold: 1000ms). Immediate investigation required."
+          dashboard: "https://grafana.pluqla.com/d/api-performance"
+          runbook: "https://docs.pluqla.com/runbooks/high-latency"
+
+      # WARNING: P95 latency > 500ms
+      - alert: HighP95LatencyWarning
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, route)) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+          component: api
+          slo: latency
+        annotations:
+          summary: "Warning: P95 latency exceeds 500ms"
+          description: "Route {{ $labels.route }} has P95 latency of {{ $value | humanizeDuration }} (threshold: 500ms). Review and optimize."
+          dashboard: "https://grafana.pluqla.com/d/api-performance"
+          action: "Check slow queries, review API endpoints"
+
+      # WARNING: P99 latency > 2000ms (2s)
+      - alert: HighP99Latency
+        expr: histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, route)) > 2
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+          slo: latency
+        annotations:
+          summary: "P99 latency exceeds 2000ms"
+          description: "Route {{ $labels.route }} has P99 latency of {{ $value | humanizeDuration }}. Top 1% of requests are very slow."
+          dashboard: "https://grafana.pluqla.com/d/api-performance"
+
+  ###########################################################################
+  # SLO: ERROR RATE & AVAILABILITY
+  ###########################################################################
+  - name: error_rate_slo
+    interval: 30s
+    rules:
+      # CRITICAL: Error rate > 5%
+      - alert: HighErrorRateCritical
+        expr: (sum(rate(http_requests_total{status=~"5.."}[5m])) by (route) / sum(rate(http_requests_total[5m])) by (route)) > 0.05
+        for: 3m
+        labels:
+          severity: critical
+          component: api
+          slo: availability
+        annotations:
+          summary: "Critical: Error rate exceeds 5%"
+          description: "Route {{ $labels.route }} has {{ $value | humanizePercentage }} error rate (threshold: 5%). Service degradation detected."
+          dashboard: "https://grafana.pluqla.com/d/api-errors"
+          runbook: "https://docs.pluqla.com/runbooks/high-error-rate"
+
+      # WARNING: Error rate > 1%
+      - alert: HighErrorRateWarning
+        expr: (sum(rate(http_requests_total{status=~"5.."}[5m])) by (route) / sum(rate(http_requests_total[5m])) by (route)) > 0.01
+        for: 10m
+        labels:
+          severity: warning
+          component: api
+          slo: availability
+        annotations:
+          summary: "Warning: Error rate exceeds 1%"
+          description: "Route {{ $labels.route }} has {{ $value | humanizePercentage }} error rate (threshold: 1%). Investigate errors."
+          dashboard: "https://grafana.pluqla.com/d/api-errors"
+          action: "Review error logs, check dependencies"
+
+      # CRITICAL: High 4xx rate (client errors) > 10%
+      - alert: HighClientErrorRate
+        expr: (sum(rate(http_requests_total{status=~"4.."}[5m])) by (route) / sum(rate(http_requests_total[5m])) by (route)) > 0.10
+        for: 10m
+        labels:
+          severity: warning
+          component: api
+          slo: client_errors
+        annotations:
+          summary: "High client error rate (4xx) > 10%"
+          description: "Route {{ $labels.route }} has {{ $value | humanizePercentage }} client error rate. Possible validation issues or API misuse."
+          dashboard: "https://grafana.pluqla.com/d/api-errors"
+
+  ###########################################################################
+  # SLO: AI QUOTA & USAGE
+  ###########################################################################
+  - name: ai_quota_slo
+    interval: 1m
+    rules:
+      # WARNING: AI quota exceeded rate > 10%
+      - alert: HighAIQuotaExceededRate
+        expr: (sum(rate(ai_quota_exceeded_total[5m])) / sum(rate(ai_requests_total[5m]))) > 0.10
+        for: 5m
+        labels:
+          severity: warning
+          component: ai
+          slo: quota
+        annotations:
+          summary: "Warning: AI quota exceeded rate > 10%"
+          description: "{{ $value | humanizePercentage }} of AI requests are hitting quota limits. Consider increasing quotas or investigating abuse."
+          dashboard: "https://grafana.pluqla.com/d/ai-usage"
+          action: "Review quota limits, check for abuse patterns"
+
+      # CRITICAL: AI quota exceeded rate > 25%
+      - alert: HighAIQuotaExceededRateCritical
+        expr: (sum(rate(ai_quota_exceeded_total[5m])) / sum(rate(ai_requests_total[5m]))) > 0.25
+        for: 3m
+        labels:
+          severity: critical
+          component: ai
+          slo: quota
+        annotations:
+          summary: "Critical: AI quota exceeded rate > 25%"
+          description: "{{ $value | humanizePercentage }} of AI requests are denied due to quota. Service degradation for users."
+          dashboard: "https://grafana.pluqla.com/d/ai-usage"
+          runbook: "https://docs.pluqla.com/runbooks/ai-quota-exceeded"
+
+      # WARNING: AI service high latency
+      - alert: HighAIServiceLatency
+        expr: histogram_quantile(0.95, sum(rate(ai_request_duration_seconds_bucket[5m])) by (le, provider)) > 5
+        for: 10m
+        labels:
+          severity: warning
+          component: ai
+          slo: latency
+        annotations:
+          summary: "AI service P95 latency > 5s"
+          description: "Provider {{ $labels.provider }} has P95 latency of {{ $value | humanizeDuration }}. AI responses are slow."
+          dashboard: "https://grafana.pluqla.com/d/ai-performance"
+
+      # CRITICAL: AI service error rate > 5%
+      - alert: HighAIServiceErrorRate
+        expr: (sum(rate(ai_requests_total{status="error"}[5m])) by (provider) / sum(rate(ai_requests_total[5m])) by (provider)) > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          component: ai
+          slo: availability
+        annotations:
+          summary: "Critical: AI service error rate > 5%"
+          description: "Provider {{ $labels.provider }} has {{ $value | humanizePercentage }} error rate. AI service degradation."
+          dashboard: "https://grafana.pluqla.com/d/ai-errors"
+          runbook: "https://docs.pluqla.com/runbooks/ai-service-errors"
+
+  ###########################################################################
+  # SLO: RATE LIMITING
+  ###########################################################################
+  - name: rate_limit_slo
+    interval: 1m
+    rules:
+      # WARNING: High rate limit hit rate > 5%
+      - alert: HighRateLimitHitRate
+        expr: (sum(rate(rate_limit_exceeded_total[5m])) by (endpoint) / sum(rate(http_requests_total[5m])) by (route)) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+          component: rate_limiter
+          slo: rate_limit
+        annotations:
+          summary: "High rate limit hit rate > 5%"
+          description: "Endpoint {{ $labels.endpoint }} has {{ $value | humanizePercentage }} rate limit hit rate. Users may be experiencing throttling."
+          dashboard: "https://grafana.pluqla.com/d/rate-limiting"
+          action: "Review rate limits, check for abuse or legitimate high traffic"
+
+      # CRITICAL: Very high rate limit hit rate > 20%
+      - alert: VeryHighRateLimitHitRate
+        expr: (sum(rate(rate_limit_exceeded_total[5m])) by (endpoint) / sum(rate(http_requests_total[5m])) by (route)) > 0.20
+        for: 5m
+        labels:
+          severity: critical
+          component: rate_limiter
+          slo: rate_limit
+        annotations:
+          summary: "Critical: Rate limit hit rate > 20%"
+          description: "Endpoint {{ $labels.endpoint }} has {{ $value | humanizePercentage }} rate limit hit rate. Possible DDoS or severe misconfiguration."
+          dashboard: "https://grafana.pluqla.com/d/rate-limiting"
+          runbook: "https://docs.pluqla.com/runbooks/ddos-mitigation"
+
+  ###########################################################################
+  # SLO: DATABASE & INFRASTRUCTURE
+  ###########################################################################
+  - name: database_slo
+    interval: 30s
+    rules:
+      # CRITICAL: Database connection pool exhaustion > 90%
+      - alert: DatabaseConnectionPoolExhaustion
+        expr: (prisma_pool_connections_active / prisma_pool_connections_max) > 0.90
+        for: 5m
+        labels:
+          severity: critical
+          component: database
+          slo: connections
+        annotations:
+          summary: "Critical: Database connection pool > 90% used"
+          description: "Connection pool at {{ $value | humanizePercentage }} capacity. Risk of connection exhaustion."
+          dashboard: "https://grafana.pluqla.com/d/database"
+          runbook: "https://docs.pluqla.com/runbooks/db-connection-pool"
+
+      # WARNING: Slow database queries (P95 > 500ms)
+      - alert: SlowDatabaseQueries
+        expr: histogram_quantile(0.95, sum(rate(prisma_query_duration_seconds_bucket[5m])) by (le, operation)) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+          component: database
+          slo: performance
+        annotations:
+          summary: "Slow database queries detected"
+          description: "Operation {{ $labels.operation }} has P95 query time of {{ $value | humanizeDuration }}. Optimize queries or add indexes."
+          dashboard: "https://grafana.pluqla.com/d/database-performance"
+
+      # CRITICAL: Redis connection failures
+      - alert: RedisConnectionFailures
+        expr: rate(redis_connection_errors_total[5m]) > 0.1
+        for: 3m
+        labels:
+          severity: critical
+          component: redis
+          slo: availability
+        annotations:
+          summary: "Redis connection failures detected"
+          description: "{{ $value }} Redis connection errors per second. Cache and session issues likely."
+          dashboard: "https://grafana.pluqla.com/d/redis"
+          runbook: "https://docs.pluqla.com/runbooks/redis-failures"
+
+  ###########################################################################
+  # SLO: AUTHENTICATION & SECURITY
+  ###########################################################################
+  - name: security_slo
+    interval: 1m
+    rules:
+      # CRITICAL: High authentication failure rate > 10%
+      - alert: HighAuthenticationFailureRate
+        expr: (sum(rate(auth_attempts_total{status="failed"}[5m])) / sum(rate(auth_attempts_total[5m]))) > 0.10
+        for: 5m
+        labels:
+          severity: critical
+          component: auth
+          slo: security
+        annotations:
+          summary: "Critical: Authentication failure rate > 10%"
+          description: "{{ $value | humanizePercentage }} of auth attempts failing. Possible brute-force attack or credential stuffing."
+          dashboard: "https://grafana.pluqla.com/d/security"
+          runbook: "https://docs.pluqla.com/runbooks/auth-attacks"
+
+      # WARNING: CSRF validation failures
+      - alert: HighCSRFFailureRate
+        expr: rate(csrf_validation_failed_total[5m]) > 1
+        for: 10m
+        labels:
+          severity: warning
+          component: csrf
+          slo: security
+        annotations:
+          summary: "High CSRF validation failure rate"
+          description: "{{ $value }} CSRF failures per second. Possible attack or client misconfiguration."
+          dashboard: "https://grafana.pluqla.com/d/security"
+
+      # WARNING: Account lockouts increasing
+      - alert: HighAccountLockoutRate
+        expr: rate(account_lockouts_total[5m]) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+          component: auth
+          slo: security
+        annotations:
+          summary: "High account lockout rate"
+          description: "{{ $value }} account lockouts per second. Possible brute-force attack or user issues."
+          dashboard: "https://grafana.pluqla.com/d/security"
+
+  ###########################################################################
+  # SLO: BUSINESS METRICS
+  ###########################################################################
+  - name: business_slo
+    interval: 5m
+    rules:
+      # WARNING: Premium conversion drop
+      - alert: PremiumConversionDrop
+        expr: (sum(rate(subscription_created_total{tier="PREMIUM"}[1h])) / sum(rate(subscription_created_total[1h]))) < 0.05
+        for: 2h
+        labels:
+          severity: warning
+          component: business
+          slo: conversion
+        annotations:
+          summary: "Premium conversion rate dropped below 5%"
+          description: "Premium subscription rate at {{ $value | humanizePercentage }}. Review pricing or user experience."
+          dashboard: "https://grafana.pluqla.com/d/business-metrics"
+
+      # WARNING: High subscription churn
+      - alert: HighSubscriptionChurn
+        expr: (sum(rate(subscription_cancelled_total[24h])) / sum(rate(subscription_created_total[24h]))) > 0.15
+        for: 6h
+        labels:
+          severity: warning
+          component: business
+          slo: retention
+        annotations:
+          summary: "Subscription churn rate > 15%"
+          description: "Churn rate at {{ $value | humanizePercentage }} in last 24h. Investigate user dissatisfaction."
+          dashboard: "https://grafana.pluqla.com/d/business-metrics"
