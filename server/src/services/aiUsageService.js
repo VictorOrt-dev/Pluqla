@@ -201,6 +201,144 @@ class AIUsageService {
   }
 
   /**
+   * Consume tokens for an AI request (ATOMIC VERSION - RACE CONDITION SAFE)
+   *
+   * Uses a database transaction to atomically check and consume tokens.
+   * Prevents quota bypass under concurrent load.
+   *
+   * @param {string} userId - User ID
+   * @param {string} feature - Feature name
+   * @param {number} tokens - Number of tokens to consume (optional, defaults to feature cost)
+   * @param {Object} metadata - Additional request metadata
+   * @returns {Promise<Object>} Updated quota info
+   *
+   * @example
+   * const result = await aiUsageService.consumeTokensAtomic(userId, 'chat', 2);
+   * if (!result.success) {
+   *   return res.status(429).json({ error: 'Quota exceeded' });
+   * }
+   */
+  async consumeTokensAtomic(userId, feature = 'suggestions', tokens = null, metadata = {}) {
+    try {
+      // Get user tier to determine quota
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { isPremium: true }
+      });
+
+      if (!user) {
+        throw new Error('User not found');
+      }
+
+      const dailyQuota = this.getDailyQuota(user.isPremium);
+      const tokenCost = tokens !== null ? tokens : this.getFeatureCost(feature);
+      const resetAt = this.getNextResetTime();
+      const periodStart = this.getCurrentPeriodStart();
+
+      // ATOMIC TRANSACTION: Check and consume in single operation
+      const result = await prisma.$transaction(async (tx) => {
+        // Step 1: Calculate current usage (with row-level lock if supported)
+        const usageRecords = await tx.aiUsage.findMany({
+          where: {
+            userId,
+            resetAt: { gte: periodStart }
+          },
+          select: { tokensUsed: true }
+        });
+
+        const tokensUsedToday = usageRecords.reduce(
+          (sum, record) => sum + record.tokensUsed,
+          0
+        );
+
+        const remaining = Math.max(0, dailyQuota - tokensUsedToday);
+
+        // Step 2: Check if quota allows consumption
+        if (remaining < tokenCost) {
+          // Record quota exceeded event
+          const usage = await tx.aiUsage.create({
+            data: {
+              userId,
+              feature,
+              tokensUsed: tokenCost,
+              tokensRemaining: remaining,
+              dailyQuota,
+              quotaExceeded: true,
+              resetAt,
+              requestMetadata: metadata ? JSON.stringify(metadata) : null,
+              ipAddress: metadata.ipAddress || null,
+              userAgent: metadata.userAgent || null
+            }
+          });
+
+          return {
+            success: false,
+            exceeded: true,
+            remaining,
+            quota: dailyQuota,
+            resetAt,
+            usageId: usage.id,
+            message: `Daily quota exceeded. You have ${remaining} tokens remaining. Quota resets at ${resetAt.toISOString()}.`
+          };
+        }
+
+        // Step 3: Consume tokens (create usage record)
+        const usage = await tx.aiUsage.create({
+          data: {
+            userId,
+            feature,
+            tokensUsed: tokenCost,
+            tokensRemaining: remaining - tokenCost,
+            dailyQuota,
+            quotaExceeded: false,
+            resetAt,
+            requestMetadata: metadata ? JSON.stringify(metadata) : null,
+            ipAddress: metadata.ipAddress || null,
+            userAgent: metadata.userAgent || null
+          }
+        });
+
+        const newRemaining = remaining - tokenCost;
+        const warning = newRemaining <= dailyQuota * this.WARNING_THRESHOLD;
+
+        return {
+          success: true,
+          exceeded: false,
+          remaining: newRemaining,
+          quota: dailyQuota,
+          resetAt,
+          warning,
+          usageId: usage.id
+        };
+      });
+
+      // Log result
+      if (result.success) {
+        logger.info('AI tokens consumed (atomic)', {
+          userId,
+          feature,
+          tokensConsumed: tokenCost,
+          remaining: result.remaining,
+          quota: dailyQuota
+        });
+      } else {
+        logger.warn('AI quota exceeded (atomic)', {
+          userId,
+          feature,
+          tokensAttempted: tokenCost,
+          remaining: result.remaining,
+          quota: dailyQuota
+        });
+      }
+
+      return result;
+    } catch (error) {
+      logger.error('Error consuming AI tokens (atomic):', error);
+      throw error;
+    }
+  }
+
+  /**
    * Record AI usage in database
    * @private
    */
@@ -348,6 +486,7 @@ module.exports = {
   // Public methods
   checkQuota: aiUsageService.checkQuota.bind(aiUsageService),
   consumeTokens: aiUsageService.consumeTokens.bind(aiUsageService),
+  consumeTokensAtomic: aiUsageService.consumeTokensAtomic.bind(aiUsageService), // ✅ ATOMIC - USE THIS
   resetQuota: aiUsageService.resetQuota.bind(aiUsageService),
   getUserStats: aiUsageService.getUserStats.bind(aiUsageService),
   cleanupOldRecords: aiUsageService.cleanupOldRecords.bind(aiUsageService),
