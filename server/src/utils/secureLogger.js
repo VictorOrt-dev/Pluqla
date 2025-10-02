@@ -491,5 +491,13 @@ secureLogger.debug = function (message, data) {
   }
 };
 
+// PII Sanitization function for testing and external use
+secureLogger.sanitizePII = function(data) {
+  if (typeof data === 'string') {
+    return sanitizeValue(data);
+  }
+  return sanitizeObject(data);
+};
+
 // Export the secure logger with all safety methods
 module.exports = secureLogger;

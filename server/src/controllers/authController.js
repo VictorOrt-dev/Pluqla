@@ -14,6 +14,7 @@ const { validatePassword } = require('../middleware/passwordPolicy');
 const authLockoutService = require('../services/authLockoutService');
 const { metrics } = require('../monitoring/metrics');
 const { recordFailedLogin, recordAccountLockout } = require('../monitoring/alerting');
+const { refreshCsrfToken } = require('../middleware/csrfProtection'); // SECURITY: CSRF token rotation
 
 class AuthController {
   async register(req, res) {
@@ -95,10 +96,15 @@ class AuthController {
       recordUserRegistration('email');
       recordAuthAttempt('email', true);
 
+      // SECURITY: Rotate CSRF token on registration (new session)
+      const newCsrfToken = refreshCsrfToken(req, res);
+      logger.debug('CSRF token rotated on registration', { userId: user.id });
+
       return sendSuccess(res, {
         user,
         token: accessToken,
         refreshToken,
+        csrfToken: newCsrfToken,
         needsEmailVerification: true
       }, 'Compte créé avec succès', 201);
     } catch (error) {
@@ -245,10 +251,15 @@ class AuthController {
       const totalDuration = totalSeconds + totalNanoseconds / 1e9;
       metrics.recordAuthTiming('login_total', 'success', totalDuration);
 
+      // SECURITY: Rotate CSRF token on login to prevent token reuse
+      const newCsrfToken = refreshCsrfToken(req, res);
+      logger.debug('CSRF token rotated on login', { userId: user.id });
+
       return sendSuccess(res, {
         user: userResponse,
         token: accessToken,
-        refreshToken
+        refreshToken,
+        csrfToken: newCsrfToken // Include new CSRF token in response
       }, 'Connexion réussie');
     } catch (error) {
       // Record login failure
@@ -315,7 +326,11 @@ class AuthController {
         }
       }
 
-      return sendSuccess(res, null, 'Déconnexion réussie');
+      // SECURITY: Rotate CSRF token on logout to prevent old token reuse
+      const newCsrfToken = refreshCsrfToken(req, res);
+      logger.debug('CSRF token rotated on logout');
+
+      return sendSuccess(res, { csrfToken: newCsrfToken }, 'Déconnexion réussie');
     } catch (error) {
       logger.error('Erreur lors de la déconnexion:', error);
       return sendError(res, 'Erreur lors de la déconnexion', 500, 'logout_error');
