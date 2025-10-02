@@ -1,0 +1,151 @@
+# Artillery Load Test Configuration for Rate Limiting
+#
+# Run with: artillery run tests/load/artillery-rate-limit.yml
+#
+# Test Scenarios:
+# 1. Warm-up phase: Gradual ramp-up
+# 2. Sustained load: Constant traffic at limit
+# 3. Burst phase: Spike traffic to test enforcement
+# 4. Cool-down: Verify recovery
+
+config:
+  target: "http://localhost:3004"
+  phases:
+    # Phase 1: Warm-up (30s)
+    - duration: 30
+      arrivalRate: 10
+      name: "Warm-up phase"
+
+    # Phase 2: Sustained load at rate limit threshold (60s)
+    - duration: 60
+      arrivalRate: 50
+      name: "Sustained load near limit"
+
+    # Phase 3: Burst traffic (30s)
+    - duration: 30
+      arrivalRate: 100
+      name: "Burst traffic over limit"
+
+    # Phase 4: Cool-down (30s)
+    - duration: 30
+      arrivalRate: 5
+      name: "Cool-down recovery"
+
+  # Performance thresholds
+  ensure:
+    maxErrorRate: 0.15  # Allow up to 15% errors (rate limit 429s)
+    p95: 200           # 95th percentile latency < 200ms
+    p99: 500           # 99th percentile latency < 500ms
+
+  # Variables for dynamic testing
+  variables:
+    testUserId: "artillery-test-user-{{ $randomString() }}"
+
+  # Plugins for enhanced metrics
+  plugins:
+    metrics-by-endpoint:
+      stripQueryString: true
+
+scenarios:
+  # Scenario 1: Standard API endpoints
+  - name: "Standard Endpoints Rate Limit Test"
+    weight: 50
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "test@artillery.com"
+            password: "TestPassword123!"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+
+      - get:
+          url: "/api/users/me"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode:
+                - 200
+                - 429  # Rate limit expected
+
+      - get:
+          url: "/api/transactions"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode:
+                - 200
+                - 429
+
+      - get:
+          url: "/api/categories"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode:
+                - 200
+                - 429
+
+  # Scenario 2: AI endpoints (stricter limits)
+  - name: "AI Endpoints Rate Limit Test"
+    weight: 30
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "ai-test@artillery.com"
+            password: "TestPassword123!"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+
+      - post:
+          url: "/api/ai/suggestions"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          json:
+            category: "financial"
+          expect:
+            - statusCode:
+                - 200
+                - 429
+                - 500  # AI service might fail
+                - 503
+
+      - get:
+          url: "/api/ai/status"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+          expect:
+            - statusCode:
+                - 200
+                - 429
+
+  # Scenario 3: Public endpoints (IP-based rate limiting)
+  - name: "Public Endpoints IP Rate Limit"
+    weight: 20
+    flow:
+      - get:
+          url: "/api/ai/status"
+          expect:
+            - statusCode:
+                - 200
+                - 429
+
+      - get:
+          url: "/health/live"
+          expect:
+            - statusCode: 200
+
+      - get:
+          url: "/health/ready"
+          expect:
+            - statusCode:
+                - 200
+                - 503
+
+# Custom assertions for rate limiting
+after:
+  flow:
+    - log: "Load test completed. Check for rate limit enforcement (429 responses)."
