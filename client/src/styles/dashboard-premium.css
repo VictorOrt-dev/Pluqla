@@ -1,6 +1,11 @@
 /* 💎 PLUQLA PREMIUM DASHBOARD STYLES */
 /* Design moderne et épuré inspiré des meilleures fintech */
 
+/* Pluqla Dark Mode Background - matching HomeScreen */
+.pluqla-bg-dark {
+  background: linear-gradient(to bottom, #121212, #1a0b0b);
+}
+
 /* Variables CSS pour le thème premium */
 :root {
   /* Couleurs principales */

@@ -65,6 +65,73 @@
   }
 }
 
+/* 🎨 Pluqla Finance Enhanced Animations */
+
+@keyframes bounce-celebration {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  25% {
+    transform: translateY(-15px) scale(1.05);
+  }
+  50% {
+    transform: translateY(0) scale(1);
+  }
+  75% {
+    transform: translateY(-7px) scale(1.02);
+  }
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-5px) rotate(-2deg);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(5px) rotate(2deg);
+  }
+}
+
+@keyframes thinking {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-3px) rotate(-3deg);
+  }
+  75% {
+    transform: translateY(-3px) rotate(3deg);
+  }
+}
+
+@keyframes confetti {
+  0% {
+    transform: translateY(0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-50px) rotate(360deg) scale(0);
+    opacity: 0;
+  }
+}
+
+@keyframes ping-slow {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
 .animate-slide-down {
   animation: slide-down 0.3s ease-out;
 }
@@ -91,6 +158,26 @@
 
 .animate-bounce-scale {
   animation: bounce-scale 1s ease-in-out infinite;
+}
+
+.animate-bounce-celebration {
+  animation: bounce-celebration 1s ease-in-out;
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+.animate-thinking {
+  animation: thinking 2s ease-in-out infinite;
+}
+
+.animate-confetti {
+  animation: confetti 1s ease-out forwards;
+}
+
+.animate-ping-slow {
+  animation: ping-slow 2s ease-in-out infinite;
 }
 
 .font-system {
