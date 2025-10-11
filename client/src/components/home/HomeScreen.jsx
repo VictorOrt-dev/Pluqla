@@ -1,8 +1,10 @@
 import React from 'react';
 import { useNavigation } from '../../contexts/NavigationContext';
 import Header from '../common/Header';
-import CircularProgress from '../common/CircularProgress';
+import DashboardWidget from './DashboardWidget';
 import CategoryGrid from './CategoryGrid';
+import QuickActions from './QuickActions';
+import RecommendedCard from './RecommendedCard';
 import Navigation from '../common/Navigation';
 
 const HomeScreen = ({
@@ -49,58 +51,59 @@ const HomeScreen = ({
         todaysSavings={todaysSavings}
       />
 
-      {/* Contenu principal avec rond central */}
-      <div className="flex-1 flex flex-col px-4 pb-20 pt-6">
+      {/* Contenu principal - Transformation Premium avec sections */}
+      <div className="flex-1 flex flex-col px-4 pb-20 pt-6 space-y-6">
 
-
-        {/* ⭐ ROND DES ÉCONOMIES - Élément central iconique */}
-        <div className="flex justify-center mb-8">
-          <CircularProgress
-            amount={userData.savedAmount || 0}
-            percentage={progress}
-            size={192}
-            goal={userData.monthlyGoal || 1000}
-            darkMode={darkMode}
-            animated={true}
-            clickable={false}
-          />
-        </div>
-
-        {/* Grid des 4 features principales sous le rond */}
-        <div className="flex-1 flex flex-col justify-center max-w-lg mx-auto w-full">
-          <CategoryGrid
-            darkMode={darkMode}
-          />
-        </div>
-
-        {/* Enhanced level indicator with premium light mode styling */}
-        <div className="mt-8 text-center">
-          <div className={`inline-flex items-center space-x-3 px-5 py-3 rounded-2xl shadow-lg border transition-all duration-300 hover:scale-105 ${
-            darkMode
-              ? 'bg-gradient-to-r from-gray-800 to-gray-700 border-[#F14545]/20 shadow-[0_8px_24px_rgba(241,69,69,0.2)] hover:shadow-[0_12px_32px_rgba(241,69,69,0.3)]'
-              : 'bg-gradient-to-r from-white/95 to-[#FAFAFA]/90 border-[#F14545]/15 shadow-[0_4px_16px_rgba(241,69,69,0.12)] hover:shadow-[0_8px_24px_rgba(241,69,69,0.18)] backdrop-blur-sm'
+        {/* Section 1: Votre Progression */}
+        <section>
+          <h2 className={`text-center text-xs font-semibold uppercase tracking-wide mb-3 ${
+            darkMode ? 'text-gray-400' : 'text-gray-500'
           }`}>
-            <div className="w-8 h-8 rounded-full flex items-center justify-center shadow-lg relative" style={{ background: 'var(--pluqla-gradient-main)' }}>
-              {/* Effet de glow sur le badge niveau */}
-              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-[#FF6B6B] to-[#F14545] opacity-50 animate-pulse" style={{ animationDuration: '2s' }}></div>
-              <span className="text-white font-bold text-sm relative z-10">
-                {userData.level || 1}
-              </span>
-            </div>
-            <div className="text-left">
-              <p className={`text-sm font-bold transition-colors duration-300 ${
-                darkMode ? 'text-white' : 'text-[#121212]'
-              }`}>
-                Niveau {userData.level || 1} - {getLevelTitle(userData.level || 1)}
-              </p>
-              <p className={`text-xs font-semibold ${
-                darkMode ? 'text-[#FF6B6B]' : 'text-[#F14545]'
-              }`}>
-                {todaysSavings}€ économisés aujourd'hui
-              </p>
-            </div>
+            Votre Progression
+          </h2>
+          <DashboardWidget
+            userData={userData}
+            progress={progress}
+            darkMode={darkMode}
+          />
+        </section>
+
+        {/* Section 2: Actions Rapides */}
+        <section>
+          <h2 className={`text-center text-xs font-semibold uppercase tracking-wide mb-3 ${
+            darkMode ? 'text-gray-400' : 'text-gray-500'
+          }`}>
+            Actions Rapides
+          </h2>
+          <QuickActions darkMode={darkMode} />
+        </section>
+
+        {/* Section 3: Vos Modules */}
+        <section>
+          <h2 className={`text-center text-xs font-semibold uppercase tracking-wide mb-3 ${
+            darkMode ? 'text-gray-400' : 'text-gray-500'
+          }`}>
+            Vos Modules
+          </h2>
+          <div className="max-w-lg mx-auto w-full">
+            <CategoryGrid
+              darkMode={darkMode}
+              userData={userData}
+              todaysSavings={todaysSavings}
+              getLevelTitle={getLevelTitle}
+            />
           </div>
-        </div>
+        </section>
+
+        {/* Section 4: Conseillé pour vous */}
+        <section>
+          <h2 className={`text-center text-xs font-semibold uppercase tracking-wide mb-3 ${
+            darkMode ? 'text-gray-400' : 'text-gray-500'
+          }`}>
+            Conseillé pour vous
+          </h2>
+          <RecommendedCard darkMode={darkMode} userData={userData} />
+        </section>
       </div>
 
       {/* Navigation bottom */}

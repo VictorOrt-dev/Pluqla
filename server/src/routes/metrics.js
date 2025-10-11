@@ -6,7 +6,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { register } = require('../monitoring/metrics');
+const { client } = require('../infra/metrics/promClient');
 const logger = require('../utils/logger');
 
 /**
@@ -17,8 +17,8 @@ const logger = require('../utils/logger');
  */
 router.get('/', async (req, res) => {
   try {
-    res.set('Content-Type', register.contentType);
-    const metrics = await register.metrics();
+    res.set('Content-Type', client.register.contentType);
+    const metrics = await client.register.metrics();
     res.end(metrics);
   } catch (error) {
     logger.error('Failed to generate metrics', { error: error.message });

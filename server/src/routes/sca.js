@@ -11,6 +11,7 @@ const { verifySCA } = require('../middleware/scaAuthentication');
 const rateLimit = require('../middleware/rateLimit');
 const { validateSCAVerification } = require('../middleware/validation/scaValidation');
 const logger = require('../utils/logger');
+const scaService = require('../services/scaService');
 
 const router = express.Router();
 
@@ -285,6 +286,264 @@ router.get(
       return res.status(500).json({
         error: 'SCA_SETTINGS_ERROR',
         message: 'Unable to retrieve SCA settings'
+      });
+    }
+  }
+);
+
+/**
+ * Check if transaction requires SCA (PSD2 compliance)
+ * @route POST /api/sca/check-requirement
+ * @access Private
+ */
+router.post(
+  '/check-requirement',
+  authenticateToken,
+  async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const { amount, transactionType, transactionData } = req.body;
+
+      if (!amount || amount <= 0) {
+        return res.status(400).json({
+          error: 'INVALID_AMOUNT',
+          message: 'Valid transaction amount is required'
+        });
+      }
+
+      // Check SCA requirement
+      const scaCheck = await scaService.requiresSCA(userId, amount, transactionType);
+
+      // Check for possible exemptions
+      const exemptionCheck = await scaService.checkScaExemption(
+        userId,
+        amount,
+        transactionData || {}
+      );
+
+      return res.json({
+        scaRequired: scaCheck.required && !exemptionCheck.exempt,
+        scaCheck,
+        exemption: exemptionCheck,
+        psd2Compliant: true
+      });
+
+    } catch (error) {
+      logger.error('SCA requirement check error', {
+        userId: req.user.id,
+        error: error.message
+      });
+
+      return res.status(500).json({
+        error: 'SCA_CHECK_ERROR',
+        message: 'Unable to check SCA requirement'
+      });
+    }
+  }
+);
+
+/**
+ * Create SCA challenge for transaction (PSD2)
+ * @route POST /api/sca/create-challenge
+ * @access Private
+ */
+router.post(
+  '/create-challenge',
+  authenticateToken,
+  rateLimit.createLimiter({
+    windowMs: 15 * 60 * 1000,
+    max: 20,
+    keyGenerator: (req) => `sca_create_${req.user?.id || req.ip}`
+  }),
+  async (req, res) => {
+    try {
+      const userId = req.user.id;
+      const { transactionId, amount, allowedMethods } = req.body;
+
+      if (!transactionId) {
+        return res.status(400).json({
+          error: 'INVALID_REQUEST',
+          message: 'Transaction ID is required'
+        });
+      }
+
+      // Create SCA challenge
+      const challenge = await scaService.createScaChallenge(
+        userId,
+        transactionId,
+        allowedMethods || ['password', 'biometric']
+      );
+
+      return res.status(201).json({
+        success: true,
+        challenge: {
+          id: challenge.id,
+          transactionId: challenge.transactionId,
+          allowedMethods: JSON.parse(challenge.allowedMethods),
+          expiresAt: challenge.expiresAt,
+          expiresIn: Math.floor((challenge.expiresAt.getTime() - Date.now()) / 1000)
+        }
+      });
+
+    } catch (error) {
+      logger.error('SCA challenge creation error', {
+        userId: req.user.id,
+        error: error.message
+      });
+
+      return res.status(500).json({
+        error: 'CHALLENGE_CREATE_ERROR',
+        message: 'Unable to create SCA challenge'
+      });
+    }
+  }
+);
+
+/**
+ * Complete SCA challenge (PSD2)
+ * @route POST /api/sca/complete-challenge
+ * @access Private
+ */
+router.post(
+  '/complete-challenge',
+  authenticateToken,
+  rateLimit.createLimiter({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    keyGenerator: (req) => `sca_complete_${req.user?.id || req.ip}`,
+    skipSuccessfulRequests: true
+  }),
+  async (req, res) => {
+    try {
+      const { challengeId, verificationMethod, credentials } = req.body;
+
+      if (!challengeId || !verificationMethod) {
+        return res.status(400).json({
+          error: 'INVALID_REQUEST',
+          message: 'Challenge ID and verification method are required'
+        });
+      }
+
+      // Verify credentials based on method
+      // (In production, this would verify password, biometric, etc.)
+      const isValid = true; // Placeholder for actual verification
+
+      if (!isValid) {
+        return res.status(401).json({
+          error: 'VERIFICATION_FAILED',
+          message: 'Authentication failed'
+        });
+      }
+
+      // Complete the challenge
+      const result = await scaService.completeScaChallenge(challengeId, verificationMethod);
+
+      if (!result.success) {
+        return res.status(400).json({
+          error: 'CHALLENGE_FAILED',
+          message: result.error
+        });
+      }
+
+      logger.info('SCA challenge completed successfully', {
+        userId: req.user.id,
+        challengeId,
+        verificationMethod
+      });
+
+      return res.json({
+        success: true,
+        message: 'SCA challenge completed successfully'
+      });
+
+    } catch (error) {
+      logger.error('SCA challenge completion error', {
+        userId: req.user.id,
+        error: error.message
+      });
+
+      return res.status(500).json({
+        error: 'CHALLENGE_COMPLETE_ERROR',
+        message: 'Unable to complete SCA challenge'
+      });
+    }
+  }
+);
+
+/**
+ * Get SCA exemption logs (Admin only - for compliance auditing)
+ * @route GET /api/sca/exemptions
+ * @access Private (Admin)
+ */
+router.get(
+  '/exemptions',
+  authenticateToken,
+  async (req, res) => {
+    try {
+      const { prisma } = require('../lib/prisma');
+
+      // Check admin
+      const user = await prisma.user.findUnique({
+        where: { id: req.user.id },
+        select: { role: true }
+      });
+
+      if (!user || user.role !== 'admin') {
+        return res.status(403).json({
+          error: 'ACCESS_DENIED',
+          message: 'Admin privileges required'
+        });
+      }
+
+      const { page = 1, limit = 50, userId, exemptionType } = req.query;
+      const skip = (page - 1) * limit;
+
+      const where = {};
+      if (userId) where.userId = userId;
+      if (exemptionType) where.exemptionType = exemptionType;
+
+      const [logs, total] = await Promise.all([
+        prisma.scaExemptionLog.findMany({
+          where,
+          skip,
+          take: parseInt(limit),
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            userId: true,
+            transactionId: true,
+            exemptionType: true,
+            amount: true,
+            reason: true,
+            riskScore: true,
+            createdAt: true
+          }
+        }),
+        prisma.scaExemptionLog.count({ where })
+      ]);
+
+      return res.json({
+        success: true,
+        data: {
+          logs,
+          pagination: {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            total,
+            pages: Math.ceil(total / limit)
+          }
+        }
+      });
+
+    } catch (error) {
+      logger.error('SCA exemption logs error', {
+        userId: req.user.id,
+        error: error.message
+      });
+
+      return res.status(500).json({
+        error: 'EXEMPTION_LOGS_ERROR',
+        message: 'Unable to retrieve exemption logs'
       });
     }
   }

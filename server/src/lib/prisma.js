@@ -81,44 +81,50 @@ function createPrismaClient() {
     // Note: __internal.useUds removed - deprecated in newer Prisma versions
   });
 
-  // Add performance monitoring middleware
-  client.$use(async (params, next) => {
-    const start = Date.now();
+  // Add performance monitoring middleware using $extends (Prisma v5+)
+  const extendedClient = client.$extends({
+    query: {
+      $allModels: {
+        async $allOperations({ operation, model, args, query }) {
+          const start = Date.now();
 
-    try {
-      const result = await next(params);
-      const duration = Date.now() - start;
+          try {
+            const result = await query(args);
+            const duration = Date.now() - start;
 
-      // Track performance for all database operations
-      performanceMonitor.trackDatabaseQuery(
-        `${params.model}.${params.action}`,
-        duration,
-        params.args
-      );
+            // Track performance for all database operations
+            performanceMonitor.trackDatabaseQuery(
+              `${model}.${operation}`,
+              duration,
+              args
+            );
 
-      return result;
-    } catch (error) {
-      const duration = Date.now() - start;
+            return result;
+          } catch (error) {
+            const duration = Date.now() - start;
 
-      // Track failed queries too
-      performanceMonitor.trackDatabaseQuery(
-        `${params.model}.${params.action} [ERROR]`,
-        duration,
-        params.args
-      );
+            // Track failed queries too
+            performanceMonitor.trackDatabaseQuery(
+              `${model}.${operation} [ERROR]`,
+              duration,
+              args
+            );
 
-      logger.error('Database query failed', {
-        model: params.model,
-        action: params.action,
-        duration,
-        error: error.message
-      });
+            logger.error('Database query failed', {
+              model,
+              operation,
+              duration,
+              error: error.message
+            });
 
-      throw error;
+            throw error;
+          }
+        }
+      }
     }
   });
 
-  return client;
+  return extendedClient;
 }
 
 /**

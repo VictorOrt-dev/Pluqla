@@ -1,6 +1,19 @@
 const rateLimit = require('express-rate-limit');
 const logger = require('../utils/logger');
 const financialRateLimit = require('./financialRateLimit');
+const enhancedLimiter = require('./rateLimiter');
+
+// ⚠️  DEPRECATED - Use ./rateLimiter.js instead
+// This file is kept for backward compatibility only.
+//
+// New code should use ./rateLimiter.js which includes:
+// - Full Redis support with fallback
+// - User-tier aware limits (free/premium/admin)
+// - Better error messages with retry-after
+// - Health check utilities
+// - Improved headers and logging
+//
+// Migration guide: See docs/RATE_LIMIT_MIGRATION.md
 
 // Configuration générale du rate limiting
 const createLimiter = (options) => {
@@ -175,5 +188,22 @@ module.exports = {
   createFinancialRateLimit: financialRateLimit.createFinancialRateLimit,
   getUserSubscriptionTier: financialRateLimit.getUserSubscriptionTier,
   getRateLimitConfig: financialRateLimit.getRateLimitConfig,
-  financialHealthCheck: financialRateLimit.healthCheck
+  financialHealthCheck: financialRateLimit.healthCheck,
+
+  // Enhanced limiters (new, recommended for new code)
+  enhanced: enhancedLimiter,
+
+  // 🆕 Direct exports from enhanced limiter (for easy migration)
+  // These are the RECOMMENDED limiters - they use Redis + tier awareness
+  globalLimiter: enhancedLimiter.globalLimiter,
+  authLimiter: enhancedLimiter.authLimiter,
+  aiLimiter: enhancedLimiter.aiLimiter,
+  uploadLimiter: enhancedLimiter.uploadLimiter,
+  standardLimiter: enhancedLimiter.standardLimiter,
+  analyticsLimiter: enhancedLimiter.analyticsLimiter,
+  strictLimiter: enhancedLimiter.strictLimiter,
+  slowLimiter: enhancedLimiter.slowLimiter,
+
+  // Health check
+  rateLimiterHealth: enhancedLimiter.getHealthStatus
 };

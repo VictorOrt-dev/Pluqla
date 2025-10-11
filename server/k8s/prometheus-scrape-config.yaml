@@ -1,0 +1,14 @@
+# Kubernetes ServiceMonitor for Prometheus Operator
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: pluqla-api
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: pluqla-api
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s

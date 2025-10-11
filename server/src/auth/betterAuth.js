@@ -9,6 +9,7 @@
  */
 
 const { betterAuth } = require('better-auth');
+const { prismaAdapter } = require('better-auth/adapters/prisma');
 const { prisma } = require('../lib/prisma');
 const logger = require('../utils/logger');
 
@@ -20,8 +21,10 @@ const auth = betterAuth({
   secret: process.env.BETTER_AUTH_SECRET || process.env.JWT_SECRET,
   baseURL: process.env.BASE_URL || `http://localhost:${process.env.PORT || 3004}`,
 
-  // Database configuration using our existing Prisma setup
-  database: prisma,
+  // Database configuration using Prisma adapter
+  database: prismaAdapter(prisma, {
+    provider: 'postgresql'
+  }),
 
   // User table mapping to our existing schema
   user: {

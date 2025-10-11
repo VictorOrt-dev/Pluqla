@@ -38,6 +38,16 @@ const server = app.listen(PORT, async () => {
   logger.info(`📍 Health check: http://localhost:${PORT}/health`);
   logger.info(`📖 API Documentation: http://localhost:${PORT}/api-docs`);
 
+  // Log AI provider mode
+  const aiProvider = (process.env.AI_PROVIDER || 'none').toLowerCase();
+  if (aiProvider === 'mock') {
+    logger.info('🌍 AI Provider: MOCK MODE (no external API calls)');
+  } else if (aiProvider === 'none') {
+    logger.info('⚠️  AI Provider: DISABLED');
+  } else {
+    logger.info(`🤖 AI Provider: ${aiProvider.toUpperCase()}`);
+  }
+
   // Vérification de la santé de la base de données au démarrage
   try {
     logger.info('🔍 Checking database connection...');
@@ -65,6 +75,24 @@ const server = app.listen(PORT, async () => {
       } catch (alertError) {
         logger.error('❌ Failed to initialize alerting system:', alertError);
         logger.warn('⚠️ Alerting disabled - security events will only be logged');
+      }
+
+      // Initialize background workers for async job processing
+      try {
+        // Start Meal Suggestions worker
+        require('./workers/mealSuggestionsWorker');
+        logger.info('✅ Meal Suggestions worker initialized');
+
+        // Start Photo Match worker
+        require('./workers/photoMatchWorker');
+        logger.info('✅ Photo Match worker initialized');
+
+        // Start Transport Optimization worker
+        require('./workers/transportOptimizationWorker');
+        logger.info('✅ Transport Optimization worker initialized');
+      } catch (workerError) {
+        logger.error('❌ Failed to initialize background workers:', workerError);
+        logger.warn('⚠️ Some features may not process async jobs correctly');
       }
     } else {
       logger.error('❌ Database connection failed:', dbHealth.error);

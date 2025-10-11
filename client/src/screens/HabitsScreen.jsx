@@ -3,7 +3,7 @@ import ClothingAnalyzer from '../components/features/habits/ClothingAnalyzer';
 import ClothingResults from '../components/features/habits/ClothingResults';
 import PriceComparison from '../components/features/habits/PriceComparison';
 import PinterestFeed from '../components/features/habits/PinterestFeed';
-import { useImageAnalysis } from '../hooks/useImageAnalysis';
+import { usePhotoMatch } from '../hooks/usePhotoMatch';
 import { useAISuggestions } from '../hooks/useAISuggestions';
 import { useNavigation } from '../contexts/NavigationContext';
 import { useTranslation } from 'react-i18next';
@@ -16,7 +16,7 @@ const HabitsScreen = ({ userData, setUserData, usePlan, showNotification, addTra
   const [isVisible, setIsVisible] = useState(false);
 
   const { getAISuggestions, isLoading: isLoadingAI } = useAISuggestions();
-  const { analysisResult } = useImageAnalysis();
+  const { result: analysisResult } = usePhotoMatch();
   const [aiSuggestions, setAiSuggestions] = useState([]);
 
   // Animation d'entrée

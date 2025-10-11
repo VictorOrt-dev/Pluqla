@@ -3,27 +3,50 @@
  * Adapted to match HomeScreen DA
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { Eye, EyeOff, TrendingUp, TrendingDown } from 'lucide-react';
 
-const BalanceCard = ({ darkMode = false }) => {
-  const [balance, setBalance] = useState(() => {
-    const saved = localStorage.getItem('pluqla_balance');
-    return saved ? parseFloat(saved) : 3540;
-  });
-
-  const [monthChange, setMonthChange] = useState(() => {
-    const saved = localStorage.getItem('pluqla_month_change');
-    return saved ? parseFloat(saved) : 12.5;
-  });
-
+const BalanceCard = ({ darkMode = false, transactions = [] }) => {
   const [isHidden, setIsHidden] = useState(false);
+  const [initialBalance] = useState(() => {
+    const saved = localStorage.getItem('pluqla_initial_balance');
+    return saved ? parseFloat(saved) : 3000;
+  });
 
-  // Persist balance changes
-  useEffect(() => {
-    localStorage.setItem('pluqla_balance', balance.toString());
-  }, [balance]);
+  // Calculate current balance from transactions
+  const balance = useMemo(() => {
+    const transactionBalance = transactions.reduce((total, t) => {
+      return total + (t.type === 'income' ? t.amount : -t.amount);
+    }, 0);
+    return initialBalance + transactionBalance;
+  }, [transactions, initialBalance]);
+
+  // Calculate month change
+  const monthChange = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+    const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+
+    const currentMonthBalance = transactions
+      .filter(t => {
+        const d = new Date(t.date);
+        return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+      })
+      .reduce((total, t) => total + (t.type === 'income' ? t.amount : -t.amount), 0);
+
+    const lastMonthBalance = transactions
+      .filter(t => {
+        const d = new Date(t.date);
+        return d.getMonth() === lastMonth && d.getFullYear() === lastMonthYear;
+      })
+      .reduce((total, t) => total + (t.type === 'income' ? t.amount : -t.amount), 0);
+
+    if (lastMonthBalance === 0) return currentMonthBalance > 0 ? 100 : 0;
+    return ((currentMonthBalance - lastMonthBalance) / Math.abs(lastMonthBalance)) * 100;
+  }, [transactions]);
 
   // Calculate month progress (1-31 days)
   const today = new Date().getDate();
@@ -158,6 +181,15 @@ const BalanceCard = ({ darkMode = false }) => {
 
 BalanceCard.propTypes = {
   darkMode: PropTypes.bool,
+  transactions: PropTypes.arrayOf(
+    PropTypes.shape({
+      id: PropTypes.string,
+      type: PropTypes.oneOf(['income', 'expense']),
+      amount: PropTypes.number,
+      category: PropTypes.string,
+      date: PropTypes.string,
+    })
+  ),
 };
 
 export default BalanceCard;

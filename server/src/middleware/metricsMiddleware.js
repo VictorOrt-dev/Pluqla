@@ -1,68 +1,54 @@
-/**
- * Metrics Middleware
- *
- * Automatically tracks HTTP request metrics for all routes
- */
-
-const { metrics } = require('../monitoring/metrics');
-const logger = require('../utils/logger');
+const {
+  httpRequestDuration,
+  httpRequestsTotal,
+  http5xxErrors
+} = require('../infra/metrics/promClient');
 
 /**
- * Middleware to track HTTP request metrics
+ * Metrics middleware to track HTTP request duration and counts
+ * Captures method, route, and status code for observability
  */
-function metricsMiddleware(req, res, next) {
-  const startTime = process.hrtime();
+const metricsMiddleware = (req, res, next) => {
+  const start = Date.now();
 
-  // Capture the original res.end to track when response is sent
+  // Capture original end function
   const originalEnd = res.end;
 
-  res.end = function (...args) {
-    // Calculate request duration
-    const [seconds, nanoseconds] = process.hrtime(startTime);
-    const duration = seconds + nanoseconds / 1e9;
+  // Override end function to record metrics
+  res.end = function(...args) {
+    // Calculate duration in seconds
+    const duration = (Date.now() - start) / 1000;
 
-    // Normalize route for metrics (remove IDs)
-    const route = normalizeRoute(req.route?.path || req.path);
+    // Get route pattern (e.g., /api/users/:id instead of /api/users/123)
+    const route = req.route?.path || req.path || 'unknown';
+    const baseUrl = req.baseUrl || '';
+    const fullRoute = `${baseUrl}${route}`.replace(/\/+/g, '/');
+
+    const method = req.method;
+    const status = res.statusCode;
 
     // Record metrics
     try {
-      metrics.recordHttpRequest(
-        req.method,
-        route,
-        res.statusCode.toString(),
-        duration
-      );
+      // Record request duration
+      httpRequestDuration.labels(method, fullRoute, status).observe(duration);
 
-      // Record errors if status code indicates error
-      if (res.statusCode >= 400) {
-        const errorType = res.statusCode >= 500 ? 'server_error' : 'client_error';
-        metrics.recordApiError(route, errorType, res.statusCode.toString());
+      // Increment request counter
+      httpRequestsTotal.labels(method, fullRoute, status).inc();
+
+      // Track 5xx errors specifically
+      if (status >= 500) {
+        http5xxErrors.labels(method, fullRoute, status).inc();
       }
     } catch (error) {
-      logger.error('Failed to record metrics in middleware', { error: error.message });
+      // Fail silently to not impact application
+      console.error('Metrics recording error:', error.message);
     }
 
-    // Call original end
+    // Call original end function
     originalEnd.apply(res, args);
   };
 
   next();
-}
-
-/**
- * Normalize route path for metrics
- * Replaces dynamic segments with placeholders
- *
- * Example: /users/123/posts/456 -> /users/:id/posts/:id
- */
-function normalizeRoute(path) {
-  if (!path) return 'unknown';
-
-  return path
-    .replace(/\/\d+/g, '/:id') // Replace numeric IDs
-    .replace(/\/[a-f0-9-]{36}/gi, '/:uuid') // Replace UUIDs
-    .replace(/\/[a-f0-9]{24}/gi, '/:objectid') // Replace MongoDB ObjectIds
-    .replace(/\/[a-zA-Z0-9_-]{20,}/g, '/:token'); // Replace long tokens
-}
+};
 
 module.exports = metricsMiddleware;

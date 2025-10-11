@@ -12,6 +12,7 @@ import { retryManager } from "../../utils/retryUtils";
 // Error categories for proper handling
 export const ERROR_CATEGORIES = {
   AUTHENTICATION: "AUTHENTICATION",
+  PREMIUM_REQUIRED: "PREMIUM_REQUIRED",
   RATE_LIMIT: "RATE_LIMIT",
   SERVER_ERROR: "SERVER_ERROR",
   NETWORK_ERROR: "NETWORK_ERROR",
@@ -22,12 +23,13 @@ export const ERROR_CATEGORIES = {
 
 // Enhanced error class with categorization
 export class ApiError extends Error {
-  constructor(message, category, status, originalError = null) {
+  constructor(message, category, status, originalError = null, details = null) {
     super(message);
     this.name = "ApiError";
     this.category = category;
     this.status = status;
     this.originalError = originalError;
+    this.details = details; // For premium upgrade info
     this.timestamp = new Date().toISOString();
   }
 }
@@ -73,7 +75,12 @@ class ApiAdapter {
     // Status-based categorization
     switch (status) {
       case 401:
+        return ERROR_CATEGORIES.AUTHENTICATION;
       case 403:
+        // Distinguish between authentication and premium required
+        if (response?.error === 'Premium subscription required') {
+          return ERROR_CATEGORIES.PREMIUM_REQUIRED;
+        }
         return ERROR_CATEGORIES.AUTHENTICATION;
       case 429:
         return ERROR_CATEGORIES.RATE_LIMIT;
@@ -99,6 +106,8 @@ class ApiAdapter {
     switch (category) {
       case ERROR_CATEGORIES.AUTHENTICATION:
         return "Votre session a expiré. Veuillez vous reconnecter.";
+      case ERROR_CATEGORIES.PREMIUM_REQUIRED:
+        return originalMessage || "Fonctionnalité réservée aux membres Premium.";
       case ERROR_CATEGORIES.RATE_LIMIT:
         return "Trop de requêtes. Veuillez patienter quelques instants.";
       case ERROR_CATEGORIES.NETWORK_ERROR:
@@ -387,9 +396,14 @@ class ApiAdapter {
           data.message || data.error,
         );
 
+        // Pass premium upgrade details if this is a 403 premium required error
+        const errorDetails = category === ERROR_CATEGORIES.PREMIUM_REQUIRED
+          ? data.details
+          : null;
+
         throw new ApiError(userMessage, category, response.status, {
           response: data,
-        });
+        }, errorDetails);
       }
 
       // Handle new universal format (v2.0.0+) vs legacy format

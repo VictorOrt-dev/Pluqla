@@ -1,0 +1,55 @@
+# Docker Compose for Pluqla Development Environment
+# Provides PostgreSQL database for local development
+
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: pluqla_postgres_dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: pluqla
+      POSTGRES_PASSWORD: pluqla
+      POSTGRES_DB: pluqla_dev
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=en_US.UTF-8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - pluqla_postgres_data:/var/lib/postgresql/data
+      - ./server/prisma/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pluqla -d pluqla_dev"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pluqla_network
+
+  # pgAdmin (Optional - Web UI for PostgreSQL)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pluqla_pgadmin_dev
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@pluqla.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - pluqla_network
+    profiles:
+      - tools
+
+volumes:
+  pluqla_postgres_data:
+    name: pluqla_postgres_data
+
+networks:
+  pluqla_network:
+    name: pluqla_network
+    driver: bridge

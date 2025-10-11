@@ -10,7 +10,23 @@ const path = require('path');
  * - Safe request/error logging
  * - Redaction of PII and credentials
  * - Production-safe configuration
+ * - EPIPE error protection (prevents server crashes on client disconnect)
  */
+
+// CRITICAL FIX: Protect stdout/stderr from EPIPE errors (broken pipe)
+// This prevents server crashes when clients disconnect during log writes
+['stdout', 'stderr'].forEach((streamName) => {
+  const stream = process[streamName];
+  if (stream && typeof stream.on === 'function') {
+    stream.on('error', (err) => {
+      // Silently ignore EPIPE errors (broken pipe - client disconnected)
+      if (err.code !== 'EPIPE' && err.errno !== -4047) {
+        // Only log non-EPIPE errors to console.error (last resort)
+        console.error(`Stream ${streamName} error:`, err);
+      }
+    });
+  }
+});
 
 // Configuration des niveaux de log
 const levels = {
@@ -292,36 +308,63 @@ const fileFormat = winston.format.combine(
 
 // Transports (où envoyer les logs)
 const transports = [
-  // Console (toujours actif)
+  // Console (toujours actif) - with EPIPE protection
   new winston.transports.Console({
     format: consoleFormat,
-    level: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug')
+    level: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
+    handleExceptions: true,
+    handleRejections: true
   })
 ];
+
+// Add EPIPE error handling for all transports
+transports.forEach((transport) => {
+  transport.on('error', (err) => {
+    // Ignore EPIPE errors (broken pipe) - client disconnected
+    if (err.code === 'EPIPE' || err.errno === -4047) {
+      return; // Silent ignore
+    }
+    // Log other transport errors to stderr
+    console.error('Winston transport error:', err);
+  });
+});
 
 // Fichiers de log (uniquement si activé et sécurisés)
 if (process.env.LOG_FILE_ENABLED === 'true') {
   // Log général
-  transports.push(
-    new winston.transports.File({
-      filename: path.join('logs', 'app.log'),
-      format: fileFormat,
-      level: 'info',
-      maxsize: 5242880, // 5MB
-      maxFiles: 5
-    })
-  );
+  const appLogTransport = new winston.transports.File({
+    filename: path.join('logs', 'app.log'),
+    format: fileFormat,
+    level: 'info',
+    maxsize: 5242880, // 5MB
+    maxFiles: 5,
+    handleExceptions: true,
+    handleRejections: true
+  });
 
   // Log des erreurs uniquement
-  transports.push(
-    new winston.transports.File({
-      filename: path.join('logs', 'error.log'),
-      format: fileFormat,
-      level: 'error',
-      maxsize: 5242880, // 5MB
-      maxFiles: 5
-    })
-  );
+  const errorLogTransport = new winston.transports.File({
+    filename: path.join('logs', 'error.log'),
+    format: fileFormat,
+    level: 'error',
+    maxsize: 5242880, // 5MB
+    maxFiles: 5,
+    handleExceptions: true,
+    handleRejections: true
+  });
+
+  // Add EPIPE error handlers for file transports
+  [appLogTransport, errorLogTransport].forEach((transport) => {
+    transport.on('error', (err) => {
+      // Ignore EPIPE errors (broken pipe)
+      if (err.code === 'EPIPE' || err.errno === -4047) {
+        return;
+      }
+      console.error('File transport error:', err);
+    });
+  });
+
+  transports.push(appLogTransport, errorLogTransport);
 }
 
 // Créer le logger sécurisé

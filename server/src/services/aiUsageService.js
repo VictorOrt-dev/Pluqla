@@ -23,7 +23,10 @@ class AIUsageService {
       suggestions: 1,
       chat: 2,
       insights: 3,
-      image_analysis: 5
+      image_analysis: 5,
+      photo_match: 5, // Photo match uses same cost as image analysis
+      transport_optimization: 2, // Transport optimization (lighter than AI, no external API)
+      meal_suggestions: 3 // Meal suggestions (AI-powered, moderate complexity)
     };
 
     // Warning threshold (80% of quota)

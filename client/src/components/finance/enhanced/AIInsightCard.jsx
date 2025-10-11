@@ -173,7 +173,7 @@ const AIInsightCard = ({ transactions = [], darkMode = false, onDismiss }) => {
               : 'bg-black/10 border-gray-200/50 shadow-sm'
           }`}>
             <Sparkles size={16} className={darkMode ? 'text-[#FF6B6B]' : 'text-[#F14545]'} />
-            <span className={`text-xs font-bold ${darkMode ? 'text-[#FF6B6B]' : 'text-[#F14545]'}`}>Conseil IA</span>
+            <span className={`text-xs font-bold ${darkMode ? 'text-[#FF6B6B]' : 'text-[#F14545]'}`}>Conseil de Pluqi</span>
           </div>
 
           {onDismiss && (

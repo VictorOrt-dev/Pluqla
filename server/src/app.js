@@ -22,32 +22,52 @@ if (process.env.TRUST_PROXY === 'true') {
   app.set('trust proxy', 1);
 }
 
-// CORS Configuration
+// CORS Configuration - Enhanced for development and production
 const corsOptions = {
   origin: (origin, callback) => {
     const allowedOrigins = process.env.CORS_ORIGIN
       ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
       : ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'];
 
-    // Permettre les requêtes sans origin (mobile, Postman, etc.)
-    if (!origin) return callback(null, true);
-
-    // En développement, autoriser tous les localhost
-    if (process.env.NODE_ENV === 'development' && origin && origin.includes('localhost')) {
-      console.log(`✅ CORS allowing development origin: ${origin}`);
+    // Permettre les requêtes sans origin (mobile apps, Postman, curl, same-origin)
+    if (!origin) {
       return callback(null, true);
     }
 
+    // En développement, autoriser tous les localhost et 127.0.0.1
+    if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+      const isLocalhost = origin.includes('localhost') || origin.includes('127.0.0.1');
+      if (isLocalhost) {
+        logger.info(`✅ CORS allowing development origin: ${origin}`);
+        return callback(null, true);
+      }
+    }
+
+    // Check against allowed origins list
     if (allowedOrigins.includes(origin)) {
+      logger.info(`✅ CORS allowing configured origin: ${origin}`);
       return callback(null, true);
     }
 
-    logger.warn(`CORS blocked origin: ${origin}`);
+    // Log rejected origin for debugging
+    logger.warn(`⚠️  CORS blocked origin: ${origin}`);
     return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'X-CSRF-Token',
+    'X-API-Key',
+    'Accept',
+    'Origin'
+  ],
+  exposedHeaders: ['X-Total-Count', 'X-Page', 'X-Per-Page'],
+  maxAge: 86400, // 24 hours - cache preflight requests
+  preflightContinue: false,
+  optionsSuccessStatus: 204
 };
 
 // Middlewares de sécurité
@@ -61,9 +81,39 @@ app.use(compression());
 
 // Logging des requêtes HTTP
 if (process.env.NODE_ENV === 'production') {
-  app.use(morgan('combined', { stream: { write: (msg) => logger.info(msg.trim()) } }));
+  app.use(morgan('combined', {
+    stream: {
+      write: (msg) => {
+        try {
+          logger.info(msg.trim());
+        } catch (err) {
+          // Silently ignore EPIPE errors during logging
+          if (err.code !== 'EPIPE') {
+            console.error('Morgan logging error:', err);
+          }
+        }
+      }
+    },
+    skip: (req, res) => {
+      // Skip logging if socket is already closed
+      return !res.socket || res.socket.destroyed;
+    }
+  }));
 } else {
-  app.use(morgan('dev'));
+  // Development mode - safe morgan with EPIPE protection
+  const stream = process.stdout;
+  stream.on('error', (err) => {
+    if (err.code !== 'EPIPE') {
+      console.error('Stream error:', err);
+    }
+  });
+
+  app.use(morgan('dev', {
+    skip: (req, res) => {
+      // Skip logging if socket is already closed
+      return !res.socket || res.socket.destroyed;
+    }
+  }));
 }
 
 // Rate limiting global
@@ -81,8 +131,41 @@ app.use(metricsMiddleware);
 // Cookie parser middleware (REQUIRED for Better Auth session persistence)
 app.use(cookieParser());
 
-// Parsing du body
-app.use(express.json({ limit: process.env.UPLOAD_MAX_SIZE || '10mb' }));
+// Parsing du body with enhanced error handling
+app.use(express.json({
+  limit: process.env.UPLOAD_MAX_SIZE || '10mb',
+  // Custom error handler for JSON parsing errors
+  verify: (req, res, buf, encoding) => {
+    try {
+      JSON.parse(buf);
+    } catch (err) {
+      // Store parsing error for better error message
+      req.jsonParseError = err;
+      throw err;
+    }
+  }
+}));
+
+// JSON parsing error handler
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    // Bad JSON format
+    logger.warn('JSON parsing error', {
+      url: req.url,
+      method: req.method,
+      error: err.message,
+      ip: req.ip
+    });
+
+    return res.status(400).json({
+      error: 'Invalid JSON',
+      message: 'Request body contains malformed JSON. Please check your input for special characters that need escaping.',
+      details: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+  next(err);
+});
+
 app.use(express.urlencoded({ extended: true, limit: process.env.UPLOAD_MAX_SIZE || '10mb' }));
 
 // Servir les fichiers statiques (uploads)

@@ -13,11 +13,19 @@ const analyticsRoutes = require('./analytics'); // ✅ Re-enabled
 const uploadRoutes = require('./uploads'); // ✅ Re-enabled
 const categoryRoutes = require('./categories'); // ✅ Re-enabled
 const financialRoutes = require('./financialRoutes'); // ✅ Re-enabled for dashboard
+// const financialAIRoutes = require('./financialAI'); // 💰 NEW: AI-Powered Financial Insights & Projections (TEMP DISABLED for debugging)
 const oauthRoutes = require('./oauthRoutes'); // ✅ Re-enabled
 const strikeRoutes = require('./strikes'); // ✅ Essential for core functionality
 const shoppingListRoutes = require('./shoppingList'); // ✅ Re-enabled
 const aiProxyRoutes = require('./ai-proxy'); // ✅ SECURITY: Secure AI proxy
 const scaRoutes = require('./sca'); // 🔐 CRITICAL: Strong Customer Authentication for PSD2
+const complianceRoutes = require('./compliance'); // 🔒 GDPR & PSD2 compliance endpoints
+const photoMatchRoutes = require('./photoMatch'); // 📸 NEW: IA Photo Match feature
+const transportOptimizationRoutes = require('./transportOptimization'); // 🚗 NEW: Transport Cost Optimization feature
+const transportTripRoutes = require('./transportTrips'); // 🚗 NEW: User Transport Trip CRUD
+const mealSuggestionsRoutes = require('./mealSuggestions'); // 🍽️ NEW: AI-powered Meal Suggestions feature
+// const mealPlanningRoutes = require('./mealPlanning'); // 🍽️ NEW: Jow-inspired Weekly Meal Planning feature (TEMP DISABLED - syntax error)
+const bankAccountsRoutes = require('./bankAccounts'); // 🏦 NEW: Nordigen Bank Account Connections
 // const performanceRoutes = require('./performance'); // ❌ TEMPORARILY DISABLED for setup
 
 // Health check for API
@@ -40,11 +48,19 @@ router.use('/analytics', analyticsRoutes); // ✅ All methods implemented
 router.use('/uploads', uploadRoutes); // ✅ All methods implemented
 router.use('/categories', categoryRoutes); // ✅ All methods implemented
 router.use('/financial', financialRoutes); // ✅ All methods implemented
+// router.use('/financial/ai', financialAIRoutes); // 💰 NEW: AI-Powered Financial Insights & Projections (TEMP DISABLED for debugging)
 router.use('/oauth', oauthRoutes); // ✅ All methods implemented
 router.use('/strikes', strikeRoutes); // ✅ All methods implemented
 router.use('/shopping-list', shoppingListRoutes); // ✅ All methods implemented
 router.use('/ai-proxy', aiProxyRoutes); // ✅ SECURITY: Secure AI proxy
 router.use('/sca', scaRoutes); // 🔐 CRITICAL: Strong Customer Authentication endpoints
+router.use('/compliance', complianceRoutes); // 🔒 GDPR & PSD2 compliance endpoints
+router.use('/photo-match', photoMatchRoutes); // 📸 NEW: IA Photo Match feature
+router.use('/transport-optimize', transportOptimizationRoutes); // 🚗 NEW: Transport Cost Optimization feature
+router.use('/trips', transportTripRoutes); // 🚗 NEW: User Transport Trip CRUD
+router.use('/meal-suggestions', mealSuggestionsRoutes); // 🍽️ NEW: AI-powered Meal Suggestions feature
+// router.use('/meal-planning', mealPlanningRoutes); // 🍽️ NEW: Jow-inspired Weekly Meal Planning feature (TEMP DISABLED - syntax error)
+router.use('/bank-accounts', bankAccountsRoutes); // 🏦 NEW: Nordigen Bank Account Connections
 // router.use('/performance', performanceRoutes); // ❌ TEMPORARILY DISABLED for setup
 
 // API documentation endpoint
@@ -64,6 +80,11 @@ router.get('/', (req, res) => {
       financial: '/api/financial - Gestion financière et tableaux de bord',
       oauth: '/api/oauth - Intégration bancaire OAuth et consentements GDPR',
       strikes: '/api/strikes - Système de flammes quotidiennes et motivation',
+      photoMatch: '/api/photo-match - IA Photo Match feature',
+      transportOptimization: '/api/transport-optimize - Transport Cost Optimization feature',
+      mealSuggestions: '/api/meal-suggestions - AI-powered Meal Suggestions feature',
+      mealPlanning: '/api/meal-planning - Jow-inspired Weekly Meal Planning feature',
+      bankAccounts: '/api/bank-accounts - Nordigen Bank Account Connections',
       performance: '/api/performance - Monitoring des performances et métriques'
     },
     documentation: process.env.NODE_ENV !== 'production' ? '/api-docs' : null

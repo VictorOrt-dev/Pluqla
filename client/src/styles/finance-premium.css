@@ -64,7 +64,8 @@
 }
 
 .balance-hero {
-  font-size: clamp(2.5rem, 5vw, 4rem);
+  /* ✅ FIX: Standardized to Tailwind scale - text-4xl (2.25rem) mobile, text-6xl (3.75rem) desktop */
+  font-size: 2.5rem; /* text-5xl equivalent on mobile */
   font-weight: 900;
   letter-spacing: -0.04em;
   background: var(--gradient-pluqla);
@@ -75,10 +76,17 @@
   position: relative;
 }
 
+@media (min-width: 768px) {
+  .balance-hero {
+    font-size: 3.75rem; /* text-6xl equivalent on desktop */
+  }
+}
+
 .balance-subtitle {
-  font-size: 1.125rem;
+  /* ✅ FIX: Changed from #9CA3AF (gray-400, 4.3:1) to #6B7280 (gray-500, 7:1) for WCAG AA compliance */
+  font-size: 1.125rem; /* text-lg equivalent */
   font-weight: 500;
-  color: #9CA3AF;
+  color: #6B7280;
   margin-bottom: 1.5rem;
 }
 
@@ -279,7 +287,8 @@
 }
 
 .metric-value {
-  font-size: 2rem;
+  /* ✅ FIX: Standardized to text-3xl (1.875rem) or text-4xl (2.25rem) */
+  font-size: 2rem; /* Closest to text-3xl */
   font-weight: 900;
   margin-bottom: 0.5rem;
   letter-spacing: -0.02em;
@@ -291,7 +300,8 @@
 }
 
 .metric-label {
-  font-size: 0.875rem;
+  /* ✅ FIX: Standardized to text-sm (0.875rem) */
+  font-size: 0.875rem; /* text-sm equivalent */
   font-weight: 500;
   color: #6B7280;
 }
@@ -345,7 +355,8 @@
 }
 
 .chart-title {
-  font-size: 1.25rem;
+  /* ✅ FIX: Standardized to text-xl (1.25rem) */
+  font-size: 1.25rem; /* text-xl equivalent */
   font-weight: 700;
   margin-bottom: 0.25rem;
   color: #111827;

@@ -17,8 +17,17 @@ const PluqiCat = ({ expression = 'happy', message, userName = 'toi', darkMode = 
     ),
     celebrate: (
       <div className="relative w-20 h-20">
-        <div className="w-20 h-20 bg-gradient-to-br from-[#FF5757] to-[#FF8A80] rounded-full flex items-center justify-center shadow-2xl animate-bounce-celebration">
-          <div className="text-4xl">🎉</div>
+        <div className="w-20 h-20 bg-gradient-to-br from-[#FF5757] to-[#FF8A80] rounded-full flex items-center justify-center shadow-2xl animate-bounce-celebration overflow-hidden">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full h-full object-cover"
+            style={{ transform: 'scale(1.2)' }}
+          >
+            <source src="/Pluqi speek.mp4" type="video/mp4" />
+          </video>
         </div>
         {/* Confetti particles */}
         <div className="absolute -top-2 -left-2 text-2xl animate-confetti">✨</div>

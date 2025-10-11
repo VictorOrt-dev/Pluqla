@@ -32,6 +32,9 @@ const IncomeDetailScreen = React.lazy(() => import('../components/finance/Income
 const SuggestionsDetailScreen = React.lazy(() => import('../components/finance/SuggestionsDetailScreen'));
 const ProgressionDetailScreen = React.lazy(() => import('../components/progression/ProgressionDetailScreen'));
 
+// Premium/Subscription
+const SubscriptionPage = React.lazy(() => import('../pages/SubscriptionPage'));
+
 // Development components
 const FeatureFlagsDebug = React.lazy(() => import('../components/dev/FeatureFlagsDebug'));
 
@@ -185,6 +188,15 @@ const AppRouter = () => {
               element={
                 <ProtectedRoute>
                   <Profile />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/subscription"
+              element={
+                <ProtectedRoute>
+                  <SubscriptionPage />
                 </ProtectedRoute>
               }
             />

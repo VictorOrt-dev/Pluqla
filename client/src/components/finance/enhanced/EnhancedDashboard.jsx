@@ -61,18 +61,10 @@ const EnhancedDashboard = ({ darkMode }) => {
   };
 
   // Bank account handlers
-  const handleConnectBank = () => {
-    // TODO: Implement bank connection flow
-    console.log('Connect bank account');
-  };
-
   const handleAccountClick = (account) => {
     // TODO: Implement account details view
     console.log('Account clicked:', account);
   };
-
-  // Mock bank accounts (empty for now)
-  const bankAccounts = [];
 
   // Recent transactions (last 5)
   const recentTransactions = transactions.slice(0, 5);
@@ -97,7 +89,7 @@ const EnhancedDashboard = ({ darkMode }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <BalanceCard darkMode={darkMode} />
+          <BalanceCard darkMode={darkMode} transactions={transactions} />
         </motion.div>
 
         {/* Quick Stats */}
@@ -131,8 +123,6 @@ const EnhancedDashboard = ({ darkMode }) => {
           transition={{ duration: 0.5, delay: 0.3 }}
         >
           <BankAccounts
-            accounts={bankAccounts}
-            onConnectBank={handleConnectBank}
             onAccountClick={handleAccountClick}
             darkMode={darkMode}
           />

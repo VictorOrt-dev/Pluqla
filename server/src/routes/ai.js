@@ -3,6 +3,9 @@ const { param, body, query } = require('express-validator');
 const aiController = require('../controllers/aiController');
 const { authenticateToken } = require('../middleware/auth');
 const rateLimit = require('../middleware/rateLimit');
+const { aiQuotaMiddleware, addQuotaToResponse } = require('../middleware/aiQuotaMiddleware');
+const { requirePremium } = require('../middleware/requirePremium'); // NEW: Premium enforcement
+const { autoConsumeTokens } = require('../utils/aiQuotaHelper');
 const {
   validateAIChat,
   validateImageAnalysis,
@@ -52,10 +55,16 @@ router.get(
 // All other routes require authentication
 router.use(authenticateToken);
 
-// AI suggestion routes with enhanced security validation
+// Add quota info to responses
+router.use(addQuotaToResponse());
+
+// AI suggestion routes with enhanced security validation and quota enforcement
+// NEW: Premium tier enforcement added
 router.post(
   '/suggestions/alimentation',
   rateLimit.ai,
+  requirePremium({ feature: 'AI food suggestions' }), // PREMIUM REQUIRED
+  aiQuotaMiddleware('suggestions'),
   validateAISuggestions,
   aiController.getFoodSuggestions
 );
@@ -63,6 +72,8 @@ router.post(
 router.post(
   '/suggestions/habits',
   rateLimit.ai,
+  requirePremium({ feature: 'AI habit suggestions' }), // PREMIUM REQUIRED
+  aiQuotaMiddleware('suggestions'),
   validateAISuggestions,
   aiController.getHabitSuggestions
 );
@@ -70,6 +81,8 @@ router.post(
 router.post(
   '/suggestions/activite',
   rateLimit.ai,
+  requirePremium({ feature: 'AI activity suggestions' }), // PREMIUM REQUIRED
+  aiQuotaMiddleware('suggestions'),
   validateAISuggestions,
   aiController.getActivitySuggestions
 );
@@ -77,6 +90,8 @@ router.post(
 router.post(
   '/suggestions/deplacement',
   rateLimit.ai,
+  requirePremium({ feature: 'AI transport suggestions' }), // PREMIUM REQUIRED
+  aiQuotaMiddleware('suggestions'),
   validateAISuggestions,
   aiController.getTransportSuggestions
 );
@@ -85,6 +100,7 @@ router.post(
 router.get(
   '/suggestions/auth',
   rateLimit.ai,
+  aiQuotaMiddleware('suggestions'),
   validateAISuggestions,
   aiController.getSuggestions
 );
@@ -92,6 +108,7 @@ router.get(
 router.post(
   '/suggestions',
   rateLimit.ai,
+  aiQuotaMiddleware('suggestions'),
   validateAISuggestions,
   aiController.getSuggestions
 );
@@ -122,6 +139,7 @@ router.post(
 router.post(
   '/analyze/image',
   rateLimit.ai,
+  aiQuotaMiddleware('image_analysis'),
   validateImageAnalysis,
   aiController.analyzeImage
 );
@@ -141,6 +159,7 @@ router.get(
 // AI insights and trends routes with comprehensive validation
 router.get(
   '/insights',
+  aiQuotaMiddleware('insights'),
   validateInsightGeneration,
   aiController.getUserInsights
 );
@@ -197,6 +216,7 @@ router.post(
 router.post(
   '/chat',
   rateLimit.ai,
+  aiQuotaMiddleware('chat'),
   validateAIChat,
   aiController.processAIChat
 );

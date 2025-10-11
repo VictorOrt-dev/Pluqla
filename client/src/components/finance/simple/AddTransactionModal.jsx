@@ -228,7 +228,7 @@ AddTransactionModal.propTypes = {
   isOpen: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
   onSave: PropTypes.func.isRequired,
-  type: PropTypes.oneOf(['expense', 'revenue']),
+  type: PropTypes.oneOf(['expense', 'income']),
   darkMode: PropTypes.bool
 };
 

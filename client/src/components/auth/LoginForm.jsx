@@ -8,7 +8,7 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import '../../styles/auth.css';
 
-const LoginForm = ({ onSubmit, isLoading, serverError, onSwitchToSignup }) => {
+const LoginForm = ({ onSubmit, isLoading = false, serverError = null, onSwitchToSignup }) => {
   const { t } = useTranslation();
   const [formData, setFormData] = useState({
     email: '',
@@ -342,11 +342,6 @@ LoginForm.propTypes = {
   isLoading: PropTypes.bool,
   serverError: PropTypes.string,
   onSwitchToSignup: PropTypes.func.isRequired,
-};
-
-LoginForm.defaultProps = {
-  isLoading: false,
-  serverError: null,
 };
 
 export default LoginForm;

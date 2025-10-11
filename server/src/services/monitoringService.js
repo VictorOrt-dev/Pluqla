@@ -18,16 +18,11 @@
 const promClient = require('prom-client');
 const logger = require('../utils/logger');
 
-// Initialize Prometheus registry
-const register = new promClient.Registry();
+// FIXED: Use existing metrics registry to avoid duplicate registration
+const { register } = require('../monitoring/metrics');
 
-// Add default metrics (CPU, memory, event loop lag, etc.)
-promClient.collectDefaultMetrics({
-  register,
-  prefix: 'pluqla_',
-  gcDurationBuckets: [0.001, 0.01, 0.1, 1, 2, 5],
-  eventLoopMonitoringPrecision: 10
-});
+// NOTE: Default metrics and HTTP metrics are already registered in monitoring/metrics.js
+// We only add additional business-specific metrics here that aren't in the main registry
 
 // ========================================
 // CUSTOM METRICS DEFINITIONS
@@ -35,160 +30,230 @@ promClient.collectDefaultMetrics({
 
 /**
  * HTTP Request Metrics
+ * NOTE: These are already defined in monitoring/metrics.js,
+ * so we'll retrieve them instead of re-creating
  */
-const httpRequestDuration = new promClient.Histogram({
-  name: 'pluqla_http_request_duration_seconds',
-  help: 'Duration of HTTP requests in seconds',
-  labelNames: ['method', 'route', 'status_code'],
-  buckets: [0.001, 0.005, 0.015, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 1, 2, 5]
-});
-register.registerMetric(httpRequestDuration);
+let httpRequestDuration;
+try {
+  httpRequestDuration = register.getSingleMetric('pluqla_http_request_duration_seconds');
+  if (!httpRequestDuration) {
+    // Only create if it doesn't exist
+    httpRequestDuration = new promClient.Histogram({
+      name: 'pluqla_http_request_duration_seconds',
+      help: 'Duration of HTTP requests in seconds',
+      labelNames: ['method', 'route', 'status_code'],
+      buckets: [0.001, 0.005, 0.015, 0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 1, 2, 5],
+      registers: [register]
+    });
+  }
+} catch (err) {
+  // Metric exists, retrieve it
+  httpRequestDuration = register.getSingleMetric('pluqla_http_request_duration_seconds');
+}
 
-const httpRequestTotal = new promClient.Counter({
-  name: 'pluqla_http_requests_total',
-  help: 'Total number of HTTP requests',
-  labelNames: ['method', 'route', 'status_code']
-});
-register.registerMetric(httpRequestTotal);
+// Get or create httpRequestTotal
+let httpRequestTotal = register.getSingleMetric('pluqla_http_requests_total');
+if (!httpRequestTotal) {
+  httpRequestTotal = new promClient.Counter({
+    name: 'pluqla_http_requests_total',
+    help: 'Total number of HTTP requests',
+    labelNames: ['method', 'route', 'status_code'],
+    registers: [register]
+  });
+}
 
 /**
  * Authentication Metrics
  */
-const authAttemptsTotal = new promClient.Counter({
-  name: 'pluqla_auth_attempts_total',
-  help: 'Total number of authentication attempts',
-  labelNames: ['method', 'status'] // method: password, oauth; status: success, failure
-});
-register.registerMetric(authAttemptsTotal);
+let authAttemptsTotal = register.getSingleMetric('pluqla_auth_attempts_total');
+if (!authAttemptsTotal) {
+  authAttemptsTotal = new promClient.Counter({
+    name: 'pluqla_auth_attempts_total',
+    help: 'Total number of authentication attempts',
+    labelNames: ['method', 'status'], // method: password, oauth; status: success, failure
+    registers: [register]
+  });
+}
 
-const authFailuresTotal = new promClient.Counter({
-  name: 'pluqla_auth_failures_total',
-  help: 'Total number of authentication failures',
-  labelNames: ['reason'] // invalid_credentials, account_locked, email_not_verified, etc.
-});
-register.registerMetric(authFailuresTotal);
+let authFailuresTotal = register.getSingleMetric('pluqla_auth_failures_total');
+if (!authFailuresTotal) {
+  authFailuresTotal = new promClient.Counter({
+    name: 'pluqla_auth_failures_total',
+    help: 'Total number of authentication failures',
+    labelNames: ['reason'], // invalid_credentials, account_locked, email_not_verified, etc.
+    registers: [register]
+  });
+}
 
-const activeSessionsGauge = new promClient.Gauge({
-  name: 'pluqla_active_sessions',
-  help: 'Number of currently active user sessions'
-});
-register.registerMetric(activeSessionsGauge);
+let activeSessionsGauge = register.getSingleMetric('pluqla_active_sessions');
+if (!activeSessionsGauge) {
+  activeSessionsGauge = new promClient.Gauge({
+    name: 'pluqla_active_sessions',
+    help: 'Number of currently active user sessions',
+    registers: [register]
+  });
+}
 
-const sessionDuration = new promClient.Histogram({
-  name: 'pluqla_session_duration_seconds',
-  help: 'Duration of user sessions in seconds',
-  buckets: [60, 300, 900, 1800, 3600, 7200, 14400, 28800, 86400] // 1min to 24h
-});
-register.registerMetric(sessionDuration);
+let sessionDuration = register.getSingleMetric('pluqla_session_duration_seconds');
+if (!sessionDuration) {
+  sessionDuration = new promClient.Histogram({
+    name: 'pluqla_session_duration_seconds',
+    help: 'Duration of user sessions in seconds',
+    buckets: [60, 300, 900, 1800, 3600, 7200, 14400, 28800, 86400], // 1min to 24h
+    registers: [register]
+  });
+}
 
 /**
  * AI Service Metrics
  */
-const aiRequestsTotal = new promClient.Counter({
-  name: 'pluqla_ai_requests_total',
-  help: 'Total number of AI service requests',
-  labelNames: ['provider', 'operation', 'status'] // provider: openai, anthropic, none
-});
-register.registerMetric(aiRequestsTotal);
+let aiRequestsTotal = register.getSingleMetric('pluqla_ai_requests_total');
+if (!aiRequestsTotal) {
+  aiRequestsTotal = new promClient.Counter({
+    name: 'pluqla_ai_requests_total',
+    help: 'Total number of AI service requests',
+    labelNames: ['provider', 'operation', 'status'], // provider: openai, anthropic, none
+    registers: [register]
+  });
+}
 
-const aiRequestDuration = new promClient.Histogram({
-  name: 'pluqla_ai_request_duration_seconds',
-  help: 'Duration of AI service requests in seconds',
-  labelNames: ['provider', 'operation'],
-  buckets: [0.1, 0.5, 1, 2, 5, 10, 30, 60] // AI requests can be slow
-});
-register.registerMetric(aiRequestDuration);
+let aiRequestDuration = register.getSingleMetric('pluqla_ai_request_duration_seconds');
+if (!aiRequestDuration) {
+  aiRequestDuration = new promClient.Histogram({
+    name: 'pluqla_ai_request_duration_seconds',
+    help: 'Duration of AI service requests in seconds',
+    labelNames: ['provider', 'operation'],
+    buckets: [0.1, 0.5, 1, 2, 5, 10, 30, 60], // AI requests can be slow
+    registers: [register]
+  });
+}
 
-const aiErrorsTotal = new promClient.Counter({
-  name: 'pluqla_ai_errors_total',
-  help: 'Total number of AI service errors',
-  labelNames: ['provider', 'error_type'] // rate_limit, timeout, api_error, invalid_response
-});
-register.registerMetric(aiErrorsTotal);
+let aiErrorsTotal = register.getSingleMetric('pluqla_ai_errors_total');
+if (!aiErrorsTotal) {
+  aiErrorsTotal = new promClient.Counter({
+    name: 'pluqla_ai_errors_total',
+    help: 'Total number of AI service errors',
+    labelNames: ['provider', 'error_type'], // rate_limit, timeout, api_error, invalid_response
+    registers: [register]
+  });
+}
 
-const aiCacheHitsTotal = new promClient.Counter({
-  name: 'pluqla_ai_cache_hits_total',
-  help: 'Total number of AI cache hits',
-  labelNames: ['operation']
-});
-register.registerMetric(aiCacheHitsTotal);
+let aiCacheHitsTotal = register.getSingleMetric('pluqla_ai_cache_hits_total');
+if (!aiCacheHitsTotal) {
+  aiCacheHitsTotal = new promClient.Counter({
+    name: 'pluqla_ai_cache_hits_total',
+    help: 'Total number of AI cache hits',
+    labelNames: ['operation'],
+    registers: [register]
+  });
+}
 
 /**
  * Database Metrics
  */
-const dbQueryDuration = new promClient.Histogram({
-  name: 'pluqla_db_query_duration_seconds',
-  help: 'Duration of database queries in seconds',
-  labelNames: ['model', 'operation'],
-  buckets: [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 2, 5]
-});
-register.registerMetric(dbQueryDuration);
+let dbQueryDuration = register.getSingleMetric('pluqla_db_query_duration_seconds');
+if (!dbQueryDuration) {
+  dbQueryDuration = new promClient.Histogram({
+    name: 'pluqla_db_query_duration_seconds',
+    help: 'Duration of database queries in seconds',
+    labelNames: ['model', 'operation'],
+    buckets: [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1, 2, 5],
+    registers: [register]
+  });
+}
 
-const dbQueriesTotal = new promClient.Counter({
-  name: 'pluqla_db_queries_total',
-  help: 'Total number of database queries',
-  labelNames: ['model', 'operation', 'status'] // status: success, error
-});
-register.registerMetric(dbQueriesTotal);
+let dbQueriesTotal = register.getSingleMetric('pluqla_db_queries_total');
+if (!dbQueriesTotal) {
+  dbQueriesTotal = new promClient.Counter({
+    name: 'pluqla_db_queries_total',
+    help: 'Total number of database queries',
+    labelNames: ['model', 'operation', 'status'], // status: success, error
+    registers: [register]
+  });
+}
 
-const dbConnectionsActive = new promClient.Gauge({
-  name: 'pluqla_db_connections_active',
-  help: 'Number of active database connections'
-});
-register.registerMetric(dbConnectionsActive);
+let dbConnectionsActive = register.getSingleMetric('pluqla_db_connections_active');
+if (!dbConnectionsActive) {
+  dbConnectionsActive = new promClient.Gauge({
+    name: 'pluqla_db_connections_active',
+    help: 'Number of active database connections',
+    registers: [register]
+  });
+}
 
-const dbConnectionsIdle = new promClient.Gauge({
-  name: 'pluqla_db_connections_idle',
-  help: 'Number of idle database connections'
-});
-register.registerMetric(dbConnectionsIdle);
+let dbConnectionsIdle = register.getSingleMetric('pluqla_db_connections_idle');
+if (!dbConnectionsIdle) {
+  dbConnectionsIdle = new promClient.Gauge({
+    name: 'pluqla_db_connections_idle',
+    help: 'Number of idle database connections',
+    registers: [register]
+  });
+}
 
 /**
  * Session Cleanup Metrics
  */
-const sessionCleanupRunsTotal = new promClient.Counter({
-  name: 'pluqla_session_cleanup_runs_total',
-  help: 'Total number of session cleanup runs',
-  labelNames: ['status'] // success, failure
-});
-register.registerMetric(sessionCleanupRunsTotal);
+let sessionCleanupRunsTotal = register.getSingleMetric('pluqla_session_cleanup_runs_total');
+if (!sessionCleanupRunsTotal) {
+  sessionCleanupRunsTotal = new promClient.Counter({
+    name: 'pluqla_session_cleanup_runs_total',
+    help: 'Total number of session cleanup runs',
+    labelNames: ['status'], // success, failure
+    registers: [register]
+  });
+}
 
-const sessionCleanupDuration = new promClient.Histogram({
-  name: 'pluqla_session_cleanup_duration_seconds',
-  help: 'Duration of session cleanup operations in seconds',
-  buckets: [0.1, 0.5, 1, 2, 5, 10]
-});
-register.registerMetric(sessionCleanupDuration);
+let sessionCleanupDuration = register.getSingleMetric('pluqla_session_cleanup_duration_seconds');
+if (!sessionCleanupDuration) {
+  sessionCleanupDuration = new promClient.Histogram({
+    name: 'pluqla_session_cleanup_duration_seconds',
+    help: 'Duration of session cleanup operations in seconds',
+    buckets: [0.1, 0.5, 1, 2, 5, 10],
+    registers: [register]
+  });
+}
 
-const sessionCleanupSessionsDeleted = new promClient.Counter({
-  name: 'pluqla_session_cleanup_sessions_deleted_total',
-  help: 'Total number of sessions deleted by cleanup'
-});
-register.registerMetric(sessionCleanupSessionsDeleted);
+let sessionCleanupSessionsDeleted = register.getSingleMetric('pluqla_session_cleanup_sessions_deleted_total');
+if (!sessionCleanupSessionsDeleted) {
+  sessionCleanupSessionsDeleted = new promClient.Counter({
+    name: 'pluqla_session_cleanup_sessions_deleted_total',
+    help: 'Total number of sessions deleted by cleanup',
+    registers: [register]
+  });
+}
 
 /**
  * Business Metrics
  */
-const transactionsCreatedTotal = new promClient.Counter({
-  name: 'pluqla_transactions_created_total',
-  help: 'Total number of transactions created',
-  labelNames: ['type'] // income, expense
-});
-register.registerMetric(transactionsCreatedTotal);
+let transactionsCreatedTotal = register.getSingleMetric('pluqla_transactions_created_total');
+if (!transactionsCreatedTotal) {
+  transactionsCreatedTotal = new promClient.Counter({
+    name: 'pluqla_transactions_created_total',
+    help: 'Total number of transactions created',
+    labelNames: ['type'], // income, expense
+    registers: [register]
+  });
+}
 
-const transactionAmountSum = new promClient.Counter({
-  name: 'pluqla_transaction_amount_total',
-  help: 'Total amount of all transactions',
-  labelNames: ['type', 'currency']
-});
-register.registerMetric(transactionAmountSum);
+let transactionAmountSum = register.getSingleMetric('pluqla_transaction_amount_total');
+if (!transactionAmountSum) {
+  transactionAmountSum = new promClient.Counter({
+    name: 'pluqla_transaction_amount_total',
+    help: 'Total amount of all transactions',
+    labelNames: ['type', 'currency'],
+    registers: [register]
+  });
+}
 
-const usersRegisteredTotal = new promClient.Counter({
-  name: 'pluqla_users_registered_total',
-  help: 'Total number of users registered',
-  labelNames: ['method'] // email, oauth
-});
-register.registerMetric(usersRegisteredTotal);
+let usersRegisteredTotal = register.getSingleMetric('pluqla_users_registered_total');
+if (!usersRegisteredTotal) {
+  usersRegisteredTotal = new promClient.Counter({
+    name: 'pluqla_users_registered_total',
+    help: 'Total number of users registered',
+    labelNames: ['method'], // email, oauth
+    registers: [register]
+  });
+}
 
 // ========================================
 // SERVICE HEALTH TRACKING
@@ -228,17 +293,25 @@ async function getHealthStatus() {
     const dbHealth = await getDatabaseHealth();
     const connectionStats = dbHealth.healthy ? await getConnectionStats() : null;
 
+    // Convert BigInt to regular numbers for JSON serialization
+    const safeConnectionStats = connectionStats ? {
+      total_connections: Number(connectionStats.total_connections || 0),
+      active_connections: Number(connectionStats.active_connections || 0),
+      idle_connections: Number(connectionStats.idle_connections || 0),
+      app_connections: Number(connectionStats.app_connections || 0)
+    } : null;
+
     updateSubsystemHealth('database', {
       healthy: dbHealth.healthy,
       latency: dbHealth.latency,
-      connections: connectionStats,
+      connections: safeConnectionStats,
       error: dbHealth.error || null
     });
 
     // Update database connection gauges
-    if (connectionStats) {
-      dbConnectionsActive.set(parseInt(connectionStats.active_connections || 0));
-      dbConnectionsIdle.set(parseInt(connectionStats.idle_connections || 0));
+    if (safeConnectionStats) {
+      dbConnectionsActive.set(safeConnectionStats.active_connections);
+      dbConnectionsIdle.set(safeConnectionStats.idle_connections);
     }
   } catch (error) {
     logger.error('Database health check failed:', error);

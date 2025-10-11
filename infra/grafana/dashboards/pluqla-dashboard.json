@@ -1,0 +1,128 @@
+{
+  "dashboard": {
+    "title": "Pluqla Monitoring Dashboard",
+    "tags": ["pluqla", "api", "monitoring"],
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "30s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Request Rate (req/s)",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "sum(rate(pluqla_http_requests_total[5m]))",
+            "legendFormat": "Total Requests"
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "title": "Error Rate",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "targets": [
+          {
+            "expr": "sum(rate(pluqla_http_5xx_errors_total[5m]))",
+            "legendFormat": "5xx Errors"
+          },
+          {
+            "expr": "sum(rate(pluqla_http_requests_total{status=~\"4..\"}[5m]))",
+            "legendFormat": "4xx Errors"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "Request Latency (P50, P95, P99)",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(pluqla_http_request_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "P50"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(pluqla_http_request_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "P95"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(pluqla_http_request_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "P99"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "Active Sessions",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "targets": [
+          {
+            "expr": "pluqla_active_sessions",
+            "legendFormat": "Active Sessions"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Auth Success vs Failure",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+        "targets": [
+          {
+            "expr": "sum(rate(pluqla_auth_success_total[5m]))",
+            "legendFormat": "Success"
+          },
+          {
+            "expr": "sum(rate(pluqla_auth_failure_total[5m]))",
+            "legendFormat": "Failure"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Database Connection Pool",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+        "targets": [
+          {
+            "expr": "pluqla_db_connection_pool_used",
+            "legendFormat": "Used"
+          },
+          {
+            "expr": "pluqla_db_connection_pool_size",
+            "legendFormat": "Total"
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "AI Request Rate by Provider",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 24},
+        "targets": [
+          {
+            "expr": "sum(rate(pluqla_ai_requests_total[5m])) by (provider)",
+            "legendFormat": "{{provider}}"
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Session Concurrency Rejections",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 24},
+        "targets": [
+          {
+            "expr": "sum(rate(pluqla_session_concurrency_rejected_total[5m]))",
+            "legendFormat": "Rejections"
+          }
+        ]
+      }
+    ]
+  }
+}

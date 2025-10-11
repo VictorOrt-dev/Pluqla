@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import RecipeList from '../components/features/food/RecipeList';
 import RecipeModal from '../components/features/food/RecipeModal';
+import MealSuggestions from '../components/features/food/MealSuggestions';
 import ActivityRecommendations from '../components/features/activity/ActivityRecommendations';
 import { useRecipes } from '../hooks/useRecipes';
 import { useAISuggestions } from '../hooks/useAISuggestions';
@@ -320,19 +321,9 @@ const AlimentationScreen = ({ userData, setUserData, usePlan, showNotification, 
 
       case 'nutrition':
         return (
-          <ActivityRecommendations
-            title="Conseils Nutrition"
-            subtitle="Recommandations personnalisées par l'IA"
-            icon="🥗"
-            aiSuggestions={aiSuggestions}
-            isLoading={isLoadingAI}
+          <MealSuggestions
             darkMode={darkMode}
-            userData={userData}
-            setUserData={setUserData}
-            onUsePlan={usePlan}
-            category="alimentation"
             showNotification={showNotification}
-            addTransaction={addTransaction}
           />
         );
 

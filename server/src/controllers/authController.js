@@ -97,8 +97,14 @@ class AuthController {
       recordAuthAttempt('email', true);
 
       // SECURITY: Rotate CSRF token on registration (new session)
-      const newCsrfToken = refreshCsrfToken(req, res);
-      logger.debug('CSRF token rotated on registration', { userId: user.id });
+      let newCsrfToken = null;
+      try {
+        newCsrfToken = refreshCsrfToken(req, res);
+        logger.debug('CSRF token rotated on registration', { userId: user.id });
+      } catch (csrfError) {
+        logger.warn('CSRF token refresh failed (non-blocking)', { error: csrfError.message });
+        // Continue without CSRF token in dev
+      }
 
       return sendSuccess(res, {
         user,
@@ -108,13 +114,22 @@ class AuthController {
         needsEmailVerification: true
       }, 'Compte créé avec succès', 201);
     } catch (error) {
-      // SECURITY FIX: Use secure error logging to prevent JWT/password exposure
+      // ENHANCED ERROR LOGGING: Include stack trace and Prisma error details
       logger.error('Registration error', {
         action: 'registration',
         email: req.body.email ? 'provided' : 'missing',
         errorName: error.name,
-        errorMessage: error.message
+        errorMessage: error.message,
+        errorStack: error.stack,
+        errorCode: error.code || null,
+        errorMeta: error.meta || null
       });
+
+      // Dev-only: Full error dump to console
+      if (process.env.NODE_ENV === 'development') {
+        console.error('\n❌ REGISTRATION ERROR DETAILS:');
+        console.error(error);
+      }
 
       // Record registration failure
       recordAuthAttempt('email', false, 'registration_error');
@@ -252,8 +267,14 @@ class AuthController {
       metrics.recordAuthTiming('login_total', 'success', totalDuration);
 
       // SECURITY: Rotate CSRF token on login to prevent token reuse
-      const newCsrfToken = refreshCsrfToken(req, res);
-      logger.debug('CSRF token rotated on login', { userId: user.id });
+      let newCsrfToken = null;
+      try {
+        newCsrfToken = refreshCsrfToken(req, res);
+        logger.debug('CSRF token rotated on login', { userId: user.id });
+      } catch (csrfError) {
+        logger.warn('CSRF token refresh failed (non-blocking)', { error: csrfError.message });
+        // Continue without CSRF token in dev
+      }
 
       return sendSuccess(res, {
         user: userResponse,
@@ -266,13 +287,22 @@ class AuthController {
       metrics.recordLoginAttempt('failure', 'email');
       recordAuthAttempt('password', false, 'login_error');
 
-      // SECURITY FIX: Use secure error logging to prevent JWT/credential exposure
+      // ENHANCED ERROR LOGGING: Include stack trace and Prisma error details
       logger.error('Login error', {
         action: 'login',
         email: req.body.email ? 'provided' : 'missing',
         errorName: error.name,
-        errorMessage: error.message
+        errorMessage: error.message,
+        errorStack: error.stack,
+        errorCode: error.code || null,
+        errorMeta: error.meta || null
       });
+
+      // Dev-only: Full error dump to console
+      if (process.env.NODE_ENV === 'development') {
+        console.error('\n❌ LOGIN ERROR DETAILS:');
+        console.error(error);
+      }
 
       // TIMING ATTACK MITIGATION: Normalize response time even on error
       await this._normalizeResponseTime(loginStartTime);

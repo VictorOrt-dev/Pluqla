@@ -71,7 +71,13 @@
       "Bash(TOKEN=\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJjbWc2cnNwbWYwMDAwdHdkOHF0OHhqMTBvIiwidHlwZSI6ImFjY2VzcyIsImlhdCI6MTc1OTI0OTYyMCwiZXhwIjoxNzU5MjUwNTIwLCJhdWQiOiJwbHVzLWNsYWlyLXVzZXJzIiwiaXNzIjoicGx1cy1jbGFpci1hcHAifQ.OfbdwuLsbgTrvUnEmRqCybf5U80zIXQDDJFZXnuRw8k\")",
       "Bash(del:*)",
       "Bash(git checkout:*)",
-      "Bash(gh pr create:*)"
+      "Bash(gh pr create:*)",
+      "Bash(docker:*)",
+      "Bash(docker-compose:*)",
+      "Bash(npm:*)",
+      "Bash(python3:*)",
+      "Bash(redis-cli:*)",
+      "Bash(where:*)"
     ],
     "deny": [],
     "ask": []

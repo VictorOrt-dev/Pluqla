@@ -1,4 +1,3 @@
-// prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,88 +8,92 @@ datasource db {
 }
 
 model User {
-  id                     String    @id @default(cuid())
-  email                  String    @unique
+  id                     String                        @id @default(cuid())
+  email                  String                        @unique
   password               String
   name                   String
-  role                   String    @default("user") // user, admin, moderator
-  status                 String    @default("active") // active, inactive, suspended
-  savedAmount            Float     @default(0)
-  monthlyGoal            Float     @default(800)
-  streak                 Int       @default(0)
-  lastSavingDate         DateTime? // Dernière date d'économie pour calculer les strikes
-  level                  Int       @default(1)
-  plansUsedThisMonth     Int       @default(0)
-  isPremium              Boolean   @default(false)
-  gamificationPoints     Int       @default(0)
+  role                   String                        @default("user")
+  status                 String                        @default("active")
+  savedAmount            Float                         @default(0)
+  monthlyGoal            Float                         @default(800)
+  streak                 Int                           @default(0)
+  lastSavingDate         DateTime?
+  level                  Int                           @default(1)
+  plansUsedThisMonth     Int                           @default(0)
+  isPremium              Boolean                       @default(false)
+  subscriptionTier       SubscriptionTier              @default(FREE)
+  subscriptionStartDate  DateTime?
+  subscriptionEndDate    DateTime?
+  gamificationPoints     Int                           @default(0)
   lastLoginAt            DateTime?
-  emailVerified          Boolean   @default(false)
+  lastScaAt              DateTime?
+  emailVerified          Boolean                       @default(false)
   emailVerificationToken String?
-  createdAt              DateTime  @default(now())
-  updatedAt              DateTime  @updatedAt
+  createdAt              DateTime                      @default(now())
+  updatedAt              DateTime                      @updatedAt
+  accounts               Account[]
+  aiUsageRecords         AiUsage[]
+  analyticsEvents        AnalyticsEvent[]
+  assets                 Asset[]
+  betterAuthAccounts     BetterAuthAccount[]
+  betterAuthSessions     BetterAuthSession[]
+  budgetPlans            BudgetPlan[]
+  cacheEntries           CacheEntry[]
+  dailyChallenges        DailyChallenge[]
+  dataProcessingLogs     DataProcessingLog[]
+  expenses               Expense[]
+  favoriteRecipes        FavoriteRecipe[]
+  financialGoals         FinancialGoal[]
+  financialSuggestions   FinancialSuggestion[]
+  incomes                Income[]
+  liabilities            Liability[]
+  netWorthSnapshots      NetWorthSnapshot[]
+  passwordResets         PasswordReset[]
+  photoMatchJobs         PhotoMatchJob[]
+  photoMatchResults      PhotoMatchResult[]
+  refreshTokens          RefreshToken[]
+  transportOptJobs       TransportOptimizationJob[]
+  transportOptResults    TransportOptimizationResult[]
+  transportTrips         TransportTrip[]
+  mealSuggestionJobs     MealSuggestionJob[]
+  mealSuggestionResults  MealSuggestionResult[]
+  mealPreferences        UserMealPreferences?
+  weeklyMealPlans        WeeklyMealPlan[]
+  groceryLists           GroceryList[]
+  favoriteMeals          FavoriteMeal[]
+  mealPlanTemplates      MealPlanTemplate[]
+  sharedMealPlans        SharedMealPlan[]
+  scaChallenges          ScaChallenge[]
+  scaSessions            ScaSession[]
+  securityIncidents      SecurityIncident[]
+  transactions           Transaction[]
+  answers                UserAnswer[]
+  badges                 UserBadge[]
+  consents               UserConsent[]
+  userDevices            UserDevice[]
+  userLocations          UserLocation[]
 
-  // Relations
-  transactions    Transaction[]
-  answers         UserAnswer[]
-  badges          UserBadge[]
-  dailyChallenges DailyChallenge[]
-  favoriteRecipes FavoriteRecipe[]
-  analyticsEvents AnalyticsEvent[]
-  cacheEntries    CacheEntry[]
-  refreshTokens   RefreshToken[]
-
-  // Financial Dashboard Relations
-  accounts          Account[]
-  assets            Asset[]
-  liabilities       Liability[]
-  incomes           Income[]
-  financialGoals    FinancialGoal[]
-  netWorthSnapshots NetWorthSnapshot[]
-
-  // Personal Finance Tracking Relations
-  expenses             Expense[]
-  budgetPlans          BudgetPlan[]
-  financialSuggestions FinancialSuggestion[]
-
-  // GDPR Compliance Relations
-  consents           UserConsent[]
-  dataProcessingLogs DataProcessingLog[]
-  securityIncidents  SecurityIncident[]
-  passwordResets     PasswordReset[]
-
-  // Strong Customer Authentication Relations
-  scaChallenges ScaChallenge[]
-  scaSessions   ScaSession[]
-  userDevices   UserDevice[]
-  userLocations UserLocation[]
-
-  // Better Auth Relations
-  betterAuthSessions BetterAuthSession[]
-  betterAuthAccounts BetterAuthAccount[]
-
-  // Performance indexes for authentication and user management
-  @@index([role], name: "idx_user_role") // Admin and role-based queries - SECURITY
-  @@index([status], name: "idx_user_status") // Filter active users - Critical for auth queries
-  @@index([emailVerificationToken], name: "idx_user_email_verification_token") // Email verification lookup
-  @@index([lastLoginAt], name: "idx_user_last_login") // Recent activity queries for analytics
-  @@index([isPremium], name: "idx_user_premium") // Premium user filtering for features
-  @@index([createdAt], name: "idx_user_created_at") // User registration analytics
+  @@index([role], map: "idx_user_role")
+  @@index([status], map: "idx_user_status")
+  @@index([emailVerificationToken], map: "idx_user_email_verification_token")
+  @@index([lastLoginAt], map: "idx_user_last_login")
+  @@index([isPremium], map: "idx_user_premium")
+  @@index([createdAt], map: "idx_user_created_at")
   @@map("users")
 }
 
 model UserAnswer {
   id        String   @id @default(cuid())
   userId    String
-  key       String // 'age', 'mainSpending', etc.
+  key       String
   value     String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, key])
-  // Cross-user answer analytics (e.g., "show all users who answered 'age' = '25'")
-  @@index([key], name: "idx_user_answer_key")
-  @@index([key, value], name: "idx_user_answer_key_value") // Compound for answer analytics
+  @@index([key], map: "idx_user_answer_key")
+  @@index([key, value], map: "idx_user_answer_key_value")
   @@map("user_answers")
 }
 
@@ -98,50 +101,47 @@ model Transaction {
   id          String   @id @default(cuid())
   userId      String
   amount      Float
-  category    String // 'alimentation', 'habits', 'activite', 'deplacement'
+  category    String
   description String
   type        String   @default("saving")
   date        DateTime @default(now())
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // CRITICAL: Missing userId index - this is a major performance bottleneck
-  @@index([userId], name: "idx_transaction_user_id") // User's transactions - CRITICAL
-  @@index([userId, date], name: "idx_transaction_user_date") // Date-ordered transactions per user
-  @@index([userId, category], name: "idx_transaction_user_category") // Category filtering per user
-  @@index([date], name: "idx_transaction_date") // Global date queries for analytics
-  @@index([category], name: "idx_transaction_category") // Category-based analytics
-  @@index([userId, category, date], name: "idx_transaction_user_category_date") // Complex filtering
+  @@index([userId], map: "idx_transaction_user_id")
+  @@index([userId, date], map: "idx_transaction_user_date")
+  @@index([userId, category], map: "idx_transaction_user_category")
+  @@index([date], map: "idx_transaction_date")
+  @@index([category], map: "idx_transaction_category")
+  @@index([userId, category, date], map: "idx_transaction_user_category_date")
   @@map("transactions")
 }
 
 model Recipe {
-  id              String   @id @default(cuid())
+  id              String           @id @default(cuid())
   title           String
   description     String
-  cookingTime     Int // en minutes
+  cookingTime     Int
   servings        Int
-  difficulty      String // 'facile', 'moyen', 'difficile'
+  difficulty      String
   category        String
   estimatedPrice  Float
-  ingredients     String // JSON array
-  instructions    String // JSON array
+  ingredients     String
+  instructions    String
   image           String?
-  nutritionalInfo String? // JSON object
-  tags            String // JSON array
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  nutritionalInfo String?
+  tags            String
+  isActive        Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  favorites       FavoriteRecipe[]
+  plannedMeals    PlannedMeal[]
 
-  // Relations
-  favorites FavoriteRecipe[]
-
-  // Recipe discovery and filtering performance
-  @@index([category], name: "idx_recipe_category") // Filter recipes by category
-  @@index([isActive], name: "idx_recipe_active") // Active recipes only
-  @@index([category, isActive], name: "idx_recipe_category_active") // Active recipes by category
-  @@index([difficulty], name: "idx_recipe_difficulty") // Filter by difficulty
-  @@index([estimatedPrice], name: "idx_recipe_price") // Price-based filtering
+  @@index([category], map: "idx_recipe_category")
+  @@index([isActive], map: "idx_recipe_active")
+  @@index([category, isActive], map: "idx_recipe_category_active")
+  @@index([difficulty], map: "idx_recipe_difficulty")
+  @@index([estimatedPrice], map: "idx_recipe_price")
   @@map("recipes")
 }
 
@@ -149,36 +149,32 @@ model FavoriteRecipe {
   id        String   @id @default(cuid())
   userId    String
   recipeId  String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, recipeId])
-  // User's favorite recipes lookup
-  @@index([userId], name: "idx_favorite_recipe_user") // User's favorites
-  @@index([recipeId], name: "idx_favorite_recipe_recipe") // Recipe popularity
+  @@index([userId], map: "idx_favorite_recipe_user")
+  @@index([recipeId], map: "idx_favorite_recipe_recipe")
   @@map("favorite_recipes")
 }
 
 model Badge {
-  id          String   @id @default(cuid())
-  name        String   @unique
+  id          String      @id @default(cuid())
+  name        String      @unique
   title       String
   description String
   icon        String
   points      Int
-  rarity      String // 'common', 'uncommon', 'rare', 'epic', 'legendary'
-  requirement String // JSON object with type and value
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
+  rarity      String
+  requirement String
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  userBadges  UserBadge[]
 
-  // Relations
-  userBadges UserBadge[]
-
-  // Badge system performance
-  @@index([isActive], name: "idx_badge_active") // Active badges only
-  @@index([rarity], name: "idx_badge_rarity") // Filter by rarity
-  @@index([points], name: "idx_badge_points") // Sort by points value
+  @@index([isActive], map: "idx_badge_active")
+  @@index([rarity], map: "idx_badge_rarity")
+  @@index([points], map: "idx_badge_points")
   @@map("badges")
 }
 
@@ -187,14 +183,13 @@ model UserBadge {
   userId     String
   badgeId    String
   unlockedAt DateTime @default(now())
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   badge      Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, badgeId])
-  // User badge queries and analytics
-  @@index([userId], name: "idx_user_badge_user") // User's badges
-  @@index([badgeId], name: "idx_user_badge_badge") // Badge popularity
-  @@index([unlockedAt], name: "idx_user_badge_unlocked") // Recent achievements
+  @@index([userId], map: "idx_user_badge_user")
+  @@index([badgeId], map: "idx_user_badge_badge")
+  @@index([unlockedAt], map: "idx_user_badge_unlocked")
   @@map("user_badges")
 }
 
@@ -205,56 +200,52 @@ model DailyChallenge {
   title       String
   description String
   points      Int
-  date        String // Format: YYYY-MM-DD
+  date        String
   completed   Boolean   @default(false)
   completedAt DateTime?
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, challengeId, date])
-  // Daily challenge performance
-  @@index([userId, date], name: "idx_daily_challenge_user_date") // User's daily challenges
-  @@index([date, completed], name: "idx_daily_challenge_date_completed") // Completion analytics
-  @@index([userId, completed], name: "idx_daily_challenge_user_completed") // User completion status
+  @@index([userId, date], map: "idx_daily_challenge_user_date")
+  @@index([date, completed], map: "idx_daily_challenge_date_completed")
+  @@index([userId, completed], map: "idx_daily_challenge_user_completed")
   @@map("daily_challenges")
 }
 
 model CacheEntry {
   id        String   @id @default(cuid())
-  userId    String? // Null pour cache global
+  userId    String?
   cacheKey  String
-  category  String // 'ai_suggestions', 'recipes', etc.
-  data      String // JSON stringified
+  category  String
+  data      String
   expiresAt DateTime
-  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, cacheKey, category])
-  // Cache performance optimization - Critical for app performance
-  @@index([expiresAt], name: "idx_cache_expires_at") // Cleanup expired cache - CRITICAL
-  @@index([category], name: "idx_cache_category") // Global cache by category
-  @@index([userId, category], name: "idx_cache_user_category") // User-specific cache
-  @@index([category, expiresAt], name: "idx_cache_category_expires") // Active cache by category
+  @@index([expiresAt], map: "idx_cache_expires_at")
+  @@index([category], map: "idx_cache_category")
+  @@index([userId, category], map: "idx_cache_user_category")
+  @@index([category, expiresAt], map: "idx_cache_category_expires")
   @@map("cache_entries")
 }
 
 model AnalyticsEvent {
   id         String   @id @default(cuid())
-  userId     String? // Null pour événements anonymes
+  userId     String?
   sessionId  String
   type       String
-  properties String // JSON object
-  metadata   String // JSON object
+  properties String
+  metadata   String
   timestamp  DateTime @default(now())
   user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Existing indexes are well-designed for analytics
-  @@index([userId, type], name: "idx_analytics_user_type")
-  @@index([sessionId], name: "idx_analytics_session")
-  @@index([timestamp], name: "idx_analytics_timestamp")
-  // Additional analytics performance indexes
-  @@index([type, timestamp], name: "idx_analytics_type_timestamp") // Type-based time series
-  @@index([userId, timestamp], name: "idx_analytics_user_timestamp") // User activity timeline
+  @@index([userId, type], map: "idx_analytics_user_type")
+  @@index([sessionId], map: "idx_analytics_session")
+  @@index([timestamp], map: "idx_analytics_timestamp")
+  @@index([type, timestamp], map: "idx_analytics_type_timestamp")
+  @@index([userId, timestamp], map: "idx_analytics_user_timestamp")
   @@map("analytics_events")
 }
 
@@ -263,84 +254,78 @@ model FeatureFlag {
   name        String    @unique
   enabled     Boolean   @default(false)
   description String?
-  conditions  String? // JSON conditions
-  environment String    @default("production") // 'development', 'staging', 'production'
+  conditions  String?
+  environment String    @default("production")
   expiresAt   DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  // Feature flag lookup performance
-  @@index([environment], name: "idx_feature_flag_environment") // Environment-specific flags
-  @@index([enabled], name: "idx_feature_flag_enabled") // Active flags only
-  @@index([environment, enabled], name: "idx_feature_flag_env_enabled") // Active flags per environment
-  @@index([expiresAt], name: "idx_feature_flag_expires") // Cleanup expired flags
+  @@index([environment], map: "idx_feature_flag_environment")
+  @@index([enabled], map: "idx_feature_flag_enabled")
+  @@index([environment, enabled], map: "idx_feature_flag_env_enabled")
+  @@index([expiresAt], map: "idx_feature_flag_expires")
   @@map("feature_flags")
 }
 
 model Image {
   id           String   @id @default(cuid())
-  userId       String? // Optionnel si image publique
+  userId       String?
   filename     String
   originalName String
   mimetype     String
   size         Int
   path         String
   analyzed     Boolean  @default(false)
-  analysisData String? // JSON results
+  analysisData String?
   createdAt    DateTime @default(now())
 
-  // Image management performance
-  @@index([userId], name: "idx_image_user") // User's images
-  @@index([analyzed], name: "idx_image_analyzed") // Filter analyzed images
-  @@index([mimetype], name: "idx_image_mimetype") // Filter by image type
-  @@index([createdAt], name: "idx_image_created") // Recent images
+  @@index([userId], map: "idx_image_user")
+  @@index([analyzed], map: "idx_image_analyzed")
+  @@index([mimetype], map: "idx_image_mimetype")
+  @@index([createdAt], map: "idx_image_created")
   @@map("images")
 }
 
 model RefreshToken {
   id        String    @id @default(cuid())
   tokenHash String    @unique
-  jti       String    @unique // JWT ID for token rotation tracking
+  jti       String    @unique
   userId    String
   expiresAt DateTime
   revoked   Boolean   @default(false)
   revokedAt DateTime?
-  ipAddress String? // Track where token was created
-  userAgent String? // Track device info
+  ipAddress String?
+  userAgent String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Enhanced security token performance - Critical for auth
-  @@index([userId], name: "idx_refresh_token_user")
-  @@index([expiresAt], name: "idx_refresh_token_expires")
-  @@index([revoked], name: "idx_refresh_token_revoked")
-  @@index([jti], name: "idx_refresh_token_jti")
-  // Compound indexes for complex security queries - CRITICAL
-  @@index([userId, revoked, expiresAt], name: "idx_refresh_token_user_active") // Active tokens per user
-  @@index([jti, userId], name: "idx_refresh_token_jti_user") // JWT rotation lookup
-  @@index([revoked, expiresAt], name: "idx_refresh_token_cleanup") // Cleanup revoked/expired tokens
+  @@index([userId], map: "idx_refresh_token_user")
+  @@index([expiresAt], map: "idx_refresh_token_expires")
+  @@index([revoked], map: "idx_refresh_token_revoked")
+  @@index([jti], map: "idx_refresh_token_jti")
+  @@index([userId, revoked, expiresAt], map: "idx_refresh_token_user_active")
+  @@index([jti, userId], map: "idx_refresh_token_jti_user")
+  @@index([revoked, expiresAt], map: "idx_refresh_token_cleanup")
   @@map("refresh_tokens")
 }
 
 model TokenBlacklist {
   id        String   @id @default(cuid())
   tokenHash String   @unique
-  tokenType String // 'access', 'refresh', 'email_verification', 'password_reset'
-  userId    String? // User who owned the token (optional)
-  expiresAt DateTime // When the original token expires
-  reason    String // Reason for blacklisting
-  revokedBy String // Who/what revoked it
+  tokenType String
+  userId    String?
+  expiresAt DateTime
+  reason    String
+  revokedBy String
   revokedAt DateTime @default(now())
   createdAt DateTime @default(now())
 
-  // Token blacklist performance - Critical for security
-  @@index([tokenHash], name: "idx_token_blacklist_hash") // Token lookup - CRITICAL
-  @@index([expiresAt], name: "idx_token_blacklist_expires") // Cleanup expired blacklist entries
-  @@index([userId], name: "idx_token_blacklist_user") // User's blacklisted tokens
-  @@index([tokenType], name: "idx_token_blacklist_type") // Blacklist by token type
-  @@index([tokenType, expiresAt], name: "idx_token_blacklist_type_expires") // Active blacklist by type
+  @@index([tokenHash], map: "idx_token_blacklist_hash")
+  @@index([expiresAt], map: "idx_token_blacklist_expires")
+  @@index([userId], map: "idx_token_blacklist_user")
+  @@index([tokenType], map: "idx_token_blacklist_type")
+  @@index([tokenType, expiresAt], map: "idx_token_blacklist_type_expires")
   @@map("token_blacklist")
 }
 
@@ -351,248 +336,232 @@ model PasswordReset {
   expiresAt DateTime
   used      Boolean   @default(false)
   usedAt    DateTime?
-  ipAddress String? // Track request origin
-  userAgent String? // Track request device
+  ipAddress String?
+  userAgent String?
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Enhanced password reset performance
-  @@index([tokenHash], name: "idx_password_reset_token")
-  @@index([userId], name: "idx_password_reset_user")
-  @@index([expiresAt], name: "idx_password_reset_expires")
-  @@index([used], name: "idx_password_reset_used")
-  // Compound indexes for security queries - CRITICAL
-  @@index([userId, used, expiresAt], name: "idx_password_reset_user_active") // Active resets per user
-  @@index([used, expiresAt], name: "idx_password_reset_cleanup") // Cleanup used/expired resets
+  @@index([tokenHash], map: "idx_password_reset_token")
+  @@index([userId], map: "idx_password_reset_user")
+  @@index([expiresAt], map: "idx_password_reset_expires")
+  @@index([used], map: "idx_password_reset_used")
+  @@index([userId, used, expiresAt], map: "idx_password_reset_user_active")
+  @@index([used, expiresAt], map: "idx_password_reset_cleanup")
   @@map("password_resets")
 }
-
-// ===== GDPR COMPLIANCE MODELS =====
 
 model UserConsent {
   id          String    @id @default(cuid())
   userId      String
-  consentType String // 'data_processing', 'marketing', 'analytics', 'financial_aggregation'
-  purpose     String // Specific purpose for data processing
-  legalBasis  String // GDPR legal basis: 'consent', 'contract', 'legal_obligation', etc.
+  consentType String
+  purpose     String
+  legalBasis  String
   granted     Boolean
   grantedAt   DateTime?
   withdrawnAt DateTime?
-  ipAddress   String? // IP address when consent was given
-  userAgent   String? // User agent when consent was given
-  version     String    @default("1.0") // Version of privacy policy/terms
-  metadata    String? // JSON: additional consent details
+  ipAddress   String?
+  userAgent   String?
+  version     String    @default("1.0")
+  metadata    String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Existing indexes are appropriate for GDPR compliance
-  @@index([userId, consentType], name: "idx_user_consent_user_type")
-  @@index([createdAt], name: "idx_user_consent_created")
-  // Additional GDPR compliance indexes
-  @@index([granted], name: "idx_user_consent_granted") // Active consents
-  @@index([consentType, granted], name: "idx_user_consent_type_granted") // Granted consents by type
+  @@index([userId, consentType], map: "idx_user_consent_user_type")
+  @@index([createdAt], map: "idx_user_consent_created")
+  @@index([granted], map: "idx_user_consent_granted")
+  @@index([consentType, granted], map: "idx_user_consent_type_granted")
   @@map("user_consents")
 }
 
 model DataProcessingLog {
   id           String   @id @default(cuid())
-  userId       String? // Null for system operations
-  operation    String // 'CREATE', 'READ', 'UPDATE', 'DELETE', 'EXPORT'
-  dataType     String // 'personal', 'financial', 'behavioral'
-  description  String // What data was processed
-  legalBasis   String // GDPR legal basis for processing
+  userId       String?
+  operation    String
+  dataType     String
+  description  String
+  legalBasis   String
   ipAddress    String?
   userAgent    String?
   success      Boolean  @default(true)
   errorMessage String?
-  metadata     String? // JSON: additional details
+  metadata     String?
   timestamp    DateTime @default(now())
+  user         User?    @relation(fields: [userId], references: [id])
 
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  // Existing indexes plus additional audit trail performance
-  @@index([userId], name: "idx_data_processing_user")
-  @@index([timestamp], name: "idx_data_processing_timestamp")
-  @@index([operation], name: "idx_data_processing_operation")
-  @@index([dataType], name: "idx_data_processing_data_type") // Filter by data type
-  @@index([success], name: "idx_data_processing_success") // Filter failed operations
-  @@index([operation, timestamp], name: "idx_data_processing_op_time") // Operation timeline
+  @@index([userId], map: "idx_data_processing_user")
+  @@index([timestamp], map: "idx_data_processing_timestamp")
+  @@index([operation], map: "idx_data_processing_operation")
+  @@index([dataType], map: "idx_data_processing_data_type")
+  @@index([success], map: "idx_data_processing_success")
+  @@index([operation, timestamp], map: "idx_data_processing_op_time")
   @@map("data_processing_logs")
 }
 
 model SecurityIncident {
   id           String    @id @default(cuid())
-  userId       String? // User involved, if any
-  incidentType String // 'suspicious_login', 'multiple_failed_attempts', 'data_breach', etc.
-  severity     String // 'low', 'medium', 'high', 'critical'
+  userId       String?
+  incidentType String
+  severity     String
   description  String
   ipAddress    String?
   userAgent    String?
   resolved     Boolean   @default(false)
   resolvedAt   DateTime?
-  resolvedBy   String? // Admin user ID who resolved
-  metadata     String? // JSON: incident details
+  resolvedBy   String?
+  metadata     String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+  user         User?     @relation(fields: [userId], references: [id])
 
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  // Security incident management - existing indexes are comprehensive
-  @@index([userId], name: "idx_security_incident_user")
-  @@index([incidentType], name: "idx_security_incident_type")
-  @@index([severity], name: "idx_security_incident_severity")
-  @@index([resolved], name: "idx_security_incident_resolved")
-  @@index([createdAt], name: "idx_security_incident_created")
-  // Additional security monitoring indexes
-  @@index([severity, resolved], name: "idx_security_incident_severity_resolved") // Unresolved critical incidents
-  @@index([incidentType, createdAt], name: "idx_security_incident_type_created") // Incident trends
+  @@index([userId], map: "idx_security_incident_user")
+  @@index([incidentType], map: "idx_security_incident_type")
+  @@index([severity], map: "idx_security_incident_severity")
+  @@index([resolved], map: "idx_security_incident_resolved")
+  @@index([createdAt], map: "idx_security_incident_created")
+  @@index([severity, resolved], map: "idx_security_incident_severity_resolved")
+  @@index([incidentType, createdAt], map: "idx_security_incident_type_created")
   @@map("security_incidents")
 }
 
-// ===== FINANCIAL DASHBOARD MODELS =====
-
 model Account {
-  id                   String    @id @default(cuid())
+  id                   String               @id @default(cuid())
   userId               String
-  name                 String // "Compte Courant BNP", "Livret A"
-  type                 String // "checking", "savings", "investment", "crypto", "loan"
-  subtype              String? // "current_account", "livret_a", "crypto_exchange"
-  provider             String // "bnp_paribas", "credit_mutuel", "binance", "manual"
-  balance              Float     @default(0)
-  currency             String    @default("EUR")
-  isActive             Boolean   @default(true)
+  name                 String
+  type                 String
+  subtype              String?
+  provider             String
+  balance              Float                @default(0)
+  currency             String               @default("EUR")
+  isActive             Boolean              @default(true)
   lastSyncAt           DateTime?
-  syncError            String? // Error message if sync failed
-  encryptedCredentials String? // Encrypted bank API credentials
-  accountNumber        String? // Masked account number for display
-  metadata             String? // JSON: additional provider-specific data
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
+  syncError            String?
+  encryptedCredentials String?
+  accountNumber        String?
+  iban                 String?
+  nordigenAccountId    String?              // Nordigen account ID
+  nordigenRequisitionId String?             // Nordigen requisition ID
+  nordigenInstitutionId String?             // Nordigen bank institution ID
+  nordigenAccessToken   String?             // Encrypted Nordigen access token
+  nordigenRefreshToken  String?             // Encrypted Nordigen refresh token
+  nordigenTokenExpiry   DateTime?           // Token expiration date
+  metadata             String?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  accountTransactions  AccountTransaction[]
+  user                 User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assets               Asset[]
+  incomes              Income[]
+  liabilities          Liability[]
 
-  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  assets              Asset[]
-  liabilities         Liability[]
-  incomes             Income[]
-  accountTransactions AccountTransaction[]
-
-  // Financial account management
-  @@index([userId, type], name: "idx_account_user_type") // User's accounts by type
-  @@index([provider], name: "idx_account_provider") // Accounts by provider
-  @@index([isActive], name: "idx_account_active") // Active accounts only
-  @@index([userId, isActive], name: "idx_account_user_active") // User's active accounts
-  @@index([lastSyncAt], name: "idx_account_last_sync") // Sync monitoring
+  @@index([userId, type], map: "idx_account_user_type")
+  @@index([provider], map: "idx_account_provider")
+  @@index([isActive], map: "idx_account_active")
+  @@index([userId, isActive], map: "idx_account_user_active")
+  @@index([lastSyncAt], map: "idx_account_last_sync")
+  @@index([nordigenAccountId], map: "idx_account_nordigen_id")
+  @@index([nordigenRequisitionId], map: "idx_account_nordigen_req")
   @@map("accounts")
 }
 
 model Asset {
   id               String    @id @default(cuid())
   userId           String
-  accountId        String? // Null for manual entries
-  name             String // "Apple Inc.", "Bitcoin", "Appartement Paris"
-  type             String // "stock", "crypto", "real_estate", "bond", "etf", "commodity"
-  symbol           String? // "AAPL", "BTC-EUR" for stocks/crypto
+  accountId        String?
+  name             String
+  type             String
+  symbol           String?
   quantity         Float     @default(0)
-  unitValue        Float // Current price per unit
-  totalValue       Float // quantity * unitValue
+  unitValue        Float
+  totalValue       Float
   currency         String    @default("EUR")
   acquisitionDate  DateTime?
-  acquisitionPrice Float? // Average cost basis
-  metadata         String? // JSON: additional data (ISIN, address, etc.)
+  acquisitionPrice Float?
+  metadata         String?
   lastUpdateAt     DateTime  @default(now())
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
+  account          Account?  @relation(fields: [accountId], references: [id])
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  account Account? @relation(fields: [accountId], references: [id], onDelete: SetNull)
-
-  // Asset portfolio management
-  @@index([userId, type], name: "idx_asset_user_type") // User's assets by type
-  @@index([symbol], name: "idx_asset_symbol") // Asset symbol lookup
-  @@index([type], name: "idx_asset_type") // Assets by type globally
-  @@index([lastUpdateAt], name: "idx_asset_last_update") // Recently updated assets
-  @@index([userId, totalValue], name: "idx_asset_user_value") // User's assets by value
+  @@index([userId, type], map: "idx_asset_user_type")
+  @@index([symbol], map: "idx_asset_symbol")
+  @@index([type], map: "idx_asset_type")
+  @@index([lastUpdateAt], map: "idx_asset_last_update")
+  @@index([userId, totalValue], map: "idx_asset_user_value")
   @@map("assets")
 }
 
 model Liability {
   id             String    @id @default(cuid())
   userId         String
-  accountId      String? // Null for manual entries
-  name           String // "Prêt immobilier", "Carte de crédit BNP"
-  type           String // "mortgage", "personal_loan", "credit_card", "line_of_credit"
-  balance        Float // Current amount owed (positive number)
-  interestRate   Float? // Annual interest rate
-  monthlyPayment Float? // Regular monthly payment
-  minimumPayment Float? // Minimum payment due
-  dueDate        DateTime? // Next payment due date
-  originalAmount Float? // Original loan amount
+  accountId      String?
+  name           String
+  type           String
+  balance        Float
+  interestRate   Float?
+  monthlyPayment Float?
+  minimumPayment Float?
+  dueDate        DateTime?
+  originalAmount Float?
   currency       String    @default("EUR")
-  metadata       String? // JSON: additional data
+  metadata       String?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+  account        Account?  @relation(fields: [accountId], references: [id])
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  account Account? @relation(fields: [accountId], references: [id], onDelete: SetNull)
-
-  // Liability management
-  @@index([userId, type], name: "idx_liability_user_type") // User's liabilities by type
-  @@index([dueDate], name: "idx_liability_due_date") // Upcoming payments
-  @@index([userId, dueDate], name: "idx_liability_user_due") // User's upcoming payments
+  @@index([userId, type], map: "idx_liability_user_type")
+  @@index([dueDate], map: "idx_liability_due_date")
+  @@index([userId, dueDate], map: "idx_liability_user_due")
   @@map("liabilities")
 }
 
 model Income {
   id               String    @id @default(cuid())
   userId           String
-  accountId        String? // Which account receives this income
-  name             String // "Salaire", "Freelance", "Dividendes Apple"
-  type             String // "salary", "freelance", "investment", "rental", "pension", "other"
-  amount           Float // Monthly amount
-  frequency        String // "monthly", "weekly", "annual", "quarterly"
+  accountId        String?
+  name             String
+  type             String
+  amount           Float
+  frequency        String
   isActive         Boolean   @default(true)
   nextExpectedDate DateTime?
-  taxRate          Float? // Estimated tax rate for net calculations
-  metadata         String? // JSON: additional data
+  taxRate          Float?
+  metadata         String?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
+  account          Account?  @relation(fields: [accountId], references: [id])
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  account Account? @relation(fields: [accountId], references: [id], onDelete: SetNull)
-
-  // Income management
-  @@index([userId, type], name: "idx_income_user_type") // User's income by type
-  @@index([isActive], name: "idx_income_active") // Active income sources
-  @@index([userId, isActive], name: "idx_income_user_active") // User's active income
-  @@index([nextExpectedDate], name: "idx_income_next_expected") // Upcoming income
+  @@index([userId, type], map: "idx_income_user_type")
+  @@index([isActive], map: "idx_income_active")
+  @@index([userId, isActive], map: "idx_income_user_active")
+  @@index([nextExpectedDate], map: "idx_income_next_expected")
   @@map("incomes")
 }
 
 model FinancialGoal {
   id            String    @id @default(cuid())
   userId        String
-  name          String // "Achat maison", "Retraite", "Vacances"
-  type          String // "savings", "debt_payoff", "investment", "emergency_fund"
-  targetAmount  Float // Goal amount
+  name          String
+  type          String
+  targetAmount  Float
   currentAmount Float     @default(0)
   targetDate    DateTime?
-  priority      String    @default("medium") // "low", "medium", "high"
-  status        String    @default("active") // "active", "completed", "paused"
-  description   String? // Additional details
-  metadata      String? // JSON: strategy details, milestones
+  priority      String    @default("medium")
+  status        String    @default("active")
+  description   String?
+  metadata      String?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Financial goal tracking
-  @@index([userId, status], name: "idx_financial_goal_user_status") // User's active goals
-  @@index([type], name: "idx_financial_goal_type") // Goals by type
-  @@index([priority], name: "idx_financial_goal_priority") // High priority goals
-  @@index([targetDate], name: "idx_financial_goal_target_date") // Goals by deadline
+  @@index([userId, status], map: "idx_financial_goal_user_status")
+  @@index([type], map: "idx_financial_goal_type")
+  @@index([priority], map: "idx_financial_goal_priority")
+  @@index([targetDate], map: "idx_financial_goal_target_date")
   @@map("financial_goals")
 }
 
@@ -600,271 +569,246 @@ model NetWorthSnapshot {
   id               String   @id @default(cuid())
   userId           String
   date             DateTime @default(now())
-  totalAssets      Float // Sum of all assets
-  totalLiabilities Float // Sum of all liabilities
-  netWorth         Float // totalAssets - totalLiabilities
-  liquidAssets     Float // Cash + easily convertible assets
-  monthlyIncome    Float // Total monthly income
-  monthlyExpenses  Float // Total monthly expenses
-  savingsRate      Float? // (Income - Expenses) / Income
-  metadata         String? // JSON: breakdown by category, etc.
+  totalAssets      Float
+  totalLiabilities Float
+  netWorth         Float
+  liquidAssets     Float
+  monthlyIncome    Float
+  monthlyExpenses  Float
+  savingsRate      Float?
+  metadata         String?
   createdAt        DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Net worth tracking and analytics - existing index is optimal
-  @@index([userId, date], name: "idx_net_worth_user_date") // User's net worth timeline
-  @@index([date], name: "idx_net_worth_date") // Global net worth analytics
+  @@index([userId, date], map: "idx_net_worth_user_date")
+  @@index([date], map: "idx_net_worth_date")
   @@map("net_worth_snapshots")
 }
 
 model AccountTransaction {
   id          String   @id @default(cuid())
   accountId   String
-  externalId  String? // Bank's transaction ID
+  externalId  String?
   amount      Float
   description String
-  category    String? // Categorized automatically or manually
-  subcategory String? // More specific category
+  category    String?
+  subcategory String?
   date        DateTime
-  type        String // "debit", "credit"
-  status      String   @default("posted") // "pending", "posted", "cancelled"
-  merchant    String? // Merchant name if available
-  location    String? // Transaction location
-  metadata    String? // JSON: additional bank data
-  isReviewed  Boolean  @default(false) // User has reviewed/categorized
+  type        String
+  status      String   @default("posted")
+  merchant    String?
+  location    String?
+  metadata    String?
+  isReviewed  Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  account     Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
 
-  account Account @relation(fields: [accountId], references: [id], onDelete: Cascade)
-
-  // Bank transaction performance - existing indexes plus enhancements
-  @@index([accountId, date], name: "idx_account_transaction_account_date") // Account transaction history
-  @@index([category], name: "idx_account_transaction_category") // Transactions by category
-  @@index([merchant], name: "idx_account_transaction_merchant") // Merchant-based queries
-  @@index([status], name: "idx_account_transaction_status") // Filter by status
-  @@index([isReviewed], name: "idx_account_transaction_reviewed") // Unreviewed transactions
-  @@index([date, category], name: "idx_account_transaction_date_category") // Time-based category analysis
+  @@index([accountId, date], map: "idx_account_transaction_account_date")
+  @@index([category], map: "idx_account_transaction_category")
+  @@index([merchant], map: "idx_account_transaction_merchant")
+  @@index([status], map: "idx_account_transaction_status")
+  @@index([isReviewed], map: "idx_account_transaction_reviewed")
+  @@index([date, category], map: "idx_account_transaction_date_category")
   @@map("account_transactions")
 }
 
 model CategoryMapping {
   id              String   @id @default(cuid())
-  merchantPattern String // Pattern to match merchant names
-  description     String? // Pattern to match descriptions
-  category        String // Mapped category
-  subcategory     String? // Mapped subcategory
-  confidence      Float    @default(1.0) // AI confidence score
-  isUserDefined   Boolean  @default(false) // User created vs AI generated
-  usageCount      Int      @default(0) // How many times this mapping was used
+  merchantPattern String
+  description     String?
+  category        String
+  subcategory     String?
+  confidence      Float    @default(1.0)
+  isUserDefined   Boolean  @default(false)
+  usageCount      Int      @default(0)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  // Category mapping performance for transaction categorization
-  @@index([merchantPattern], name: "idx_category_mapping_merchant") // Pattern matching
-  @@index([category], name: "idx_category_mapping_category") // Mappings by category
-  @@index([confidence], name: "idx_category_mapping_confidence") // High confidence mappings
-  @@index([usageCount], name: "idx_category_mapping_usage") // Popular mappings
+  @@index([merchantPattern], map: "idx_category_mapping_merchant")
+  @@index([category], map: "idx_category_mapping_category")
+  @@index([confidence], map: "idx_category_mapping_confidence")
+  @@index([usageCount], map: "idx_category_mapping_usage")
   @@map("category_mappings")
 }
-
-// ===== PERSONAL FINANCE TRACKING MODELS =====
 
 model Expense {
   id            String   @id @default(cuid())
   userId        String
-  category      String // 'alimentation', 'transport', 'logement', 'loisirs', 'sante', 'habits', 'autres'
-  subcategory   String? // More specific category
+  category      String
+  subcategory   String?
   amount        Float
   description   String
   date          DateTime @default(now())
-  merchant      String? // Where the expense was made
+  merchant      String?
   isRecurring   Boolean  @default(false)
-  frequency     String? // 'weekly', 'monthly', 'yearly' if recurring
-  paymentMethod String? // 'card', 'cash', 'transfer'
-  location      String? // GPS location or manual entry
-  receipt       String? // Path to receipt image
-  tags          String? // JSON array of tags
-  metadata      String? // JSON: additional data
+  frequency     String?
+  paymentMethod String?
+  location      String?
+  receipt       String?
+  tags          String?
+  metadata      String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Personal expense tracking - existing indexes plus enhancements
-  @@index([userId, category], name: "idx_expense_user_category") // User expenses by category
-  @@index([userId, date], name: "idx_expense_user_date") // User expenses by date
-  @@index([merchant], name: "idx_expense_merchant") // Expenses by merchant
-  @@index([isRecurring], name: "idx_expense_recurring") // Recurring expenses
-  @@index([userId, isRecurring], name: "idx_expense_user_recurring") // User's recurring expenses
-  @@index([category, date], name: "idx_expense_category_date") // Category trends
+  @@index([userId, category], map: "idx_expense_user_category")
+  @@index([userId, date], map: "idx_expense_user_date")
+  @@index([merchant], map: "idx_expense_merchant")
+  @@index([isRecurring], map: "idx_expense_recurring")
+  @@index([userId, isRecurring], map: "idx_expense_user_recurring")
+  @@index([category, date], map: "idx_expense_category_date")
   @@map("expenses")
 }
 
 model ExpenseCategory {
   id             String   @id @default(cuid())
-  name           String   @unique // 'alimentation', 'transport', etc.
-  displayName    String // Localized display name
-  icon           String // Icon name or emoji
-  color          String // Hex color for charts
-  parentCategory String? // For subcategories
+  name           String   @unique
+  displayName    String
+  icon           String
+  color          String
+  parentCategory String?
   isActive       Boolean  @default(true)
   sortOrder      Int      @default(0)
-  budgetLimit    Float? // Optional monthly budget limit
+  budgetLimit    Float?
   description    String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @default(now())
 
-  // Expense category management
-  @@index([isActive], name: "idx_expense_category_active") // Active categories
-  @@index([parentCategory], name: "idx_expense_category_parent") // Subcategories
-  @@index([sortOrder], name: "idx_expense_category_sort") // Ordered categories
+  @@index([isActive], map: "idx_expense_category_active")
+  @@index([parentCategory], map: "idx_expense_category_parent")
+  @@index([sortOrder], map: "idx_expense_category_sort")
   @@map("expense_categories")
 }
 
 model BudgetPlan {
   id             String   @id @default(cuid())
   userId         String
-  name           String // "Budget Mensuel", "Vacances", etc.
-  type           String   @default("monthly") // 'monthly', 'weekly', 'yearly', 'custom'
-  totalBudget    Float // Total budget amount
+  name           String
+  type           String   @default("monthly")
+  totalBudget    Float
   startDate      DateTime
   endDate        DateTime
   isActive       Boolean  @default(true)
-  categories     String // JSON array of category budgets
-  alertThreshold Float    @default(80) // Alert when X% of budget used
+  categories     String
+  alertThreshold Float    @default(80)
   description    String?
-  metadata       String? // JSON: additional settings
+  metadata       String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Budget planning and monitoring
-  @@index([userId, isActive], name: "idx_budget_plan_user_active") // User's active budgets
-  @@index([type], name: "idx_budget_plan_type") // Budget types
-  @@index([startDate, endDate], name: "idx_budget_plan_date_range") // Budget periods
-  @@index([userId, startDate], name: "idx_budget_plan_user_start") // User's budgets by start date
+  @@index([userId, isActive], map: "idx_budget_plan_user_active")
+  @@index([type], map: "idx_budget_plan_type")
+  @@index([startDate, endDate], map: "idx_budget_plan_date_range")
+  @@index([userId, startDate], map: "idx_budget_plan_user_start")
   @@map("budget_plans")
 }
 
 model FinancialSuggestion {
   id              String    @id @default(cuid())
   userId          String
-  type            String // 'expense_reduction', 'budget_optimization', 'savings_increase'
+  type            String
   title           String
   description     String
-  impact          String // 'low', 'medium', 'high'
-  category        String? // Related expense category
-  potentialSaving Float? // Estimated savings amount
-  actionRequired  String // What user needs to do
-  priority        Int       @default(5) // 1-10 priority score
-  status          String    @default("active") // 'active', 'dismissed', 'completed'
-  generatedBy     String // 'ai', 'rule_based', 'manual'
+  impact          String
+  category        String?
+  potentialSaving Float?
+  actionRequired  String
+  priority        Int       @default(5)
+  status          String    @default("active")
+  generatedBy     String
   validUntil      DateTime?
-  metadata        String? // JSON: additional AI context
+  metadata        String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // Financial suggestions and AI recommendations
-  @@index([userId, status], name: "idx_financial_suggestion_user_status") // User's active suggestions
-  @@index([userId, priority], name: "idx_financial_suggestion_user_priority") // User's high priority suggestions
-  @@index([impact], name: "idx_financial_suggestion_impact") // High impact suggestions
-  @@index([validUntil], name: "idx_financial_suggestion_valid") // Valid suggestions
-  @@index([generatedBy], name: "idx_financial_suggestion_generated") // AI vs manual suggestions
+  @@index([userId, status], map: "idx_financial_suggestion_user_status")
+  @@index([userId, priority], map: "idx_financial_suggestion_user_priority")
+  @@index([impact], map: "idx_financial_suggestion_impact")
+  @@index([validUntil], map: "idx_financial_suggestion_valid")
+  @@index([generatedBy], map: "idx_financial_suggestion_generated")
   @@map("financial_suggestions")
 }
 
-// ===== OAUTH SECURITY MODELS =====
-
 model OauthState {
   id        String   @id @default(cuid())
-  state     String   @unique // OAuth state parameter
-  data      String // JSON: PKCE verifier, user context, etc.
-  expiresAt DateTime // Automatic cleanup of expired states
+  state     String   @unique
+  data      String
+  expiresAt DateTime
   createdAt DateTime @default(now())
 
-  // OAuth state persistence for distributed systems
-  @@index([state], name: "idx_oauth_state_lookup") // Fast state lookup - CRITICAL
-  @@index([expiresAt], name: "idx_oauth_state_expires") // Cleanup expired states
-  @@index([createdAt], name: "idx_oauth_state_created") // State creation analytics
+  @@index([state], map: "idx_oauth_state_lookup")
+  @@index([expiresAt], map: "idx_oauth_state_expires")
+  @@index([createdAt], map: "idx_oauth_state_created")
   @@map("oauth_states")
 }
 
-// ===== STRONG CUSTOMER AUTHENTICATION (SCA) MODELS =====
-
 model ScaChallenge {
-  id                 String    @id @default(cuid())
+  id                 String       @id @default(cuid())
   userId             String
-  transactionId      String    @unique
-  allowedMethods     String // JSON array of allowed auth methods
-  challengeData      String // JSON object with challenge details
-  status             String    @default("pending") // pending, completed, expired, locked
-  attempts           Int       @default(0)
+  transactionId      String       @unique
+  allowedMethods     String
+  challengeData      String
+  status             String       @default("pending")
+  attempts           Int          @default(0)
   expiresAt          DateTime
   completedAt        DateTime?
-  verificationMethod String? // Method used to complete challenge
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  verificationMethod String?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  user               User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sessions           ScaSession[]
 
-  user     User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sessions ScaSession[]
-
-  // SCA challenge performance indexes
-  @@index([userId, status], name: "idx_sca_challenge_user_status") // User's active challenges
-  @@index([transactionId], name: "idx_sca_challenge_transaction") // Transaction lookup
-  @@index([expiresAt], name: "idx_sca_challenge_expires") // Cleanup expired challenges
-  @@index([status, expiresAt], name: "idx_sca_challenge_status_expires") // Active challenges cleanup
+  @@index([userId, status], map: "idx_sca_challenge_user_status")
+  @@index([transactionId], map: "idx_sca_challenge_transaction")
+  @@index([expiresAt], map: "idx_sca_challenge_expires")
+  @@index([status, expiresAt], map: "idx_sca_challenge_status_expires")
   @@map("sca_challenges")
 }
 
 model ScaSession {
-  id          String   @id @default(cuid())
+  id          String       @id @default(cuid())
   userId      String
   challengeId String
-  status      String   @default("active") // active, expired, revoked
+  status      String       @default("active")
   expiresAt   DateTime
-  lastUsedAt  DateTime @default(now())
+  lastUsedAt  DateTime     @default(now())
   ipAddress   String?
   userAgent   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  challenge   ScaChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  challenge ScaChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
-
-  // SCA session performance indexes
-  @@index([userId, status, expiresAt], name: "idx_sca_session_user_active") // User's active sessions
-  @@index([challengeId], name: "idx_sca_session_challenge") // Challenge lookup
-  @@index([expiresAt], name: "idx_sca_session_expires") // Cleanup expired sessions
+  @@index([userId, status, expiresAt], map: "idx_sca_session_user_active")
+  @@index([challengeId], map: "idx_sca_session_challenge")
+  @@index([expiresAt], map: "idx_sca_session_expires")
   @@map("sca_sessions")
 }
 
 model UserDevice {
   id          String   @id @default(cuid())
   userId      String
-  deviceHash  String // SHA-256 hash of user agent
-  deviceName  String? // User-friendly device name
-  deviceType  String? // mobile, desktop, tablet
+  deviceHash  String
+  deviceName  String?
+  deviceType  String?
   firstSeenAt DateTime @default(now())
   lastSeenAt  DateTime @default(now())
   isTrusted   Boolean  @default(false)
   isActive    Boolean  @default(true)
   ipAddress   String?
-  location    String? // Geolocation data
-  metadata    String? // JSON: additional device info
+  location    String?
+  metadata    String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, deviceHash])
-  // Device tracking performance indexes
-  @@index([userId, isActive], name: "idx_user_device_user_active") // User's active devices
-  @@index([deviceHash], name: "idx_user_device_hash") // Device lookup
-  @@index([lastSeenAt], name: "idx_user_device_last_seen") // Recent device activity
+  @@index([userId, isActive], map: "idx_user_device_user_active")
+  @@index([deviceHash], map: "idx_user_device_hash")
+  @@index([lastSeenAt], map: "idx_user_device_last_seen")
   @@map("user_devices")
 }
 
@@ -884,42 +828,57 @@ model UserLocation {
   accessCount Int      @default(1)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, ipAddress])
-  // Location tracking performance indexes
-  @@index([userId, lastSeenAt], name: "idx_user_location_user_recent") // User's recent locations
-  @@index([ipAddress], name: "idx_user_location_ip") // IP lookup
-  @@index([isVpn], name: "idx_user_location_vpn") // VPN detection
+  @@index([userId, lastSeenAt], map: "idx_user_location_user_recent")
+  @@index([ipAddress], map: "idx_user_location_ip")
+  @@index([isVpn], map: "idx_user_location_vpn")
   @@map("user_locations")
 }
 
-// ===== BETTER AUTH MODELS =====
+model ScaExemptionLog {
+  id            String   @id @default(cuid())
+  userId        String
+  transactionId String
+  exemptionType String
+  amount        Float
+  reason        String
+  riskScore     Float?
+  ipAddress     String?
+  userAgent     String?
+  metadata      String?
+  createdAt     DateTime @default(now())
+
+  @@index([userId, createdAt], map: "idx_sca_exemption_user_created")
+  @@index([transactionId], map: "idx_sca_exemption_transaction")
+  @@index([exemptionType], map: "idx_sca_exemption_type")
+  @@index([createdAt], map: "idx_sca_exemption_created")
+  @@map("sca_exemption_logs")
+}
 
 model BetterAuthSession {
   id           String   @id @default(cuid())
   sessionToken String   @unique
   userId       String
   expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Better Auth session performance indexes
-  @@index([sessionToken], name: "idx_better_auth_session_token") // Session lookup - CRITICAL
-  @@index([userId], name: "idx_better_auth_session_user") // User's sessions
-  @@index([expires], name: "idx_better_auth_session_expires") // Cleanup expired sessions
-  @@index([userId, expires], name: "idx_better_auth_session_user_active") // User's active sessions
+  @@index([sessionToken], map: "idx_better_auth_session_token")
+  @@index([userId], map: "idx_better_auth_session_user")
+  @@index([expires], map: "idx_better_auth_session_expires")
+  @@index([userId, expires], map: "idx_better_auth_session_user_active")
   @@map("better_auth_sessions")
 }
 
 model BetterAuthAccount {
   id                String   @id @default(cuid())
   userId            String
-  type              String // oauth, credentials
-  provider          String // google, github, credentials
-  providerAccountId String // Provider's user ID
+  type              String
+  provider          String
+  providerAccountId String
   refresh_token     String?
   access_token      String?
   expires_at        Int?
@@ -927,14 +886,450 @@ model BetterAuthAccount {
   scope             String?
   id_token          String?
   session_state     String?
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
-  // Better Auth account performance indexes
-  @@index([userId], name: "idx_better_auth_account_user") // User's accounts
-  @@index([provider], name: "idx_better_auth_account_provider") // Accounts by provider
-  @@index([type], name: "idx_better_auth_account_type") // Accounts by type
+  @@index([userId], map: "idx_better_auth_account_user")
+  @@index([provider], map: "idx_better_auth_account_provider")
+  @@index([type], map: "idx_better_auth_account_type")
   @@map("better_auth_accounts")
+}
+
+model AiUsage {
+  id              String   @id @default(cuid())
+  userId          String
+  feature         String
+  tokensUsed      Int      @default(0)
+  tokensRemaining Int
+  dailyQuota      Int
+  requestMetadata String?
+  quotaExceeded   Boolean  @default(false)
+  resetAt         DateTime
+  ipAddress       String?
+  userAgent       String?
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, resetAt], map: "idx_ai_usage_user_reset")
+  @@index([userId, feature], map: "idx_ai_usage_user_feature")
+  @@index([resetAt], map: "idx_ai_usage_reset")
+  @@index([quotaExceeded], map: "idx_ai_usage_exceeded")
+  @@index([userId, createdAt], map: "idx_ai_usage_user_created")
+  @@index([feature, createdAt], map: "idx_ai_usage_feature_created")
+  @@map("ai_usage")
+}
+
+model PhotoMatchJob {
+  id                    String            @id @default(cuid())
+  userId                String
+  status                String            @default("pending")
+  imageUrl              String
+  imageHash             String
+  imageSize             Int
+  mimeType              String
+  processingStartedAt   DateTime?
+  processingCompletedAt DateTime?
+  errorMessage          String?
+  retryCount            Int               @default(0)
+  metadata              String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  user                  User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  result                PhotoMatchResult?
+
+  @@index([userId], map: "idx_photo_match_job_user")
+  @@index([status], map: "idx_photo_match_job_status")
+  @@index([userId, status], map: "idx_photo_match_job_user_status")
+  @@index([createdAt], map: "idx_photo_match_job_created")
+  @@index([imageHash], map: "idx_photo_match_job_image_hash")
+  @@index([userId, createdAt], map: "idx_photo_match_job_user_created")
+  @@map("photo_match_jobs")
+}
+
+model PhotoMatchResult {
+  id               String        @id @default(cuid())
+  jobId            String        @unique
+  userId           String
+  matchType        String
+  matchScore       Float         @default(0)
+  matchData        String
+  aiProvider       String
+  tokensUsed       Int           @default(0)
+  processingTimeMs Int
+  cacheKey         String
+  cachedUntil      DateTime
+  metadata         String?
+  createdAt        DateTime      @default(now())
+  job              PhotoMatchJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_photo_match_result_user")
+  @@index([cacheKey], map: "idx_photo_match_result_cache_key")
+  @@index([cachedUntil], map: "idx_photo_match_result_cached_until")
+  @@index([userId, createdAt], map: "idx_photo_match_result_user_created")
+  @@map("photo_match_results")
+}
+
+model TransportOptimizationJob {
+  id                    String                       @id @default(cuid())
+  userId                String
+  status                String                       @default("pending")
+  tripData              String
+  tripHash              String
+  processingStartedAt   DateTime?
+  processingCompletedAt DateTime?
+  errorMessage          String?
+  retryCount            Int                          @default(0)
+  metadata              String?
+  createdAt             DateTime                     @default(now())
+  updatedAt             DateTime                     @updatedAt
+  user                  User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  result                TransportOptimizationResult?
+
+  @@index([userId], map: "idx_transport_opt_job_user")
+  @@index([status], map: "idx_transport_opt_job_status")
+  @@index([userId, status], map: "idx_transport_opt_job_user_status")
+  @@index([createdAt], map: "idx_transport_opt_job_created")
+  @@index([tripHash], map: "idx_transport_opt_job_trip_hash")
+  @@index([userId, createdAt], map: "idx_transport_opt_job_user_created")
+  @@map("transport_optimization_jobs")
+}
+
+model TransportOptimizationResult {
+  id                 String                   @id @default(cuid())
+  jobId              String                   @unique
+  userId             String
+  distanceKm         Float
+  optimalMode        String
+  totalCostEur       Float
+  costsBreakdown     String
+  savingsPotential   Float                    @default(0)
+  co2ImpactKg        Float                    @default(0)
+  calculationVersion String                   @default("1.0")
+  processingTimeMs   Int
+  cacheKey           String
+  cachedUntil        DateTime
+  metadata           String?
+  createdAt          DateTime                 @default(now())
+  job                TransportOptimizationJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user               User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_transport_opt_result_user")
+  @@index([cacheKey], map: "idx_transport_opt_result_cache_key")
+  @@index([cachedUntil], map: "idx_transport_opt_result_cached_until")
+  @@index([userId, createdAt], map: "idx_transport_opt_result_user_created")
+  @@index([optimalMode], map: "idx_transport_opt_result_optimal_mode")
+  @@map("transport_optimization_results")
+}
+
+model TransportTrip {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  origin      String
+  destination String
+  distanceKm  Float?
+  recurring   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_transport_trip_user")
+  @@index([userId, createdAt], map: "idx_transport_trip_user_created")
+  @@map("transport_trips")
+}
+
+model MealSuggestionJob {
+  id                    String                @id @default(cuid())
+  userId                String
+  status                String                @default("pending")
+  requestHash           String
+  mealType              String?
+  dietaryRestrictions   String?
+  budget                Float?
+  servings              Int?
+  filters               String?
+  processingStartedAt   DateTime?
+  processingCompletedAt DateTime?
+  errorMessage          String?
+  retryCount            Int                   @default(0)
+  metadata              String?
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  user                  User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  result                MealSuggestionResult?
+
+  @@index([userId], map: "idx_meal_suggestion_job_user")
+  @@index([status], map: "idx_meal_suggestion_job_status")
+  @@index([userId, status], map: "idx_meal_suggestion_job_user_status")
+  @@index([createdAt], map: "idx_meal_suggestion_job_created")
+  @@index([requestHash], map: "idx_meal_suggestion_job_request_hash")
+  @@index([userId, createdAt], map: "idx_meal_suggestion_job_user_created")
+  @@index([mealType], map: "idx_meal_suggestion_job_meal_type")
+  @@map("meal_suggestion_jobs")
+}
+
+model MealSuggestionResult {
+  id                String            @id @default(cuid())
+  jobId             String            @unique
+  userId            String
+  mealsData         String
+  totalMeals        Int               @default(0)
+  avgCostEur        Float             @default(0)
+  avgCookingTimeMin Int               @default(0)
+  aiProvider        String
+  tokensUsed        Int               @default(0)
+  processingTimeMs  Int
+  cacheKey          String
+  cachedUntil       DateTime
+  metadata          String?
+  createdAt         DateTime          @default(now())
+  job               MealSuggestionJob @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_meal_suggestion_result_user")
+  @@index([cacheKey], map: "idx_meal_suggestion_result_cache_key")
+  @@index([cachedUntil], map: "idx_meal_suggestion_result_cached_until")
+  @@index([userId, createdAt], map: "idx_meal_suggestion_result_user_created")
+  @@index([aiProvider], map: "idx_meal_suggestion_result_ai_provider")
+  @@map("meal_suggestion_results")
+}
+
+model MealSuggestionCache {
+  id             String   @id @default(cuid())
+  cacheKey       String   @unique
+  category       String
+  mealType       String?
+  mealsData      String
+  totalMeals     Int      @default(0)
+  avgCostEur     Float    @default(0)
+  avgCookingTime Int      @default(0)
+  expiresAt      DateTime
+  metadata       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([cacheKey], map: "idx_meal_cache_cache_key")
+  @@index([category], map: "idx_meal_cache_category")
+  @@index([mealType], map: "idx_meal_cache_meal_type")
+  @@index([expiresAt], map: "idx_meal_cache_expires_at")
+  @@index([category, expiresAt], map: "idx_meal_cache_category_expires")
+  @@map("meal_suggestion_cache")
+}
+
+enum SubscriptionTier {
+  FREE
+  PREMIUM
+  ENTERPRISE
+}
+
+// ============================================================================
+// MEAL PLANNING SYSTEM (Jow-inspired)
+// ============================================================================
+
+model UserMealPreferences {
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  householdSize        Int      @default(2)
+  dietaryRestrictions  String?  // JSON array
+  dislikedIngredients  String?  // JSON array
+  preferredCuisines    String?  // JSON array
+  skillLevel           String   @default("intermediate")
+  weeklyBudget         Float?
+  cookingFrequency     String   @default("daily") // daily, 3-4times, weekends
+  mealTypes            String?  // JSON array of preferred meal types
+  allergies            String?  // JSON array
+  cookingTimeLimit     Int?     // minutes per meal
+  eatingHabits         String?  // JSON object with breakfast/lunch/dinner preferences
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mealPlans            WeeklyMealPlan[]
+
+  @@index([userId], map: "idx_meal_preferences_user")
+  @@map("user_meal_preferences")
+}
+
+model WeeklyMealPlan {
+  id               String                 @id @default(cuid())
+  userId           String
+  weekStartDate    DateTime
+  weekEndDate      DateTime
+  status           String                 @default("active") // active, archived, draft
+  totalBudget      Float?
+  actualCost       Float                  @default(0)
+  mealsCount       Int                    @default(0)
+  planHash         String                 // For deduplication
+  generatedBy      String                 @default("ai") // ai, manual
+  metadata         String?                // JSON
+  createdAt        DateTime               @default(now())
+  updatedAt        DateTime               @updatedAt
+  user             User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userPreferences  UserMealPreferences?   @relation(fields: [preferencesId], references: [id])
+  preferencesId    String?
+  meals            PlannedMeal[]
+  groceryLists     GroceryList[]
+  sharedPlans      SharedMealPlan[]
+
+  @@index([userId, weekStartDate], map: "idx_weekly_plan_user_week")
+  @@index([status], map: "idx_weekly_plan_status")
+  @@index([userId, status], map: "idx_weekly_plan_user_status")
+  @@index([planHash], map: "idx_weekly_plan_hash")
+  @@map("weekly_meal_plans")
+}
+
+model PlannedMeal {
+  id               String          @id @default(cuid())
+  weeklyPlanId     String
+  recipeId         String?
+  dayOfWeek        Int             // 0=Monday, 6=Sunday
+  mealType         String          // breakfast, lunch, dinner, snack
+  mealName         String
+  servings         Int             @default(2)
+  cookingTimeMin   Int
+  totalCostEur     Float
+  ingredients      String          // JSON array
+  recipe           String          // JSON array of steps
+  nutritionInfo    String?         // JSON object
+  difficulty       String          @default("intermediate")
+  cuisineType      String?
+  tags             String?         // JSON array
+  isCooked         Boolean         @default(false)
+  cookedAt         DateTime?
+  rating           Int?            // 1-5 stars
+  notes            String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  weeklyPlan       WeeklyMealPlan  @relation(fields: [weeklyPlanId], references: [id], onDelete: Cascade)
+  recipeRef        Recipe?         @relation(fields: [recipeId], references: [id])
+
+  @@index([weeklyPlanId], map: "idx_planned_meal_plan")
+  @@index([dayOfWeek, mealType], map: "idx_planned_meal_day_type")
+  @@index([recipeId], map: "idx_planned_meal_recipe")
+  @@index([weeklyPlanId, dayOfWeek], map: "idx_planned_meal_plan_day")
+  @@index([isCooked], map: "idx_planned_meal_cooked")
+  @@index([weeklyPlanId, isCooked], map: "idx_planned_meal_plan_cooked")
+  @@map("planned_meals")
+}
+
+model GroceryList {
+  id              String          @id @default(cuid())
+  weeklyPlanId    String
+  userId          String
+  status          String          @default("pending") // pending, shopping, completed
+  totalItems      Int             @default(0)
+  checkedItems    Int             @default(0)
+  estimatedCost   Float           @default(0)
+  actualCost      Float?
+  generatedAt     DateTime        @default(now())
+  shoppedAt       DateTime?
+  metadata        String?         // JSON
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  weeklyPlan      WeeklyMealPlan  @relation(fields: [weeklyPlanId], references: [id], onDelete: Cascade)
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items           GroceryItem[]
+
+  @@index([userId, status], map: "idx_grocery_list_user_status")
+  @@index([weeklyPlanId], map: "idx_grocery_list_plan")
+  @@index([status], map: "idx_grocery_list_status")
+  @@map("grocery_lists")
+}
+
+model GroceryItem {
+  id                String       @id @default(cuid())
+  groceryListId     String
+  name              String
+  quantity          String
+  unit              String?
+  category          String       @default("other") // produce, dairy, meat, pantry, etc.
+  estimatedCostEur  Float        @default(0)
+  actualCostEur     Float?
+  isChecked         Boolean      @default(false)
+  checkedAt         DateTime?
+  notes             String?
+  usedInMeals       String?      // JSON array of meal IDs
+  sortOrder         Int          @default(0)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  groceryList       GroceryList  @relation(fields: [groceryListId], references: [id], onDelete: Cascade)
+
+  @@index([groceryListId, category], map: "idx_grocery_item_list_category")
+  @@index([isChecked], map: "idx_grocery_item_checked")
+  @@index([category], map: "idx_grocery_item_category")
+  @@map("grocery_items")
+}
+
+model FavoriteMeal {
+  id               String   @id @default(cuid())
+  userId           String
+  mealName         String
+  servings         Int      @default(2)
+  cookingTimeMin   Int
+  totalCostEur     Float
+  ingredients      String   // JSON array
+  recipe           String   // JSON array of steps
+  nutritionInfo    String?  // JSON object
+  difficulty       String   @default("intermediate")
+  cuisineType      String?
+  mealType         String   // breakfast, lunch, dinner, snack
+  tags             String?  // JSON array
+  notes            String?
+  timesCooked      Int      @default(0)
+  lastCookedAt     DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_favorite_meal_user")
+  @@index([userId, mealType], map: "idx_favorite_meal_user_type")
+  @@index([cuisineType], map: "idx_favorite_meal_cuisine")
+  @@map("favorite_meals")
+}
+
+model MealPlanTemplate {
+  id                String   @id @default(cuid())
+  name              String
+  description       String?
+  createdByUserId   String
+  isPublic          Boolean  @default(false)
+  category          String   @default("custom") // custom, quick, healthy, budget, vegetarian
+  daysCount         Int      @default(7)
+  mealsPerDay       Int      @default(2)
+  targetBudget      Float?
+  difficulty        String   @default("intermediate")
+  dietaryTags       String?  // JSON array
+  templateData      String   // JSON with meal structure
+  usageCount        Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  createdBy         User     @relation(fields: [createdByUserId], references: [id], onDelete: Cascade)
+
+  @@index([createdByUserId], map: "idx_template_creator")
+  @@index([isPublic, category], map: "idx_template_public_category")
+  @@index([category], map: "idx_template_category")
+  @@map("meal_plan_templates")
+}
+
+model SharedMealPlan {
+  id              String          @id @default(cuid())
+  weeklyPlanId    String
+  userId          String
+  shareToken      String          @unique
+  expiresAt       DateTime?
+  viewCount       Int             @default(0)
+  isPublic        Boolean         @default(true)
+  allowCopy       Boolean         @default(true)
+  createdAt       DateTime        @default(now())
+  lastViewedAt    DateTime?
+  weeklyPlan      WeeklyMealPlan  @relation(fields: [weeklyPlanId], references: [id], onDelete: Cascade)
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([shareToken], map: "idx_shared_plan_token")
+  @@index([userId], map: "idx_shared_plan_user")
+  @@index([weeklyPlanId], map: "idx_shared_plan_weekly")
+  @@index([expiresAt], map: "idx_shared_plan_expires")
+  @@map("shared_meal_plans")
 }

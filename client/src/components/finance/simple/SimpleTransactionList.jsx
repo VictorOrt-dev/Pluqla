@@ -139,11 +139,11 @@ const TransactionItem = ({ transaction, onDelete, darkMode }) => {
           </div>
           <div className="text-right ml-3 flex-shrink-0">
             <div className={`font-bold text-lg ${
-              transaction.type === 'revenue'
+              transaction.type === 'income'
                 ? 'text-emerald-500'
                 : 'text-[#F14545]'
             }`}>
-              {transaction.type === 'revenue' ? '+' : '-'}
+              {transaction.type === 'income' ? '+' : '-'}
               {formatCurrency(Math.abs(transaction.amount))}
             </div>
           </div>
@@ -239,7 +239,7 @@ const SimpleTransactionList = ({ transactions, onDelete, darkMode }) => {
 TransactionItem.propTypes = {
   transaction: PropTypes.shape({
     id: PropTypes.string.isRequired,
-    type: PropTypes.oneOf(['expense', 'revenue']).isRequired,
+    type: PropTypes.oneOf(['expense', 'income']).isRequired,
     amount: PropTypes.number.isRequired,
     description: PropTypes.string.isRequired,
     category: PropTypes.string.isRequired,

@@ -1,16 +1,23 @@
 import React, { useRef, useState } from 'react';
-import { useImageAnalysis } from '../../../hooks/useImageAnalysis';
+import { usePhotoMatch } from '../../../hooks/usePhotoMatch';
 
 const ClothingAnalyzer = ({ darkMode, onResults }) => {
   const fileInputRef = useRef(null);
   const [dragOver, setDragOver] = useState(false);
-  const { isAnalyzing, analysisResult, error, analyzeImage } = useImageAnalysis();
+  const { loading: isAnalyzing, result: analysisResult, error, progress, quota, submitPhoto } = usePhotoMatch();
 
   const handleFileSelect = async (file) => {
     if (file && file.type.startsWith('image/')) {
-      await analyzeImage(file);
-      if (onResults) {
-        onResults(analysisResult);
+      try {
+        const result = await submitPhoto(file, {
+          category: 'clothing',
+          source: 'habits_screen'
+        });
+        if (onResults) {
+          onResults(result);
+        }
+      } catch (err) {
+        console.error('Photo match error:', err);
       }
     }
   };
@@ -58,8 +65,14 @@ const ClothingAnalyzer = ({ darkMode, onResults }) => {
           <div className="space-y-4">
             <div className="animate-spin w-12 h-12 border-4 border-red-500 border-t-transparent rounded-full mx-auto"></div>
             <p className={`${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
-              Analyse IA en cours...
+              Analyse IA en cours... {Math.round(progress)}%
             </p>
+            <div className="w-full bg-gray-200 rounded-full h-2 dark:bg-gray-700">
+              <div
+                className="bg-red-500 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              ></div>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">
@@ -96,8 +109,25 @@ const ClothingAnalyzer = ({ darkMode, onResults }) => {
       {analysisResult && (
         <div className={`p-4 ${darkMode ? 'bg-green-900/20 border-green-800' : 'bg-green-50 border-green-200'} border rounded-xl`}>
           <p className={`text-sm font-medium ${darkMode ? 'text-green-400' : 'text-green-700'}`}>
-            ✅ {analysisResult.items.length} vêtement(s) détecté(s)
+            ✅ Analyse terminée avec succès
           </p>
+          {analysisResult.matchData && (
+            <p className={`text-xs mt-1 ${darkMode ? 'text-green-300' : 'text-green-600'}`}>
+              {analysisResult.matchType} • Score: {Math.round(analysisResult.matchScore * 100)}%
+            </p>
+          )}
+        </div>
+      )}
+
+      {quota && (
+        <div className={`px-3 py-2 rounded-lg text-xs ${
+          quota.remaining > quota.limit * 0.5
+            ? 'bg-green-100 text-green-700'
+            : quota.remaining > 0
+            ? 'bg-yellow-100 text-yellow-700'
+            : 'bg-red-100 text-red-700'
+        }`}>
+          <span className="font-semibold">Quota IA:</span> {quota.remaining}/{quota.limit} analyses restantes
         </div>
       )}
     </div>

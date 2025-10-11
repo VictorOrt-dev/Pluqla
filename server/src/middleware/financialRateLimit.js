@@ -152,12 +152,14 @@ const generateRateLimitKey = (req, operationType, dimension = 'user') => {
  * Enhanced rate limit handler with detailed logging
  */
 const createRateLimitHandler = (operationType) => (req, res, next, options) => {
+  // Ensure operationType is a string for logging
+  const opType = typeof operationType === 'string' ? operationType : String(operationType);
   const tier = getUserSubscriptionTier(req);
   const userAgent = req.get('User-Agent') || 'Unknown';
 
   // Log rate limit violation with comprehensive context
   logger.warn('Financial rate limit exceeded', {
-    operation: operationType,
+    operation: opType,
     tier,
     ip: req.ip,
     userId: req.user?.id,
@@ -172,7 +174,7 @@ const createRateLimitHandler = (operationType) => (req, res, next, options) => {
   const retryAfter = Math.ceil(options.windowMs / 1000);
   const errorMessage = tier === 'free'
     ? `Rate limit exceeded for free tier. Upgrade to premium for higher limits. Try again in ${retryAfter} seconds.`
-    : `Rate limit exceeded for ${operationType}. Try again in ${retryAfter} seconds.`;
+    : `Rate limit exceeded for ${opType}. Try again in ${retryAfter} seconds.`;
 
   // Set rate limit headers
   res.set({
@@ -200,12 +202,19 @@ const createFinancialRateLimit = (operationType, options = {}) => (req, res, nex
   }
 
   try {
+    // Validate operationType parameter
+    const opType = typeof operationType === 'string' ? operationType : JSON.stringify(operationType);
+
     const tier = getUserSubscriptionTier(req);
     const tierConfig = SUBSCRIPTION_TIERS[tier];
     const operationConfig = tierConfig[operationType];
 
     if (!operationConfig) {
-      logger.error(`No rate limit configuration found for operation: ${operationType}`);
+      logger.error(`No rate limit configuration found for operation: ${opType} (tier: ${tier})`);
+      logger.debug('Available operations for tier:', {
+        tier,
+        operations: Object.keys(tierConfig || {})
+      });
       return next(); // Allow request if no config found
     }
 
