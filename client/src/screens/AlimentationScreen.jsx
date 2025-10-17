@@ -1,72 +1,103 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { Sparkles, TrendingUp, Flame } from 'lucide-react';
 import RecipeList from '../components/features/food/RecipeList';
 import RecipeModal from '../components/features/food/RecipeModal';
 import MealSuggestions from '../components/features/food/MealSuggestions';
-import ActivityRecommendations from '../components/features/activity/ActivityRecommendations';
-import { useRecipes } from '../hooks/useRecipes';
-import { useAISuggestions } from '../hooks/useAISuggestions';
+import { useRecipesAPI } from '../hooks/useRecipesAPI'; // ✨ Phase 1C - Backend integration
 import { useNavigation } from '../contexts/NavigationContext';
 import { useTranslation } from 'react-i18next';
+import { apiAdapter } from '../services/api/apiAdapter';
+import secureLogger from '../utils/secureLogger';
+import { useToast } from '../components/common/PluqlaToast';
+import PropTypes from 'prop-types';
 import './ActivityScreen.css';
 
-const AlimentationScreen = ({ userData, setUserData, usePlan, showNotification, addTransaction, darkMode }) => {
+const AlimentationScreen = ({ showNotification, darkMode }) => {
   const { t } = useTranslation();
   const { navigateToHome } = useNavigation();
   const [activeCategory, setActiveCategory] = useState('recettes');
-  const [isVisible, setIsVisible] = useState(false);
   const [shoppingList, setShoppingList] = useState(null);
   const [isGeneratingList, setIsGeneratingList] = useState(false);
 
-  const { getAISuggestions, isLoading: isLoadingAI } = useAISuggestions();
-  const [aiSuggestions, setAiSuggestions] = useState([]);
+  const toast = useToast();
 
-  // Hooks pour les recettes
+  // ✨ Phase 1C - Hooks pour les recettes avec backend IA-hybride
   const {
-    filteredRecipes,
+    recipes,
+    smartSuggestions,
     selectedRecipe,
     searchQuery,
     maxPrice,
     favorites,
+    sortBy,
+    isLoading: isLoadingRecipes,
     setSearchQuery,
     setMaxPrice,
+    setSortBy,
+    fetchRecipes,
+    fetchSmartSuggestions,
     selectRecipe,
     clearSelection,
-    toggleFavorite
-  } = useRecipes();
+    toggleFavorite,
+    markAsCooked // ✨ Phase 1B - Mark recipe as cooked with tracking
+  } = useRecipesAPI();
 
-  // Animation d'entrée
-  useEffect(() => {
-    const timer = setTimeout(() => setIsVisible(true), 100);
-    return () => clearTimeout(timer);
-  }, []);
+  // Local state for tracking loading errors
+  const [hasLoadError, setHasLoadError] = useState(false);
 
-  // Charger les suggestions IA pour l'alimentation
+  // ✨ Phase 1C - Charger les recettes et suggestions IA au montage
   useEffect(() => {
     let isMounted = true;
 
-    const loadSuggestions = async () => {
-      if (activeCategory === 'nutrition' && isMounted) {
+    const loadRecipesData = async () => {
+      if (isMounted) {
         try {
-          const suggestions = await getAISuggestions('alimentation');
-          if (isMounted) {
-            setAiSuggestions(Array.isArray(suggestions) ? suggestions : []);
-          }
+          setHasLoadError(false);
+          await fetchRecipes(); // Charger recettes backend
+          await fetchSmartSuggestions(); // Charger suggestions IA Phase 1A
+
+          secureLogger.info('Recipes and smart suggestions loaded', {
+            recipesCount: recipes?.length || 0,
+            suggestionsCount: smartSuggestions?.length || 0
+          });
         } catch (error) {
-          if (isMounted) {
-            console.error('Erreur chargement suggestions alimentation:', error);
-            setAiSuggestions([]);
+          setHasLoadError(true);
+          secureLogger.error('Failed to load recipes data', {
+            error: error.message
+          });
+
+          // Defensive: Fallback to showNotification if toast unavailable
+          if (toast?.error) {
+            toast.error('Erreur de chargement des recettes. Veuillez réessayer.');
+          } else if (showNotification) {
+            showNotification('Erreur de chargement des recettes. Veuillez réessayer.', 'error');
           }
         }
       }
     };
 
-    loadSuggestions();
+    loadRecipesData();
 
     return () => {
       isMounted = false;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeCategory]); // getAISuggestions supprimé volontairement pour éviter les boucles infinies
+  }, [fetchRecipes, fetchSmartSuggestions, recipes?.length, smartSuggestions?.length, toast, showNotification]);
+
+  // Retry function for error recovery
+  const handleRetry = async () => {
+    setHasLoadError(false);
+    try {
+      await fetchRecipes();
+      await fetchSmartSuggestions();
+      if (toast?.success) {
+        toast.success('Recettes rechargées avec succès !');
+      }
+    } catch (error) {
+      setHasLoadError(true);
+      secureLogger.error('Retry failed', { error: error.message });
+    }
+  };
 
   // Fonction pour générer la liste de courses
   const generateShoppingList = async () => {
@@ -74,35 +105,23 @@ const AlimentationScreen = ({ userData, setUserData, usePlan, showNotification, 
 
     setIsGeneratingList(true);
     try {
-      const token = localStorage.getItem('token');
-      const selectedRecipes = favorites.map(fav => ({
-        title: fav.title,
-        ingredients: fav.ingredients || []
-      }));
-
-      const response = await fetch(`${process.env.REACT_APP_API_URL || ''}/api/shopping-list/generate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          selectedRecipes,
-          language: 'fr'
-        })
+      const response = await apiAdapter.post('/shopping-list/generate', {
+        selectedRecipes: favorites.map(fav => ({
+          title: fav.title,
+          ingredients: fav.ingredients || []
+        })),
+        language: 'fr'
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setShoppingList(data.data);
-        setActiveCategory('courses');
-        showNotification?.('Liste de courses générée avec succès ! 🛒', 'success');
-      } else {
-        throw new Error('Erreur lors de la génération');
-      }
+      setShoppingList(response.data);
+      setActiveCategory('courses');
+      showNotification?.('Liste de courses générée avec succès ! 🛒', 'success');
     } catch (error) {
-      console.error('Erreur génération liste:', error);
-      showNotification?.('Erreur lors de la génération de la liste', 'error');
+      secureLogger.error('Shopping list generation failed', {
+        error: error.message,
+        favoritesCount: favorites.length
+      });
+      showNotification?.(error.message || 'Erreur lors de la génération de la liste', 'error');
     } finally {
       setIsGeneratingList(false);
     }
@@ -120,12 +139,6 @@ const AlimentationScreen = ({ userData, setUserData, usePlan, showNotification, 
       name: 'Liste Courses',
       icon: '🛒',
       description: 'Liste de courses intelligente'
-    },
-    {
-      id: 'nutrition',
-      name: 'Nutrition IA',
-      icon: '🥗',
-      description: 'Conseils nutrition et régimes IA'
     }
   ];
 
@@ -134,7 +147,7 @@ const AlimentationScreen = ({ userData, setUserData, usePlan, showNotification, 
       case 'recettes':
         return (
           <div className="space-y-6">
-            {/* Filtres de recherche */}
+            {/* Filtres de recherche & Tri */}
             <div className={`glass-effect p-6 rounded-2xl ${
               darkMode ? 'glass-effect-dark' : ''
             }`}>
@@ -146,11 +159,16 @@ const AlimentationScreen = ({ userData, setUserData, usePlan, showNotification, 
 
               <div className="space-y-4">
                 <div>
+                  <label htmlFor="recipe-search-input" className="sr-only">
+                    Rechercher une recette
+                  </label>
                   <input
+                    id="recipe-search-input"
                     type="text"
                     placeholder="Rechercher une recette..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
+                    aria-label="Rechercher une recette par nom ou ingrédient"
                     className={`w-full px-4 py-3 rounded-xl border transition-all focus:outline-none focus:ring-2 ${
                       darkMode
                         ? 'bg-gray-900/50 text-white border-gray-700 focus:border-red-500 focus:ring-red-500/20'
@@ -159,23 +177,69 @@ const AlimentationScreen = ({ userData, setUserData, usePlan, showNotification, 
                   />
                 </div>
 
+                {/* ✨ Phase 1A - Sort Buttons */}
+                <div className="flex gap-2">
+                  <motion.button
+                    onClick={() => setSortBy('popularity')}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    aria-label="Trier par popularité"
+                    aria-pressed={sortBy === 'popularity'}
+                    className={`flex-1 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 ${
+                      sortBy === 'popularity'
+                        ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg'
+                        : darkMode
+                          ? 'bg-gray-800/60 text-gray-300 hover:bg-gray-700/70'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    <Flame className="w-4 h-4" aria-hidden="true" />
+                    Populaires
+                  </motion.button>
+                  <motion.button
+                    onClick={() => setSortBy('recent')}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    aria-label="Trier par date de création"
+                    aria-pressed={sortBy === 'recent'}
+                    className={`flex-1 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 ${
+                      sortBy === 'recent'
+                        ? 'bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg'
+                        : darkMode
+                          ? 'bg-gray-800/60 text-gray-300 hover:bg-gray-700/70'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    <TrendingUp className="w-4 h-4" aria-hidden="true" />
+                    Récents
+                  </motion.button>
+                </div>
+
                 <div className={`p-4 rounded-xl ${
                   darkMode ? 'bg-gray-900/30' : 'bg-gray-50'
                 }`}>
                   <div className="flex justify-between items-center mb-2">
-                    <label className={`text-sm font-medium ${
+                    <label htmlFor="max-price-slider" className={`text-sm font-medium ${
                       darkMode ? 'text-gray-300' : 'text-gray-700'
                     }`}>
                       Budget maximum
                     </label>
-                    <span className="text-lg font-bold text-red-500">{maxPrice}€</span>
+                    <span className="text-lg font-bold text-red-500" aria-live="polite" aria-atomic="true">
+                      {maxPrice}€
+                    </span>
                   </div>
                   <input
+                    id="max-price-slider"
                     type="range"
                     min="0"
                     max="20"
                     value={maxPrice}
                     onChange={(e) => setMaxPrice(parseInt(e.target.value))}
+                    aria-label={`Définir le budget maximum à ${maxPrice} euros`}
+                    aria-valuemin={0}
+                    aria-valuemax={20}
+                    aria-valuenow={maxPrice}
+                    aria-valuetext={`${maxPrice} euros`}
                     className="w-full accent-red-500"
                   />
                   <div className="flex justify-between text-xs text-gray-500 mt-1">
@@ -186,19 +250,131 @@ const AlimentationScreen = ({ userData, setUserData, usePlan, showNotification, 
               </div>
             </div>
 
-            <RecipeList
-              recipes={filteredRecipes}
-              darkMode={darkMode}
-              onRecipeSelect={selectRecipe}
-              onFavoriteToggle={toggleFavorite}
-              favorites={favorites}
-            />
+            {/* ✨ Phase 1A - Smart Suggestions IA Section */}
+            {smartSuggestions && smartSuggestions.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className={`glass-effect p-6 rounded-2xl ${
+                  darkMode ? 'glass-effect-dark' : ''
+                }`}
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-red-600">
+                    <Sparkles className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h3 className={`text-lg font-bold ${
+                      darkMode ? 'text-white' : 'text-gray-900'
+                    }`}>
+                      Suggestions IA pour vous
+                    </h3>
+                    <p className={`text-xs ${
+                      darkMode ? 'text-gray-300' : 'text-gray-700'
+                    }`}>
+                      Recettes personnalisées selon vos préférences
+                    </p>
+                  </div>
+                  <div className="ml-auto">
+                    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/20">
+                      <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                      <span className="text-xs font-semibold text-red-500">IA Active</span>
+                    </div>
+                  </div>
+                </div>
+
+                <RecipeList
+                  recipes={smartSuggestions}
+                  darkMode={darkMode}
+                  onRecipeSelect={selectRecipe}
+                  onFavoriteToggle={toggleFavorite}
+                  favorites={favorites}
+                  showAIBadge={true}
+                  showPopularityScore={true}
+                />
+              </motion.div>
+            )}
+
+            {/* Liste complète des recettes */}
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className={`text-lg font-semibold ${
+                  darkMode ? 'text-white' : 'text-gray-900'
+                }`}>
+                  {searchQuery ? `Résultats de recherche (${recipes?.length || 0})` : 'Toutes les recettes'}
+                </h3>
+                {isLoadingRecipes && (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full bg-red-500 animate-pulse" />
+                    <span className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                      Chargement...
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {/* Error State with Retry */}
+              {hasLoadError && !isLoadingRecipes && (
+                <div className={`p-6 rounded-2xl text-center ${
+                  darkMode ? 'bg-red-900/20 border border-red-800/30' : 'bg-red-50 border border-red-200'
+                }`}>
+                  <div className="text-5xl mb-4">😕</div>
+                  <h4 className={`text-lg font-semibold mb-2 ${
+                    darkMode ? 'text-red-400' : 'text-red-800'
+                  }`}>
+                    Erreur de chargement
+                  </h4>
+                  <p className={`text-sm mb-4 ${
+                    darkMode ? 'text-red-300' : 'text-red-700'
+                  }`}>
+                    Impossible de charger les recettes. Vérifiez votre connexion internet.
+                  </p>
+                  <motion.button
+                    onClick={handleRetry}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl font-semibold hover:shadow-lg transition-all"
+                  >
+                    🔄 Réessayer
+                  </motion.button>
+                </div>
+              )}
+
+              {!hasLoadError && (
+                <RecipeList
+                  recipes={recipes}
+                  darkMode={darkMode}
+                  onRecipeSelect={selectRecipe}
+                  onFavoriteToggle={toggleFavorite}
+                  favorites={favorites}
+                  showPopularityScore={true}
+                />
+              )}
+            </div>
 
             <RecipeModal
               isOpen={!!selectedRecipe}
               recipe={selectedRecipe}
               darkMode={darkMode}
               onClose={clearSelection}
+              onMarkAsCooked={async (recipeId) => {
+                // ✨ Phase 1B - Mark as cooked with tracking
+                const success = await markAsCooked(recipeId);
+                if (success) {
+                  if (toast?.success) {
+                    toast.success('Recette marquée comme cuisinée! 🎉');
+                  } else {
+                    showNotification?.('Recette marquée comme cuisinée! 🎉', 'success');
+                  }
+                } else {
+                  if (toast?.error) {
+                    toast.error('Erreur lors du marquage');
+                  } else {
+                    showNotification?.('Erreur lors du marquage', 'error');
+                  }
+                }
+              }}
             />
           </div>
         );
@@ -227,7 +403,15 @@ const AlimentationScreen = ({ userData, setUserData, usePlan, showNotification, 
                   <button
                     onClick={generateShoppingList}
                     disabled={favorites.length === 0 || isGeneratingList}
-                    className={`w-full py-3 px-6 rounded-xl font-medium transition-all duration-200 ${
+                    aria-label={
+                      isGeneratingList
+                        ? 'Génération de la liste de courses en cours'
+                        : favorites.length === 0
+                        ? 'Ajoutez des recettes aux favoris pour générer une liste de courses'
+                        : `Générer une liste de courses à partir de ${favorites.length} recettes favorites`
+                    }
+                    aria-disabled={favorites.length === 0 || isGeneratingList}
+                    className={`w-full py-3 px-6 rounded-xl font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 ${
                       favorites.length === 0 || isGeneratingList
                         ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
                         : 'bg-gradient-to-r from-red-500 to-red-600 text-white hover:scale-105'
@@ -236,7 +420,7 @@ const AlimentationScreen = ({ userData, setUserData, usePlan, showNotification, 
                     {isGeneratingList
                       ? '🤖 Génération en cours...'
                       : favorites.length === 0
-                      ? 'Ajoutez des recettes aux favoris d\'abord'
+                      ? 'Ajoutez des recettes aux favoris d&apos;abord'
                       : `Créer ma liste (${favorites.length} recettes)`
                     }
                   </button>
@@ -246,9 +430,9 @@ const AlimentationScreen = ({ userData, setUserData, usePlan, showNotification, 
                   darkMode ? 'bg-gray-900/30' : 'bg-gray-50'
                 }`}>
                   <p className={`text-sm ${
-                    darkMode ? 'text-gray-400' : 'text-gray-600'
+                    darkMode ? 'text-gray-300' : 'text-gray-700'
                   }`}>
-                    L'IA analysera vos recettes sélectionnées et générera automatiquement une liste de courses optimisée avec les quantités nécessaires.
+                    L&apos;IA analysera vos recettes sélectionnées et générera automatiquement une liste de courses optimisée avec les quantités nécessaires.
                   </p>
                 </div>
 
@@ -275,7 +459,7 @@ const AlimentationScreen = ({ userData, setUserData, usePlan, showNotification, 
                               {item.name}
                             </span>
                             <span className={`ml-2 text-sm ${
-                              darkMode ? 'text-gray-400' : 'text-gray-600'
+                              darkMode ? 'text-gray-300' : 'text-gray-700'
                             }`}>
                               {item.quantity} {item.unit}
                             </span>
@@ -299,12 +483,12 @@ const AlimentationScreen = ({ userData, setUserData, usePlan, showNotification, 
                         <h5 className={`font-medium mb-2 ${
                           darkMode ? 'text-gray-300' : 'text-gray-700'
                         }`}>
-                          💡 Conseils d'économie :
+                          💡 Conseils d&apos;économie :
                         </h5>
                         <ul className="space-y-1">
                           {shoppingList.tips.map((tip, index) => (
                             <li key={index} className={`text-sm ${
-                              darkMode ? 'text-gray-400' : 'text-gray-600'
+                              darkMode ? 'text-gray-300' : 'text-gray-700'
                             }`}>
                               • {tip}
                             </li>
@@ -375,7 +559,7 @@ const AlimentationScreen = ({ userData, setUserData, usePlan, showNotification, 
                   🍽️ {t('food.title', 'Alimentation')}
                 </h1>
                 <p className={`text-sm ${
-                  darkMode ? 'text-gray-400' : 'text-gray-600'
+                  darkMode ? 'text-gray-300' : 'text-gray-700'
                 } font-medium`}>
                   {t('food.subtitle', 'Recettes et nutrition intelligents')}
                 </p>
@@ -383,12 +567,12 @@ const AlimentationScreen = ({ userData, setUserData, usePlan, showNotification, 
             </div>
 
             {/* Loading Indicator */}
-            {isLoadingAI && (
+            {isLoadingRecipes && (
               <div className="flex items-center space-x-2">
                 <div className="w-4 h-4 rounded-full bg-gradient-to-r from-red-500 to-red-600 animate-pulse"></div>
                 <span className={`text-xs font-medium ${
                   darkMode ? 'text-red-400' : 'text-red-600'
-                }`}>IA en cours...</span>
+                }`}>Chargement...</span>
               </div>
             )}
           </div>
@@ -488,4 +672,16 @@ const AlimentationScreen = ({ userData, setUserData, usePlan, showNotification, 
   );
 };
 
-export default AlimentationScreen;
+// PropTypes validation
+AlimentationScreen.propTypes = {
+  showNotification: PropTypes.func,
+  darkMode: PropTypes.bool
+};
+
+AlimentationScreen.defaultProps = {
+  showNotification: null,
+  darkMode: false
+};
+
+// Wrap with React.memo to prevent unnecessary re-renders
+export default React.memo(AlimentationScreen);
