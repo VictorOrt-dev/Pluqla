@@ -9,7 +9,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import { AppProvider } from './contexts/AppContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { NavigationProvider, useNavigation } from './contexts/NavigationContext';
-import LoginScreen from './components/auth/LoginScreen';
+import { ToastProvider } from './components/common/PluqlaToast';
 import { initFinancialApi } from './services/financialApi';
 import { featureFlags, FeatureGate } from './utils/featureFlags';
 import Notifications from './components/common/Notifications';
@@ -42,6 +42,9 @@ const ExpensesDetailScreen = React.lazy(() => import('./components/finance/Expen
 const IncomeDetailScreen = React.lazy(() => import('./components/finance/IncomeDetailScreen'));
 const SuggestionsDetailScreen = React.lazy(() => import('./components/finance/SuggestionsDetailScreen'));
 const ProgressionDetailScreen = React.lazy(() => import('./components/progression/ProgressionDetailScreen'));
+
+// Lazy loading auth screens
+const LoginScreen = React.lazy(() => import('./components/auth/LoginScreen'));
 
 // Composant principal de l'app qui utilise NavigationContext et AuthContext
 function AppContent() {
@@ -279,11 +282,7 @@ function AppContent() {
         return (
           <Suspense fallback={<SuspenseFallback component="l'écran Alimentation" fullScreen={true} />}>
             <AlimentationScreen
-              userData={userData}
-              setUserData={setUserData}
-              usePlan={usePlan}
               showNotification={notificationSystem.showNotification}
-              addTransaction={addTransaction}
               darkMode={darkMode}
             />
           </Suspense>
@@ -305,23 +304,29 @@ function AppContent() {
 
       case 'expenses-detail':
         return (
-          <div className={`min-h-screen ${darkMode ? 'bg-black' : 'bg-gray-50'}`}>
-            <ExpensesDetailScreen darkMode={darkMode} />
-          </div>
+          <Suspense fallback={<SuspenseFallback component="les détails des dépenses" fullScreen={true} />}>
+            <div className={`min-h-screen ${darkMode ? 'bg-black' : 'bg-gray-50'}`}>
+              <ExpensesDetailScreen darkMode={darkMode} />
+            </div>
+          </Suspense>
         );
 
       case 'income-detail':
         return (
-          <div className={`min-h-screen ${darkMode ? 'bg-black' : 'bg-gray-50'}`}>
-            <IncomeDetailScreen darkMode={darkMode} />
-          </div>
+          <Suspense fallback={<SuspenseFallback component="les détails des revenus" fullScreen={true} />}>
+            <div className={`min-h-screen ${darkMode ? 'bg-black' : 'bg-gray-50'}`}>
+              <IncomeDetailScreen darkMode={darkMode} />
+            </div>
+          </Suspense>
         );
 
       case 'suggestions-detail':
         return (
-          <div className={`min-h-screen ${darkMode ? 'bg-black' : 'bg-gray-50'}`}>
-            <SuggestionsDetailScreen darkMode={darkMode} />
-          </div>
+          <Suspense fallback={<SuspenseFallback component="les suggestions" fullScreen={true} />}>
+            <div className={`min-h-screen ${darkMode ? 'bg-black' : 'bg-gray-50'}`}>
+              <SuggestionsDetailScreen darkMode={darkMode} />
+            </div>
+          </Suspense>
         );
 
       case 'progression-detail':
@@ -333,16 +338,20 @@ function AppContent() {
 
       case 'profile':
         return (
-          <Profile
-            darkMode={darkMode}
-          />
+          <Suspense fallback={<SuspenseFallback component="le profil" fullScreen={true} />}>
+            <Profile
+              darkMode={darkMode}
+            />
+          </Suspense>
         );
 
       case 'login':
         return (
-          <div className={`min-h-screen ${darkMode ? 'bg-black' : 'bg-gray-50'}`}>
-            <LoginScreen darkMode={darkMode} />
-          </div>
+          <Suspense fallback={<SuspenseFallback component="la page de connexion" fullScreen={true} />}>
+            <div className={`min-h-screen ${darkMode ? 'bg-black' : 'bg-gray-50'}`}>
+              <LoginScreen darkMode={darkMode} />
+            </div>
+          </Suspense>
         );
 
       case 'landing':
@@ -357,41 +366,45 @@ function AppContent() {
           const config = categoryConfig[currentCategory];
 
           return (
-            <CategoryScreen
-              category={currentCategory}
-              icon={config.icon}
-              title={config.title}
-              setCurrentCategory={setCurrentCategory}
-              darkMode={darkMode}
-              setDarkMode={setDarkMode}
-              getAISuggestions={aiSuggestionsHook.getAISuggestions}
-              userData={userData}
-              setUserData={setUserData}
-              usePlan={usePlan}
-              notificationSystem={notificationSystem}
-              addTransaction={addTransaction}
-              removeTransaction={removeTransaction}
-              showRecipeDetail={showRecipeDetail}
-              setShowRecipeDetail={setShowRecipeDetail}
-              suggestionsCache={suggestionsCache}
-              setSuggestionsCache={setSuggestionsCache}
-              answers={answers}
-            />
+            <Suspense fallback={<SuspenseFallback component="la catégorie" fullScreen={true} />}>
+              <CategoryScreen
+                category={currentCategory}
+                icon={config.icon}
+                title={config.title}
+                setCurrentCategory={setCurrentCategory}
+                darkMode={darkMode}
+                setDarkMode={setDarkMode}
+                getAISuggestions={aiSuggestionsHook.getAISuggestions}
+                userData={userData}
+                setUserData={setUserData}
+                usePlan={usePlan}
+                notificationSystem={notificationSystem}
+                addTransaction={addTransaction}
+                removeTransaction={removeTransaction}
+                showRecipeDetail={showRecipeDetail}
+                setShowRecipeDetail={setShowRecipeDetail}
+                suggestionsCache={suggestionsCache}
+                setSuggestionsCache={setSuggestionsCache}
+                answers={answers}
+              />
+            </Suspense>
           );
         }
 
         return (
-          <HomeScreen
-            userData={userData}
-            setUserData={setUserData}
-            darkMode={darkMode}
-            setDarkMode={setDarkMode}
-            setCurrentCategory={setCurrentCategory}
-            transactions={transactions}
-            addTransaction={addTransaction}
-            removeTransaction={removeTransaction}
-            progress={progress}
-          />
+          <Suspense fallback={<SuspenseFallback component="l'écran d'accueil" fullScreen={true} />}>
+            <HomeScreen
+              userData={userData}
+              setUserData={setUserData}
+              darkMode={darkMode}
+              setDarkMode={setDarkMode}
+              setCurrentCategory={setCurrentCategory}
+              transactions={transactions}
+              addTransaction={addTransaction}
+              removeTransaction={removeTransaction}
+              progress={progress}
+            />
+          </Suspense>
         );
 
       default: {
@@ -563,7 +576,9 @@ function AppContent() {
       case 'login':
         return (
           <div className="max-w-md mx-auto bg-white dark:bg-black min-h-screen relative font-system transition-colors duration-300" style={{minHeight: '100vh', backgroundColor: darkMode ? '#000000' : '#ffffff'}}>
-            <LoginScreen darkMode={darkMode} />
+            <Suspense fallback={<SuspenseFallback component="la page de connexion" fullScreen={true} />}>
+              <LoginScreen darkMode={darkMode} />
+            </Suspense>
           </div>
         );
 
@@ -600,18 +615,20 @@ export default function App() {
   return (
     <ErrorBoundary>
       <ChunkErrorBoundary>
-        <NavigationProvider>
-          <AuthProvider>
-            <AppProvider>
-              <ThemeProvider>
-                <ProfilerWrapper id="App">
-                  <AppContent />
-                  <PerformanceDebugPanel />
-                </ProfilerWrapper>
-              </ThemeProvider>
-            </AppProvider>
-          </AuthProvider>
-        </NavigationProvider>
+        <ToastProvider position="top-right" maxToasts={3}>
+          <NavigationProvider>
+            <AuthProvider>
+              <AppProvider>
+                <ThemeProvider>
+                  <ProfilerWrapper id="App">
+                    <AppContent />
+                    <PerformanceDebugPanel />
+                  </ProfilerWrapper>
+                </ThemeProvider>
+              </AppProvider>
+            </AuthProvider>
+          </NavigationProvider>
+        </ToastProvider>
       </ChunkErrorBoundary>
     </ErrorBoundary>
   );

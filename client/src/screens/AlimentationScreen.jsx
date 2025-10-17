@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import { Sparkles, TrendingUp, Flame } from 'lucide-react';
 import RecipeList from '../components/features/food/RecipeList';
 import RecipeModal from '../components/features/food/RecipeModal';
-import MealSuggestions from '../components/features/food/MealSuggestions';
 import { useRecipesAPI } from '../hooks/useRecipesAPI'; // ✨ Phase 1C - Backend integration
 import { useNavigation } from '../contexts/NavigationContext';
 import { useTranslation } from 'react-i18next';
@@ -12,6 +11,9 @@ import secureLogger from '../utils/secureLogger';
 import { useToast } from '../components/common/PluqlaToast';
 import PropTypes from 'prop-types';
 import './ActivityScreen.css';
+
+// ✨ Phase 2: Lazy load MealSuggestions (only loaded when nutrition tab is active)
+const MealSuggestions = lazy(() => import('../components/features/food/MealSuggestions'));
 
 const AlimentationScreen = ({ showNotification, darkMode }) => {
   const { t } = useTranslation();
@@ -505,10 +507,24 @@ const AlimentationScreen = ({ showNotification, darkMode }) => {
 
       case 'nutrition':
         return (
-          <MealSuggestions
-            darkMode={darkMode}
-            showNotification={showNotification}
-          />
+          <Suspense fallback={
+            <div className={`p-6 rounded-2xl text-center ${
+              darkMode ? 'bg-gray-900/20' : 'bg-gray-50'
+            }`}>
+              <div className="w-12 h-12 rounded-full bg-gradient-to-r from-red-500 to-red-600 animate-spin mx-auto mb-4" style={{
+                borderTopColor: 'transparent',
+                border: '3px solid currentColor'
+              }}></div>
+              <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+                Chargement des suggestions...
+              </p>
+            </div>
+          }>
+            <MealSuggestions
+              darkMode={darkMode}
+              showNotification={showNotification}
+            />
+          </Suspense>
         );
 
       default:
