@@ -24,9 +24,15 @@ const photoMatchRoutes = require('./photoMatch'); // 📸 NEW: IA Photo Match fe
 const transportOptimizationRoutes = require('./transportOptimization'); // 🚗 NEW: Transport Cost Optimization feature
 const transportTripRoutes = require('./transportTrips'); // 🚗 NEW: User Transport Trip CRUD
 const mealSuggestionsRoutes = require('./mealSuggestions'); // 🍽️ NEW: AI-powered Meal Suggestions feature
-// const mealPlanningRoutes = require('./mealPlanning'); // 🍽️ NEW: Jow-inspired Weekly Meal Planning feature (TEMP DISABLED - syntax error)
+const mealPlanningRoutes = require('./mealPlanning'); // 🍽️ NEW: Jow-inspired Weekly Meal Planning feature
+const recipeRoutes = require('./recipes'); // 🍽️ NEW: Recipe CRUD and favorites management
 const bankAccountsRoutes = require('./bankAccounts'); // 🏦 NEW: Nordigen Bank Account Connections
 // const performanceRoutes = require('./performance'); // ❌ TEMPORARILY DISABLED for setup
+
+// ✨ Phase 1B - Security & Compliance Routes
+const gdprRoutes = require('./gdpr'); // 🔒 Phase 1B: GDPR compliance (export, delete, audit)
+const recipeInteractionsRoutes = require('./recipeInteractions'); // 📊 Phase 1B: Recipe interactions tracking with fraud detection
+const webVitalsRoutes = require('./webVitals'); // 📊 Phase 3: Web Vitals monitoring for performance tracking
 
 // Health check for API
 router.get('/health', (req, res) => {
@@ -59,9 +65,15 @@ router.use('/photo-match', photoMatchRoutes); // 📸 NEW: IA Photo Match featur
 router.use('/transport-optimize', transportOptimizationRoutes); // 🚗 NEW: Transport Cost Optimization feature
 router.use('/trips', transportTripRoutes); // 🚗 NEW: User Transport Trip CRUD
 router.use('/meal-suggestions', mealSuggestionsRoutes); // 🍽️ NEW: AI-powered Meal Suggestions feature
-// router.use('/meal-planning', mealPlanningRoutes); // 🍽️ NEW: Jow-inspired Weekly Meal Planning feature (TEMP DISABLED - syntax error)
+router.use('/meal-planning', mealPlanningRoutes); // 🍽️ NEW: Jow-inspired Weekly Meal Planning feature
+router.use('/recipes', recipeRoutes); // 🍽️ NEW: Recipe CRUD and favorites management
 router.use('/bank-accounts', bankAccountsRoutes); // 🏦 NEW: Nordigen Bank Account Connections
 // router.use('/performance', performanceRoutes); // ❌ TEMPORARILY DISABLED for setup
+
+// ✨ Phase 1B - Security & Compliance Routes
+router.use('/gdpr', gdprRoutes); // 🔒 Phase 1B: GDPR compliance endpoints
+router.use('/recipe-interactions', recipeInteractionsRoutes); // 📊 Phase 1B: Recipe interactions with fraud detection
+router.use('/web-vitals', webVitalsRoutes); // 📊 Phase 3: Web Vitals monitoring endpoints
 
 // API documentation endpoint
 router.get('/', (req, res) => {
@@ -85,7 +97,10 @@ router.get('/', (req, res) => {
       mealSuggestions: '/api/meal-suggestions - AI-powered Meal Suggestions feature',
       mealPlanning: '/api/meal-planning - Jow-inspired Weekly Meal Planning feature',
       bankAccounts: '/api/bank-accounts - Nordigen Bank Account Connections',
-      performance: '/api/performance - Monitoring des performances et métriques'
+      performance: '/api/performance - Monitoring des performances et métriques',
+      gdpr: '/api/gdpr - GDPR compliance (Phase 1B)',
+      recipeInteractions: '/api/recipe-interactions - Recipe tracking with fraud detection (Phase 1B)',
+      webVitals: '/api/web-vitals - Web Vitals monitoring for performance tracking (Phase 3)'
     },
     documentation: process.env.NODE_ENV !== 'production' ? '/api-docs' : null
   });
