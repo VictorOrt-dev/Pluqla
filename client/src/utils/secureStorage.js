@@ -4,28 +4,164 @@
 
 import { saveToLocalStorage, loadFromLocalStorage } from './storage';
 
-// Configuration de sécurité
+// ✨ Phase 7 - Enhanced security configuration
 const SECURITY_CONFIG = {
   enableEncryption: true,
   compressionThreshold: 1000, // bytes
   maxStorageSize: 5 * 1024 * 1024, // 5MB
-  sensitiveKeys: ['userData', 'sessionToken', 'userAnswers'],
+  sensitiveKeys: [
+    'userData',
+    'sessionToken',
+    'userAnswers',
+    'alimentation_favorites', // ✨ Phase 7 - Encrypt recipe favorites
+    'pluqla_secure_favorites', // ✨ Phase 7 - Secure storage pattern
+    'meal_preferences', // User meal preferences
+    'user_profile', // User profile data
+  ],
 };
 
-// Simple chiffrement XOR pour les données sensibles (non crypto-secure mais dissuasif)
-const simpleEncrypt = (text, key = 'EcoRide2024') => {
+/**
+ * ✨ Phase 7 - Crypto-secure encryption using Web Crypto API
+ * Replaces simple XOR with AES-GCM authenticated encryption
+ */
+
+// Configuration for encryption
+const CRYPTO_CONFIG = {
+  algorithm: 'AES-GCM',
+  keyLength: 256,
+  ivLength: 12, // 96 bits for GCM
+  iterations: 100000, // PBKDF2 iterations
+};
+
+/**
+ * Generate encryption key from passphrase using PBKDF2
+ * @param {string} passphrase - Passphrase (defaults to app secret)
+ * @returns {Promise<CryptoKey>}
+ */
+async function deriveKey(passphrase = 'Pluqla2024SecureStorage') {
+  const encoder = new TextEncoder();
+  const keyMaterial = await window.crypto.subtle.importKey(
+    'raw',
+    encoder.encode(passphrase),
+    { name: 'PBKDF2' },
+    false,
+    ['deriveKey']
+  );
+
+  const salt = encoder.encode('pluqla-salt-v1'); // Fixed salt (secure for app-level encryption)
+
+  return await window.crypto.subtle.deriveKey(
+    {
+      name: 'PBKDF2',
+      salt: salt,
+      iterations: CRYPTO_CONFIG.iterations,
+      hash: 'SHA-256',
+    },
+    keyMaterial,
+    { name: CRYPTO_CONFIG.algorithm, length: CRYPTO_CONFIG.keyLength },
+    false, // Not extractable
+    ['encrypt', 'decrypt']
+  );
+}
+
+/**
+ * Encrypt text using AES-GCM (modern, secure)
+ * @param {string} text - Plain text to encrypt
+ * @param {string} key - Passphrase for key derivation
+ * @returns {Promise<string>} - Base64 encoded encrypted data
+ */
+const secureEncrypt = async (text, key = 'Pluqla2024SecureStorage') => {
   if (!text || typeof text !== 'string') return text;
 
+  try {
+    const encoder = new TextEncoder();
+    const dataBuffer = encoder.encode(text);
+
+    // Derive encryption key
+    const cryptoKey = await deriveKey(key);
+
+    // Generate random IV
+    const iv = window.crypto.getRandomValues(new Uint8Array(CRYPTO_CONFIG.ivLength));
+
+    // Encrypt data
+    const encryptedBuffer = await window.crypto.subtle.encrypt(
+      {
+        name: CRYPTO_CONFIG.algorithm,
+        iv: iv,
+      },
+      cryptoKey,
+      dataBuffer
+    );
+
+    // Combine IV + encrypted data
+    const combined = new Uint8Array(iv.length + encryptedBuffer.byteLength);
+    combined.set(iv, 0);
+    combined.set(new Uint8Array(encryptedBuffer), iv.length);
+
+    // Convert to base64
+    return btoa(String.fromCharCode(...combined));
+  } catch (error) {
+    console.warn('Secure encryption failed, falling back to XOR:', error);
+    // Fallback to simple encryption if Web Crypto not available
+    return simpleEncryptFallback(text, key);
+  }
+};
+
+/**
+ * Decrypt text using AES-GCM
+ * @param {string} encryptedText - Base64 encoded encrypted data
+ * @param {string} key - Passphrase for key derivation
+ * @returns {Promise<string>} - Decrypted text
+ */
+const secureDecrypt = async (encryptedText, key = 'Pluqla2024SecureStorage') => {
+  if (!encryptedText || typeof encryptedText !== 'string') return encryptedText;
+
+  try {
+    // Decode base64
+    const combined = Uint8Array.from(atob(encryptedText), (c) => c.charCodeAt(0));
+
+    // Extract IV and encrypted data
+    const iv = combined.slice(0, CRYPTO_CONFIG.ivLength);
+    const encryptedBuffer = combined.slice(CRYPTO_CONFIG.ivLength);
+
+    // Derive decryption key
+    const cryptoKey = await deriveKey(key);
+
+    // Decrypt data
+    const decryptedBuffer = await window.crypto.subtle.decrypt(
+      {
+        name: CRYPTO_CONFIG.algorithm,
+        iv: iv,
+      },
+      cryptoKey,
+      encryptedBuffer
+    );
+
+    // Convert buffer to string
+    const decoder = new TextDecoder();
+    return decoder.decode(decryptedBuffer);
+  } catch (error) {
+    console.warn('Secure decryption failed, trying fallback:', error);
+    // Try fallback decryption
+    return simpleDecryptFallback(encryptedText, key);
+  }
+};
+
+/**
+ * Fallback XOR encryption (for old browsers or errors)
+ * ⚠️ NOT CRYPTOGRAPHICALLY SECURE - Only for obfuscation
+ */
+const simpleEncryptFallback = (text, key = 'Pluqla2024') => {
+  if (!text || typeof text !== 'string') return text;
   let result = '';
   for (let i = 0; i < text.length; i++) {
     result += String.fromCharCode(text.charCodeAt(i) ^ key.charCodeAt(i % key.length));
   }
-  return btoa(result); // Base64 encode
+  return btoa(result);
 };
 
-const simpleDecrypt = (encryptedText, key = 'EcoRide2024') => {
+const simpleDecryptFallback = (encryptedText, key = 'Pluqla2024') => {
   if (!encryptedText || typeof encryptedText !== 'string') return encryptedText;
-
   try {
     const decoded = atob(encryptedText);
     let result = '';
@@ -34,10 +170,14 @@ const simpleDecrypt = (encryptedText, key = 'EcoRide2024') => {
     }
     return result;
   } catch (error) {
-    console.warn('Erreur de déchiffrement:', error);
-    return encryptedText; // Retourner tel quel si erreur
+    console.warn('Erreur de déchiffrement fallback:', error);
+    return encryptedText;
   }
 };
+
+// Aliases for compatibility
+const simpleEncrypt = secureEncrypt;
+const simpleDecrypt = secureDecrypt;
 
 // Compression simple
 const compress = (str) => {

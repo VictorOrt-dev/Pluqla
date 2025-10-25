@@ -12,10 +12,24 @@ const { requestTracker, globalErrorHandler } = require('./utils/responseHelper')
 const { performanceMiddleware } = require('./middleware/performanceMiddleware');
 const metricsMiddleware = require('./middleware/metricsMiddleware');
 
+// ✨ Phase 7 - Modern CSRF Protection (no vulnerable dependencies)
+const { conditionalCsrfProtection, csrfErrorHandler, attachCsrfToken } = require('./middleware/csrf-modern');
+
+// ✨ Phase 1B - Security & Observability
+const { initSentry, sentryRequestHandler, sentryTracingHandler, sentryErrorHandler } = require('./config/sentry');
+const { prometheusMiddleware } = require('./config/prometheus');
+const { attachIPHash } = require('./services/ipDeduplicationService');
+
 // Routes
 const routes = require('./routes');
 
 const app = express();
+
+// ✨ Phase 1B - Initialize Sentry error tracking (MUST be first)
+if (process.env.SENTRY_DSN && process.env.SENTRY_ENABLED !== 'false') {
+  initSentry(app);
+  logger.info('✅ Sentry error tracking initialized');
+}
 
 // Trust proxy si derrière un reverse proxy
 if (process.env.TRUST_PROXY === 'true') {
@@ -70,14 +84,72 @@ const corsOptions = {
   optionsSuccessStatus: 204
 };
 
-// Middlewares de sécurité
+// ✨ Phase 1B - Sentry request tracking (must be before other middlewares)
+if (process.env.SENTRY_DSN && process.env.SENTRY_ENABLED !== 'false') {
+  app.use(sentryRequestHandler());
+  app.use(sentryTracingHandler());
+}
+
+// ✨ Phase 7 - Enhanced Security Headers with CSP for Recipe APIs
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
-  contentSecurityPolicy: false // Désactivé pour les uploads d'images
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles (React + Tailwind)
+      scriptSrc: [
+        "'self'",
+        process.env.NODE_ENV === 'development' ? "'unsafe-inline'" : '',
+        process.env.NODE_ENV === 'development' ? "'unsafe-eval'" : '', // React dev only
+        'https://cdn.jsdelivr.net', // CDN for libraries
+      ].filter(Boolean),
+      imgSrc: [
+        "'self'",
+        'data:',
+        'blob:',
+        'https:', // Allow all HTTPS images
+        'https://spoonacular.com',
+        'https://*.spoonacular.com',
+        'https://edamam-product-images.s3.amazonaws.com',
+        'https://www.themealdb.com',
+        'https://*.unsplash.com', // For placeholder images
+      ],
+      connectSrc: [
+        "'self'",
+        process.env.NODE_ENV === 'development' ? 'http://localhost:*' : '',
+        process.env.NODE_ENV === 'development' ? 'ws://localhost:*' : '', // WebSocket dev
+        'https://api.spoonacular.com',
+        'https://api.edamam.com',
+        'https://www.themealdb.com',
+        process.env.SENTRY_DSN ? 'https://sentry.io' : '',
+      ].filter(Boolean),
+      fontSrc: ["'self'", 'data:', 'https://fonts.gstatic.com'],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      frameAncestors: ["'none'"], // Prevent clickjacking
+      upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null,
+    },
+  },
+  hsts: {
+    maxAge: 31536000, // 1 year
+    includeSubDomains: true,
+    preload: true,
+  },
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+  noSniff: true, // Prevent MIME type sniffing
+  xssFilter: true, // Enable XSS filter
 }));
 
 app.use(cors(corsOptions));
 app.use(compression());
+
+// ✨ Phase 2 - Cache headers for optimal performance
+const { setCacheHeaders, setSecurityHeaders } = require('./middleware/cacheHeaders');
+app.use(setCacheHeaders);
+app.use(setSecurityHeaders);
 
 // Logging des requêtes HTTP
 if (process.env.NODE_ENV === 'production') {
@@ -116,6 +188,9 @@ if (process.env.NODE_ENV === 'production') {
   }));
 }
 
+// ✨ Phase 1B - IP Deduplication (attach ipHash to all requests for GDPR compliance)
+app.use(attachIPHash);
+
 // Rate limiting global
 app.use(rateLimit.global);
 
@@ -125,11 +200,25 @@ app.use(requestTracker);
 // Performance monitoring middleware
 app.use(performanceMiddleware);
 
-// Prometheus metrics middleware (must be before routes)
+// ✨ Phase 1B - Prometheus metrics middleware (must be before routes)
+if (process.env.PROMETHEUS_METRICS_ENABLED !== 'false') {
+  app.use(prometheusMiddleware);
+  logger.info('✅ Prometheus metrics collection enabled');
+}
+
+// Legacy metrics middleware (keeping for backward compatibility)
 app.use(metricsMiddleware);
 
-// Cookie parser middleware (REQUIRED for Better Auth session persistence)
+// Cookie parser middleware (REQUIRED for Better Auth session persistence + CSRF)
 app.use(cookieParser());
+
+// ✨ Phase 7 - CSRF Protection (must be after cookieParser, before routes)
+// Apply CSRF protection to all state-changing methods (POST, PUT, PATCH, DELETE)
+// Skips API key authenticated requests and webhooks
+app.use(conditionalCsrfProtection);
+
+// Attach CSRF token to all responses for frontend consumption
+app.use(attachCsrfToken);
 
 // Parsing du body with enhanced error handling
 app.use(express.json({
@@ -209,9 +298,18 @@ app.get('/health', async (req, res) => {
   }
 });
 
-// Prometheus metrics endpoint
+// ✨ Phase 1B - Prometheus metrics endpoint
 app.get('/metrics', async (req, res) => {
   try {
+    // Try Phase 1B Prometheus metrics first
+    if (process.env.PROMETHEUS_METRICS_ENABLED !== 'false') {
+      const { register } = require('./config/prometheus');
+      res.set('Content-Type', register.contentType);
+      const metrics = await register.metrics();
+      return res.end(metrics);
+    }
+
+    // Fallback to legacy metrics
     const { register } = require('./monitoring/metrics');
     res.set('Content-Type', register.contentType);
     const metrics = await register.metrics();
@@ -263,6 +361,14 @@ app.use('*', (req, res) => {
     availableEndpoints: ['/health', '/api/auth', '/api/users', '/api/transactions']
   });
 });
+
+// ✨ Phase 1B - Sentry error handler (must be after routes, before other error handlers)
+if (process.env.SENTRY_DSN && process.env.SENTRY_ENABLED !== 'false') {
+  app.use(sentryErrorHandler());
+}
+
+// ✨ Phase 7 - CSRF error handler (must be before global error handler)
+app.use(csrfErrorHandler);
 
 // Global error handler (enhanced universal format)
 app.use(globalErrorHandler);
