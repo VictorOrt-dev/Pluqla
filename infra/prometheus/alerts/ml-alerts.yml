@@ -1,0 +1,288 @@
+# Phase 9A - ML Recommendation System Alerts
+# ==========================================
+#
+# Prometheus alerting rules for ML recommendation engine health monitoring.
+#
+# Usage: Include this file in prometheus.yml:
+#   rule_files:
+#     - 'alerts/ml-alerts.yml'
+
+groups:
+  - name: ml_recommendations
+    interval: 30s
+    rules:
+      # ====================================================================
+      # CRITICAL ALERTS (P1) - Immediate Action Required
+      # ====================================================================
+
+      - alert: MLModelNotAvailable
+        expr: ml_model_available == 0
+        for: 30m
+        labels:
+          severity: critical
+          component: ml
+          priority: P1
+        annotations:
+          summary: "ML model is not trained or unavailable"
+          description: |
+            The ML recommendation model has been unavailable for 30 minutes.
+            All recommendations are falling back to popular recipes.
+
+            **Impact**: Users are not getting personalized recommendations.
+
+            **Action Required**:
+            1. Check if model file exists: `ls server/ml-models/recommender_model.pkl`
+            2. Train the model: `python server/src/ml/train.py`
+            3. Verify training data: `node server/src/ml/export_training_data.js`
+
+            **Current Status**: {{ $value }}
+          runbook_url: "https://github.com/pluqla/app/blob/main/docs/runbooks/ml-model-unavailable.md"
+
+      - alert: MLHighLatency
+        expr: histogram_quantile(0.95, sum(rate(ml_recommendation_duration_seconds_bucket[5m])) by (le, source)) > 5
+        for: 10m
+        labels:
+          severity: critical
+          component: ml
+          priority: P1
+        annotations:
+          summary: "ML recommendation latency is critically high (p95 > 5s)"
+          description: |
+            95th percentile of ML recommendation latency has exceeded 5 seconds for 10 minutes.
+
+            **Impact**: Poor user experience, slow page loads.
+
+            **Current p95 Latency**: {{ $value | humanizeDuration }}
+            **Target**: < 2s
+
+            **Possible Causes**:
+            - Model file too large (check ml-models/ size)
+            - Python subprocess spawn overhead
+            - High concurrent requests
+            - System resource constraints (CPU/Memory)
+
+            **Action Required**:
+            1. Check system resources: `top` or `htop`
+            2. Review model size: `ls -lh server/ml-models/`
+            3. Check for memory leaks: Python processes
+            4. Consider caching frequently requested recommendations
+          runbook_url: "https://github.com/pluqla/app/blob/main/docs/runbooks/ml-high-latency.md"
+
+      - alert: MLHighFallbackRate
+        expr: |
+          100 * sum(rate(ml_recommendation_source_total{source="fallback"}[10m]))
+          / sum(rate(ml_recommendation_source_total[10m])) > 80
+        for: 20m
+        labels:
+          severity: critical
+          component: ml
+          priority: P1
+        annotations:
+          summary: "ML fallback rate is critically high (>80%)"
+          description: |
+            More than 80% of recommendations are using fallback (popular recipes) instead of ML.
+
+            **Impact**: ML system effectively offline, no personalization.
+
+            **Current Fallback Rate**: {{ $value | printf "%.1f" }}%
+            **Target**: < 10%
+
+            **Possible Causes**:
+            - Python process failing repeatedly
+            - Model file corrupted or missing
+            - Database connection issues for fallback
+            - Insufficient training data
+
+            **Action Required**:
+            1. Check Python errors: `journalctl -u pluqla-api -n 100 | grep "ML"`
+            2. Test Python subprocess: `python server/src/ml/predict.py --user-id test`
+            3. Verify model integrity: `python server/src/ml/validate_model.py`
+            4. Retrain if needed: `python server/src/ml/train.py`
+          runbook_url: "https://github.com/pluqla/app/blob/main/docs/runbooks/ml-high-fallback.md"
+
+      # ====================================================================
+      # WARNING ALERTS (P2) - Investigate Soon
+      # ====================================================================
+
+      - alert: MLModerateFallbackRate
+        expr: |
+          100 * sum(rate(ml_recommendation_source_total{source="fallback"}[10m]))
+          / sum(rate(ml_recommendation_source_total[10m])) > 30
+        for: 30m
+        labels:
+          severity: warning
+          component: ml
+          priority: P2
+        annotations:
+          summary: "ML fallback rate is elevated (>30%)"
+          description: |
+            More than 30% of recommendations are using fallback instead of ML.
+
+            **Current Fallback Rate**: {{ $value | printf "%.1f" }}%
+            **Target**: < 10%
+
+            **Possible Causes**:
+            - Many new users without favorites (expected)
+            - Recent deployment/restart (temporary)
+            - Model quality degradation
+
+            **Action**: Monitor trend. If persists > 1h, investigate.
+          runbook_url: "https://github.com/pluqla/app/blob/main/docs/runbooks/ml-moderate-fallback.md"
+
+      - alert: MLModerateLatency
+        expr: histogram_quantile(0.95, sum(rate(ml_recommendation_duration_seconds_bucket[5m])) by (le, source)) > 2
+        for: 15m
+        labels:
+          severity: warning
+          component: ml
+          priority: P2
+        annotations:
+          summary: "ML recommendation latency is elevated (p95 > 2s)"
+          description: |
+            95th percentile latency has exceeded target of 2 seconds.
+
+            **Current p95 Latency**: {{ $value | humanizeDuration }}
+            **Target**: < 2s
+            **Critical Threshold**: 5s
+
+            **Action**: Monitor. Consider optimization if trend continues.
+          runbook_url: "https://github.com/pluqla/app/blob/main/docs/runbooks/ml-moderate-latency.md"
+
+      - alert: MLLowRecommendationScores
+        expr: histogram_quantile(0.50, sum(rate(ml_recommendation_score_bucket[10m])) by (le, source)) < 0.3
+        for: 1h
+        labels:
+          severity: warning
+          component: ml
+          priority: P2
+        annotations:
+          summary: "ML recommendation scores are consistently low"
+          description: |
+            Median (p50) recommendation score has been below 0.3 for 1 hour.
+
+            **Current p50 Score**: {{ $value | printf "%.2f" }}
+            **Target**: > 0.5
+
+            **Impact**: Poor recommendation quality, low user engagement.
+
+            **Possible Causes**:
+            - Insufficient training data
+            - Model needs retraining with recent data
+            - Cold start problem (many new users)
+            - Algorithm weights need tuning
+
+            **Action**:
+            1. Check training data freshness
+            2. Review user growth (many new users = expected)
+            3. Consider retraining: `python server/src/ml/train.py`
+            4. Review collaborative/content weight balance
+          runbook_url: "https://github.com/pluqla/app/blob/main/docs/runbooks/ml-low-scores.md"
+
+      - alert: MLLowEngagementRate
+        expr: |
+          100 * sum(rate(ml_recommendation_feedback_total{action="favorite"}[1h]))
+          / sum(rate(ml_recommendation_feedback_total{action="view"}[1h])) < 2
+        for: 2h
+        labels:
+          severity: warning
+          component: ml
+          priority: P2
+        annotations:
+          summary: "ML recommendation engagement is low (favorite rate <2%)"
+          description: |
+            Less than 2% of viewed recommendations are being favorited.
+
+            **Current Favorite Rate**: {{ $value | printf "%.2f" }}%
+            **Target**: > 5%
+            **Good**: > 10%
+
+            **Impact**: Low recommendation relevance, poor personalization.
+
+            **Possible Causes**:
+            - Recommendations not matching user preferences
+            - Model quality issues
+            - UI/UX issues preventing favoriting
+            - Natural user behavior (informational browsing)
+
+            **Action**:
+            1. Review recommendation explanations accuracy
+            2. Check A/B test metrics if running
+            3. Consider user feedback collection
+            4. Evaluate model retraining with recent interactions
+          runbook_url: "https://github.com/pluqla/app/blob/main/docs/runbooks/ml-low-engagement.md"
+
+      # ====================================================================
+      # INFO ALERTS (P3) - Informational
+      # ====================================================================
+
+      - alert: MLModelStale
+        expr: time() - ml_model_training_timestamp > 604800  # 7 days in seconds
+        for: 1h
+        labels:
+          severity: info
+          component: ml
+          priority: P3
+        annotations:
+          summary: "ML model hasn't been retrained in 7+ days"
+          description: |
+            The ML model was last trained more than 7 days ago.
+
+            **Last Training**: {{ $value | humanizeDuration }} ago
+            **Recommended**: Retrain weekly
+
+            **Action**: Schedule retraining to capture recent user preferences.
+
+            **Command**: `python server/src/ml/train.py`
+          runbook_url: "https://github.com/pluqla/app/blob/main/docs/runbooks/ml-model-stale.md"
+
+      - alert: MLHighThroughput
+        expr: sum(rate(ml_recommendation_source_total[5m])) > 100
+        for: 5m
+        labels:
+          severity: info
+          component: ml
+          priority: P3
+        annotations:
+          summary: "ML recommendation throughput is unusually high"
+          description: |
+            Recommendation requests are exceeding 100 req/s.
+
+            **Current Rate**: {{ $value | printf "%.0f" }} req/s
+            **Typical**: < 10 req/s
+
+            **This could indicate**:
+            - Successful feature launch (good!)
+            - Traffic spike
+            - Potential abuse/bot activity
+
+            **Action**: Monitor for abuse patterns. Celebrate if legitimate growth!
+          runbook_url: "https://github.com/pluqla/app/blob/main/docs/runbooks/ml-high-throughput.md"
+
+      # ====================================================================
+      # RECORDING RULES (for efficiency)
+      # ====================================================================
+
+  - name: ml_recording_rules
+    interval: 1m
+    rules:
+      - record: ml:recommendation_latency:p95
+        expr: histogram_quantile(0.95, sum(rate(ml_recommendation_duration_seconds_bucket[5m])) by (le, source))
+
+      - record: ml:recommendation_latency:p50
+        expr: histogram_quantile(0.50, sum(rate(ml_recommendation_duration_seconds_bucket[5m])) by (le, source))
+
+      - record: ml:fallback_rate:percent
+        expr: |
+          100 * sum(rate(ml_recommendation_source_total{source="fallback"}[5m]))
+          / sum(rate(ml_recommendation_source_total[5m]))
+
+      - record: ml:favorite_conversion_rate:percent
+        expr: |
+          100 * sum(rate(ml_recommendation_feedback_total{action="favorite"}[5m]))
+          / sum(rate(ml_recommendation_feedback_total{action="view"}[5m]))
+
+      - record: ml:score:p50
+        expr: histogram_quantile(0.50, sum(rate(ml_recommendation_score_bucket[5m])) by (le, source))
+
+      - record: ml:throughput:total
+        expr: sum(rate(ml_recommendation_source_total[5m]))
