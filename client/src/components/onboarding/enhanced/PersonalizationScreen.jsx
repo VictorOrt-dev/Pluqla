@@ -644,4 +644,5 @@ const PersonalizationScreen = ({
   );
 };
 
-export default PersonalizationScreen;
+// Wrap with React.memo to prevent unnecessary re-renders
+export default React.memo(PersonalizationScreen);

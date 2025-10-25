@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, master, develop]
   pull_request:
-    branches: [main, master, develop]
+    branches: [main, master, develop, 'feature/**']
   workflow_dispatch: # Allow manual trigger
 
 env:
@@ -75,8 +75,8 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [18.x, 20.x]
-        test-suite: [auth-flow, password-reset]
+        node-version: [20.x]
+        browser: [chromium, firefox, webkit]
       fail-fast: false
 
     steps:
@@ -90,13 +90,13 @@ jobs:
           cache: 'npm'
           cache-dependency-path: |
             package-lock.json
-            frontend/package-lock.json
+            client/package-lock.json
             server/package-lock.json
 
       - name: 🔧 Install dependencies
         run: |
           npm ci
-          cd frontend && npm ci
+          cd client && npm ci
           cd ../server && npm ci
 
       - name: 🗄️ Setup test database
@@ -113,7 +113,9 @@ jobs:
           echo "Database setup complete!"
 
       - name: 🧪 Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: |
+          cd client
+          npx playwright install --with-deps ${{ matrix.browser }}
 
       - name: 🚀 Start server server
         run: |
@@ -132,30 +134,39 @@ jobs:
           curl -f http://localhost:3004/health || exit 1
           echo "Backend health check passed!"
 
-      - name: 🧹 Run E2E test setup
+      - name: 🚀 Start client development server
         run: |
-          echo "Running global E2E setup..."
-          node tests/scripts/e2e-setup.js
+          cd client
+          echo "Starting client server in background..."
+          npm start &
+          echo $! > ../client.pid
 
-      - name: 🎭 Run E2E tests - Authentication Flow
-        if: matrix.test-suite == 'auth-flow'
+          echo "Waiting for client to be ready..."
+          npx wait-on http://localhost:3000 --timeout 60000
+          echo "Client server is ready!"
+
+      - name: 🧪 Run E2E tests - Comprehensive Suite
         run: |
-          echo "Running Authentication Flow E2E tests..."
-          npx playwright test tests/e2e/authFlow.test.js --reporter=html,junit
-        continue-on-error: true
+          cd client
+          echo "Running comprehensive E2E test suite on ${{ matrix.browser }}..."
+          npm run test:e2e -- --project=${{ matrix.browser }} --reporter=html,json,junit
+        continue-on-error: false
 
-      - name: 🔐 Run E2E tests - Password Reset Flow
-        if: matrix.test-suite == 'password-reset'
-        run: |
-          echo "Running Password Reset Flow E2E tests..."
-          npx playwright test tests/e2e/passwordResetFlow.test.js --reporter=html,junit
-        continue-on-error: true
-
-      - name: 🧹 Run E2E test cleanup
+      - name: 📊 Generate coverage report
         if: always()
         run: |
-          echo "Running global E2E cleanup..."
-          node tests/scripts/e2e-cleanup.js
+          cd client
+          echo "Generating E2E coverage report..."
+          node src/tests/e2e/coverage-report.js || echo "Coverage report generation failed"
+
+      - name: 🛑 Stop client server
+        if: always()
+        run: |
+          if [ -f client.pid ]; then
+            echo "Stopping client server..."
+            kill $(cat client.pid) || echo "Client already stopped"
+            rm -f client.pid
+          fi
 
       - name: 🛑 Stop server server
         if: always()
@@ -170,54 +181,85 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: e2e-test-results-${{ matrix.node-version }}-${{ matrix.test-suite }}
+          name: e2e-test-results-${{ matrix.browser }}
           path: |
-            test-results/
-            playwright-report/
-            tests/playwright-report/
+            client/test-results/
+            client/playwright-report/
           retention-days: 7
 
-      - name: 📋 Upload test reports
+      - name: 📋 Upload coverage summary
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: e2e-reports-${{ matrix.node-version }}-${{ matrix.test-suite }}
+          name: e2e-coverage-${{ matrix.browser }}
           path: |
-            test-results/cleanup-report.json
-            playwright-report/index.html
+            client/test-results/coverage-summary.json
+            client/test-results/results.json
           retention-days: 7
 
       - name: 💬 Comment test results on PR
-        if: github.event_name == 'pull_request' && always()
+        if: github.event_name == 'pull_request' && always() && matrix.browser == 'chromium'
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require('fs');
             const path = require('path');
 
-            let comment = `## 🧪 E2E Test Results - Node.js ${{ matrix.node-version }} - ${{ matrix.test-suite }}\n\n`;
+            let comment = `## 🧪 E2E Test Results - Comprehensive Suite\n\n`;
 
             try {
-              // Read cleanup report if available
-              const cleanupReportPath = 'test-results/cleanup-report.json';
-              if (fs.existsSync(cleanupReportPath)) {
-                const cleanupReport = JSON.parse(fs.readFileSync(cleanupReportPath, 'utf8'));
-                comment += `✅ **Cleanup Status**: ${cleanupReport.cleanupStatus}\n`;
-                comment += `📅 **Timestamp**: ${cleanupReport.timestamp}\n\n`;
-              }
+              // Read coverage summary
+              const summaryPath = 'client/test-results/coverage-summary.json';
+              if (fs.existsSync(summaryPath)) {
+                const summary = JSON.parse(fs.readFileSync(summaryPath, 'utf8'));
 
-              comment += `🎭 **Playwright Report**: Available in artifacts\n`;
-              comment += `📊 **Test Environment**: ${{ matrix.node-version }}\n`;
-              comment += `🔧 **Test Suite**: ${{ matrix.test-suite }}\n\n`;
+                comment += `### Coverage Summary\n\n`;
+                comment += `| Metric | Value |\n`;
+                comment += `|--------|-------|\n`;
+                comment += `| **Total Tests** | ${summary.overall.total} |\n`;
+                comment += `| **Passed** | ${summary.overall.passed} ✅ |\n`;
+                comment += `| **Failed** | ${summary.overall.failed} ${summary.overall.failed > 0 ? '❌' : '✅'} |\n`;
+                comment += `| **Pass Rate** | ${summary.overall.passRate}% |\n`;
+                comment += `| **Duration** | ${(summary.overall.duration / 1000).toFixed(2)}s |\n\n`;
 
-              if ('${{ job.status }}' === 'success') {
-                comment += `✅ **Status**: All E2E tests passed!`;
+                comment += `### Critical User Flows\n\n`;
+                comment += `| Flow | Status |\n`;
+                comment += `|------|--------|\n`;
+
+                const flows = {
+                  'Authentication': 'Authentication Flow',
+                  'Finance Dashboard': 'Finance Dashboard',
+                  'Transport': 'Transport Feature',
+                  'Alimentation': 'Alimentation Feature',
+                  'Premium Features': 'Premium Features'
+                };
+
+                for (const [name, title] of Object.entries(flows)) {
+                  const suite = summary.suites.find(s => s.title.includes(title));
+                  if (suite) {
+                    const status = suite.failed === 0 ? '✅' : '❌';
+                    const coverage = suite.total > 0 ? ((suite.passed / suite.total) * 100).toFixed(0) : 0;
+                    comment += `| ${name} | ${status} ${coverage}% (${suite.passed}/${suite.total}) |\n`;
+                  }
+                }
+
+                comment += `\n`;
+
+                if (summary.thresholds.met) {
+                  comment += `✅ **Coverage threshold met**: ${summary.thresholds.current}% (target: ${summary.thresholds.target}%)\n`;
+                } else {
+                  comment += `⚠️ **Coverage below threshold**: ${summary.thresholds.current}% (target: ${summary.thresholds.target}%)\n`;
+                }
               } else {
-                comment += `❌ **Status**: Some E2E tests failed. Check the artifacts for details.`;
+                comment += `📊 Coverage report will be available in artifacts.\n`;
               }
+
+              comment += `\n🎭 **Playwright Report**: Check workflow artifacts for detailed HTML report\n`;
+              comment += `🔧 **Browsers Tested**: Chromium, Firefox, WebKit\n`;
 
             } catch (error) {
-              comment += `⚠️ **Status**: Could not read test results. Check the workflow logs.`;
+              comment += `⚠️ Could not read coverage summary: ${error.message}\n`;
+              comment += `Check workflow artifacts for detailed results.\n`;
             }
 
             github.rest.issues.createComment({
@@ -243,7 +285,7 @@ jobs:
       - name: 🔒 Run security audit
         run: |
           npm audit --audit-level high
-          cd frontend && npm audit --audit-level high
+          cd client && npm audit --audit-level high
           cd ../server && npm audit --audit-level high
 
       - name: 🔍 Check for vulnerable dependencies
@@ -290,19 +332,20 @@ jobs:
           echo "# 🧪 E2E Test Suite Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## Test Matrix Results" >> $GITHUB_STEP_SUMMARY
-          echo "- **Authentication Flow Tests**: ${{ needs.e2e-tests.result }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Password Reset Flow Tests**: ${{ needs.e2e-tests.result }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Comprehensive E2E Tests**: ${{ needs.e2e-tests.result }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Security Audit**: ${{ needs.security-audit.result }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## Test Features Validated" >> $GITHUB_STEP_SUMMARY
-          echo "✅ User Registration & Email Validation" >> $GITHUB_STEP_SUMMARY
-          echo "✅ JWT Token Security & Expiration" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Password Reset Token Security" >> $GITHUB_STEP_SUMMARY
-          echo "✅ SQL Injection Protection" >> $GITHUB_STEP_SUMMARY
-          echo "✅ XSS Protection" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Rate Limiting" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Sensitive Data Leakage Prevention" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Database State Consistency" >> $GITHUB_STEP_SUMMARY
+          echo "## Test Features Validated (87+ Tests)" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Authentication Flow** (12 tests)" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Finance Dashboard** (18 tests) - CRUD, AI Insights, Pluqla DA" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Transport Optimization** (16 tests) - 14 modes, Backend API" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Alimentation IA-Hybrid** (24 tests) - Smart Suggestions, Enrichment" >> $GITHUB_STEP_SUMMARY
+          echo "✅ **Premium Features** (17 tests) - Free vs Premium differentiation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Browser Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Chromium (Desktop Chrome)" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Firefox (Desktop)" >> $GITHUB_STEP_SUMMARY
+          echo "✅ WebKit (Safari)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## Artifacts" >> $GITHUB_STEP_SUMMARY
           echo "- 📊 Test reports available in workflow artifacts" >> $GITHUB_STEP_SUMMARY

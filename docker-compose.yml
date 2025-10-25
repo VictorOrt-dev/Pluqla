@@ -1,0 +1,83 @@
+# Docker Compose - Pluqla Development Stack
+# Includes: Redis, PostgreSQL, Workers
+
+version: '3.8'
+
+services:
+  # Redis pour Bull queues, rate limiting, cache
+  redis:
+    image: redis:7-alpine
+    container_name: pluqla-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    command: >
+      redis-server
+      --appendonly yes
+      --requirepass ${REDIS_PASSWORD:-}
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - pluqla-network
+    restart: unless-stopped
+
+  # PostgreSQL database (optionnel si pas déjà external)
+  postgres:
+    image: postgres:15-alpine
+    container_name: pluqla-postgres
+    environment:
+      POSTGRES_USER: ${DATABASE_USER:-postgres}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-password}
+      POSTGRES_DB: ${DATABASE_NAME:-pluqla_dev}
+    ports:
+      - "${DATABASE_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-postgres}"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - pluqla-network
+    restart: unless-stopped
+
+  # Workers Bull (enrichment + popularity calculation)
+  workers:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: pluqla-workers
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      DATABASE_URL: ${DATABASE_URL}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      WORKER_HTTP_PORT: 3005
+    command: node src/workers/index.js
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - pluqla-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3005/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+networks:
+  pluqla-network:
+    driver: bridge
+
+volumes:
+  redis_data:
+    driver: local
+  postgres_data:
+    driver: local

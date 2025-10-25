@@ -177,6 +177,22 @@ kill -9 PID                     # Arrêter processus
 - **Monitoring** : Grafana dashboard
 - **Health** : `/api/health` endpoints
 
+## 📚 Documentation Associée
+
+- [Guide Déploiement](../docs/DEPLOYMENT.md)
+- [Production Checklist](../docs/guides/PRODUCTION_CHECKLIST.md)
+- [Monitoring Guide](../docs/development/MONITORING.md)
+- [Production Monitoring](../docs/PRODUCTION_MONITORING_GUIDE.md)
+- [Security Guidelines](../docs/security/SECURITY.md)
+
+## 🔄 CI/CD Workflows
+
+GitHub Actions workflows disponibles:
+- [`.github/workflows/e2e-tests.yml`](../.github/workflows/e2e-tests.yml) - Tests E2E (87+ tests)
+- [`.github/workflows/deploy-staging.yml`](../.github/workflows/deploy-staging.yml) - Déploiement staging
+- [`.github/workflows/deploy-production.yml`](../.github/workflows/deploy-production.yml) - Déploiement production
+- [`.github/workflows/lighthouse-ci.yml`](../.github/workflows/lighthouse-ci.yml) - Performance CI
+
 ---
 
-**Stack** : Docker + nginx + PostgreSQL + Redis | **CI/CD** : GitHub Actions
+**Stack** : Docker + nginx + PostgreSQL + Redis | **CI/CD** : GitHub Actions | **Monitoring** : Prometheus + Grafana

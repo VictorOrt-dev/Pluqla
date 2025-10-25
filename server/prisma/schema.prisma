@@ -43,6 +43,7 @@ model User {
   dataProcessingLogs     DataProcessingLog[]
   expenses               Expense[]
   favoriteRecipes        FavoriteRecipe[]
+  foodSpendingLogs       FoodSpendingLog[]
   financialGoals         FinancialGoal[]
   financialSuggestions   FinancialSuggestion[]
   incomes                Income[]
@@ -72,6 +73,8 @@ model User {
   consents               UserConsent[]
   userDevices            UserDevice[]
   userLocations          UserLocation[]
+  userProfile            UserProfile?
+  recipeInteractions     RecipeInteraction[]
 
   @@index([role], map: "idx_user_role")
   @@index([status], map: "idx_user_status")
@@ -117,46 +120,70 @@ model Transaction {
   @@map("transactions")
 }
 
-model Recipe {
-  id              String           @id @default(cuid())
-  title           String
-  description     String
-  cookingTime     Int
-  servings        Int
-  difficulty      String
-  category        String
-  estimatedPrice  Float
-  ingredients     String
-  instructions    String
-  image           String?
-  nutritionalInfo String?
-  tags            String
-  isActive        Boolean          @default(true)
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  favorites       FavoriteRecipe[]
-  plannedMeals    PlannedMeal[]
+// ============================================================================
+// RECIPE MODELS - API-Based (No local Recipe storage)
+// ============================================================================
 
-  @@index([category], map: "idx_recipe_category")
-  @@index([isActive], map: "idx_recipe_active")
-  @@index([category, isActive], map: "idx_recipe_category_active")
-  @@index([difficulty], map: "idx_recipe_difficulty")
-  @@index([estimatedPrice], map: "idx_recipe_price")
-  @@map("recipes")
+/// Favorite recipes from external APIs (Spoonacular, Edamam, TheMealDB)
+model FavoriteRecipe {
+  id              String   @id @default(cuid())
+  userId          String
+  externalId      String   // Recipe ID from external provider
+  provider        String   // 'spoonacular', 'edamam', 'themealdb'
+  recipeData      Json     // Cached recipe data (title, image, price, etc.)
+  pricePerServing Float?   // Price in EUR
+  ecoScore        Int?     // Pluqla EcoScore 0-100
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider, externalId])
+  @@index([userId], map: "idx_favorite_recipe_user")
+  @@index([provider, externalId], map: "idx_favorite_recipe_external")
+  @@index([userId, createdAt], map: "idx_favorite_recipe_user_created")
+  @@map("favorite_recipes")
 }
 
-model FavoriteRecipe {
-  id        String   @id @default(cuid())
-  userId    String
-  recipeId  String
-  createdAt DateTime @default(now())
-  recipe    Recipe   @relation(fields: [recipeId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+/// Food spending log for budget tracking
+/// Phase 5: Prévision vs Réalité - Enhanced model
+model FoodSpendingLog {
+  id                    String    @id @default(cuid())
+  userId                String
+  externalId            String    // Recipe ID from provider
+  provider              String    // 'spoonacular', 'edamam', 'themealdb'
+  recipeName            String
 
-  @@unique([userId, recipeId])
-  @@index([userId], map: "idx_favorite_recipe_user")
-  @@index([recipeId], map: "idx_favorite_recipe_recipe")
-  @@map("favorite_recipes")
+  // Phase 4B - Prévision (forecast)
+  costEur               Float     // Estimated cost per serving
+  servings              Int       @default(1)
+  totalCostEur          Float     // costEur * servings (estimated total)
+
+  // Phase 5 - Réalité (actual)
+  estimatedPriceEur     Float?    // Same as totalCostEur, kept for clarity
+  actualPriceEur        Float?    // Real price from bank transaction
+
+  // Phase 5 - Matching
+  status                String    @default("forecast") // "forecast", "matched", "archived"
+  linkedTransactionId   String?   // Link to AccountTransaction
+
+  // Dates
+  date                  DateTime  @default(now()) // Date planned/logged
+  dateMatched           DateTime? // Date when matched with real transaction
+
+  // Metadata
+  category              String    @default("food") // For finance integration
+  metadata              Json?     // Additional data (ingredients, eco-score, etc.)
+  createdAt             DateTime  @default(now())
+
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date], map: "idx_food_spending_user_date")
+  @@index([userId, category], map: "idx_food_spending_user_category")
+  @@index([userId, status], map: "idx_food_spending_user_status")
+  @@index([status, date], map: "idx_food_spending_status_date")
+  @@index([linkedTransactionId], map: "idx_food_spending_transaction")
+  @@index([date], map: "idx_food_spending_date")
+  @@map("food_spending_logs")
 }
 
 model Badge {
@@ -250,15 +277,16 @@ model AnalyticsEvent {
 }
 
 model FeatureFlag {
-  id          String    @id @default(cuid())
-  name        String    @unique
-  enabled     Boolean   @default(false)
-  description String?
-  conditions  String?
-  environment String    @default("production")
-  expiresAt   DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id             String    @id @default(cuid())
+  name           String    @unique
+  enabled        Boolean   @default(false)
+  description    String?
+  targetingRules Json?     // Phase 1B: userIds, roles, isPremium, percentage rollout
+  conditions     String?   // Deprecated - use targetingRules instead
+  environment    String    @default("production")
+  expiresAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   @@index([environment], map: "idx_feature_flag_environment")
   @@index([enabled], map: "idx_feature_flag_enabled")
@@ -1025,19 +1053,24 @@ model TransportOptimizationResult {
 }
 
 model TransportTrip {
-  id          String   @id @default(cuid())
-  userId      String
-  name        String
-  origin      String
-  destination String
-  distanceKm  Float?
-  recurring   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String   @id @default(cuid())
+  userId         String
+  name           String
+  origin         String
+  destination    String
+  distanceKm     Float?
+  recurring      Boolean  @default(false)
+  // ✨ Phase 2: Real cost tracking
+  modeUsed       String?  // Mode actually used: "car_gasoline", "bike", "metro", etc.
+  actualCostEur  Float?   // Real cost of trip
+  actualCO2Kg    Float?   // Real CO2 emissions
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId], map: "idx_transport_trip_user")
   @@index([userId, createdAt], map: "idx_transport_trip_user_created")
+  @@index([modeUsed], map: "idx_transport_trip_mode")
   @@map("transport_trips")
 }
 
@@ -1126,6 +1159,68 @@ enum SubscriptionTier {
 }
 
 // ============================================================================
+// SMART RECIPE RECOMMENDATION SYSTEM - Phase 1A
+// ============================================================================
+
+/// User profile for recipe preferences and smart suggestions
+model UserProfile {
+  id                    String   @id @default(cuid())
+  userId                String   @unique
+  dietaryRestrictions   String?  // JSON array: ["vegetarian", "gluten-free"]
+  dislikedIngredients   String?  // JSON array: ["mushrooms", "olives"]
+  preferredCuisines     String?  // JSON array: ["italian", "french", "japanese"]
+  maxCookingTime        Int?     // Max cooking time in minutes
+  budgetPerMeal         Float?   // Average budget per meal in EUR
+  foodBudgetEur         Float?   // Monthly food budget in EUR (for finance integration)
+  skillLevel            String   @default("intermediate") // beginner, easy, intermediate, advanced, expert
+  lastUpdated           DateTime @default(now()) @updatedAt
+  createdAt             DateTime @default(now())
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId], map: "idx_user_profile_user")
+  @@map("user_profiles")
+}
+
+/// User interactions with recipes from external APIs (analytics)
+model RecipeInteraction {
+  id              String   @id @default(cuid())
+  userId          String
+  externalId      String   // Recipe ID from external provider
+  provider        String   // 'spoonacular', 'edamam', 'themealdb'
+  interactionType String   // "view", "cook", "favorite"
+  ipHash          String?  // SHA256 hash of IP + salt for anti-spam
+  metadata        Json?    // Additional data: { suspicious: true/false, userAgent: "..." }
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([provider, externalId, interactionType], map: "idx_recipe_interaction_external_type")
+  @@index([userId, externalId], map: "idx_recipe_interaction_user_recipe")
+  @@index([createdAt], map: "idx_recipe_interaction_created")
+  @@index([interactionType, createdAt], map: "idx_recipe_interaction_type_created")
+  @@index([provider, externalId, createdAt], map: "idx_recipe_interaction_external_created")
+  @@map("recipe_interactions")
+}
+
+/// Audit log for GDPR compliance
+model AuditLog {
+  id          String   @id @default(cuid())
+  userId      String?
+  action      String   // "profile_update", "data_export", "data_deletion", "suspicious_activity"
+  entityType  String   // "UserProfile", "RecipeInteraction", etc.
+  entityId    String?
+  changes     Json?    // Before/after values for updates
+  ipAddress   String?
+  userAgent   String?
+  metadata    Json?    // Additional context
+  createdAt   DateTime @default(now())
+
+  @@index([userId, action], map: "idx_audit_log_user_action")
+  @@index([createdAt], map: "idx_audit_log_created")
+  @@index([action, createdAt], map: "idx_audit_log_action_created")
+  @@map("audit_logs")
+}
+
+// ============================================================================
 // MEAL PLANNING SYSTEM (Jow-inspired)
 // ============================================================================
 
@@ -1183,7 +1278,8 @@ model WeeklyMealPlan {
 model PlannedMeal {
   id               String          @id @default(cuid())
   weeklyPlanId     String
-  recipeId         String?
+  externalId       String?         // Recipe ID from external provider (if applicable)
+  provider         String?         // 'spoonacular', 'edamam', 'themealdb' (if from API)
   dayOfWeek        Int             // 0=Monday, 6=Sunday
   mealType         String          // breakfast, lunch, dinner, snack
   mealName         String
@@ -1196,6 +1292,7 @@ model PlannedMeal {
   difficulty       String          @default("intermediate")
   cuisineType      String?
   tags             String?         // JSON array
+  ecoScore         Int?            // Pluqla EcoScore 0-100
   isCooked         Boolean         @default(false)
   cookedAt         DateTime?
   rating           Int?            // 1-5 stars
@@ -1203,11 +1300,10 @@ model PlannedMeal {
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
   weeklyPlan       WeeklyMealPlan  @relation(fields: [weeklyPlanId], references: [id], onDelete: Cascade)
-  recipeRef        Recipe?         @relation(fields: [recipeId], references: [id])
 
   @@index([weeklyPlanId], map: "idx_planned_meal_plan")
   @@index([dayOfWeek, mealType], map: "idx_planned_meal_day_type")
-  @@index([recipeId], map: "idx_planned_meal_recipe")
+  @@index([provider, externalId], map: "idx_planned_meal_external")
   @@index([weeklyPlanId, dayOfWeek], map: "idx_planned_meal_plan_day")
   @@index([isCooked], map: "idx_planned_meal_cooked")
   @@index([weeklyPlanId, isCooked], map: "idx_planned_meal_plan_cooked")

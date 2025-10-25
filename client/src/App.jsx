@@ -10,6 +10,9 @@ import { AppProvider } from './contexts/AppContext';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { NavigationProvider, useNavigation } from './contexts/NavigationContext';
 import { ToastProvider } from './components/common/PluqlaToast';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { queryClient } from './config/queryClient';
 import { initFinancialApi } from './services/financialApi';
 import { featureFlags, FeatureGate } from './utils/featureFlags';
 import Notifications from './components/common/Notifications';
@@ -18,6 +21,7 @@ import SuspenseFallback from './components/common/SuspenseFallback';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import ChunkErrorBoundary from './components/common/ChunkErrorBoundary';
 import PWAManager from './components/common/PWAManager';
+import OfflineIndicator from './components/common/OfflineIndicator';
 import { PerformanceDebugPanel, ProfilerWrapper, usePageLoadTracking } from './components/common/PerformanceProfiler';
 import './styles/animations.css';
 import './styles/unified-theme.css';
@@ -34,7 +38,8 @@ const FeatureFlagsDebug = React.lazy(() => import('./components/dev/FeatureFlags
 const FinancePage = React.lazy(() => import('./pages/FinancePage'));
 const ActivityScreen = React.lazy(() => import('./screens/ActivityScreen'));
 const HabitsScreen = React.lazy(() => import('./screens/HabitsScreen'));
-const AlimentationScreen = React.lazy(() => import('./screens/AlimentationScreen'));
+const AlimentationScreen = React.lazy(() => import('./screens/AlimentationScreenNew')); // ✨ Updated to new API-based screen
+const AlimentationScreenLegacy = React.lazy(() => import('./screens/AlimentationScreen')); // Legacy version (backup)
 const DeplacementScreen = React.lazy(() => import('./screens/DeplacementScreen'));
 
 // Lazy loading des écrans de détail
@@ -504,6 +509,7 @@ function AppContent() {
             onDismiss={notificationSystem.dismissNotification}
           />
           <PWAManager />
+          <OfflineIndicator />
           <Suspense fallback={<SuspenseFallback component="l'application" fullScreen={true} />}>
             {renderScreen}
           </Suspense>
@@ -563,6 +569,7 @@ function AppContent() {
               onDismiss={notificationSystem.dismissNotification}
             />
             <PWAManager />
+            <OfflineIndicator />
             <Suspense fallback={<SuspenseFallback component="l'application" fullScreen={true} />}>
               {renderScreen}
             </Suspense>
@@ -615,20 +622,23 @@ export default function App() {
   return (
     <ErrorBoundary>
       <ChunkErrorBoundary>
-        <ToastProvider position="top-right" maxToasts={3}>
-          <NavigationProvider>
-            <AuthProvider>
-              <AppProvider>
-                <ThemeProvider>
-                  <ProfilerWrapper id="App">
-                    <AppContent />
-                    <PerformanceDebugPanel />
-                  </ProfilerWrapper>
-                </ThemeProvider>
-              </AppProvider>
-            </AuthProvider>
-          </NavigationProvider>
-        </ToastProvider>
+        <QueryClientProvider client={queryClient}>
+          <ToastProvider position="top-right" maxToasts={3}>
+            <NavigationProvider>
+              <AuthProvider>
+                <AppProvider>
+                  <ThemeProvider>
+                    <ProfilerWrapper id="App">
+                      <AppContent />
+                      <PerformanceDebugPanel />
+                    </ProfilerWrapper>
+                  </ThemeProvider>
+                </AppProvider>
+              </AuthProvider>
+            </NavigationProvider>
+          </ToastProvider>
+          <ReactQueryDevtools initialIsOpen={false} position="bottom-right" />
+        </QueryClientProvider>
       </ChunkErrorBoundary>
     </ErrorBoundary>
   );

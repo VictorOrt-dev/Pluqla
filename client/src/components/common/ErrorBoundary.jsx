@@ -5,10 +5,20 @@
  * a fallback UI instead of crashing the entire application.
  *
  * CRITICAL for fintech apps to prevent data loss and maintain user trust.
+ *
+ * ✨ Phase 8 - Integrated with Sentry for error tracking and monitoring
  */
 
 import React from 'react';
 import secureLogger from '../../utils/secureLogger';
+
+// ✨ Phase 8 - Sentry integration (lazy loaded to avoid errors if not installed)
+let Sentry = null;
+try {
+  Sentry = require('@sentry/react');
+} catch (error) {
+  console.warn('Sentry not installed - error tracking disabled');
+}
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -40,6 +50,23 @@ class ErrorBoundary extends React.Component {
       timestamp: new Date().toISOString(),
       url: window.location.pathname
     });
+
+    // ✨ Phase 8 - Report to Sentry if available
+    if (Sentry) {
+      Sentry.withScope((scope) => {
+        scope.setContext('errorBoundary', {
+          componentName: this.props.name || 'UnnamedComponent',
+          critical: this.props.critical || false,
+          errorId,
+        });
+        scope.setContext('component', {
+          stack: errorInfo.componentStack?.substring(0, 500),
+        });
+        scope.setLevel(this.props.critical ? 'error' : 'warning');
+        scope.setTag('errorBoundary', this.props.name || 'UnnamedComponent');
+        Sentry.captureException(error);
+      });
+    }
 
     this.setState({
       error,
@@ -243,6 +270,47 @@ export const AuthErrorBoundary = ({ children }) => (
               className="px-4 py-2 border border-blue-500 text-blue-500 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium"
             >
               Réessayer
+            </button>
+          </div>
+          {errorId && <p className="mt-3 text-xs text-gray-400 font-mono">ID: {errorId}</p>}
+        </div>
+      </div>
+    )}
+  >
+    {children}
+  </ErrorBoundary>
+);
+
+/**
+ * ✨ Phase 8 - Alimentation Error Boundary
+ * For food/recipe-related components
+ */
+export const AlimentationErrorBoundary = ({ children, componentName }) => (
+  <ErrorBoundary
+    name={`Alimentation_${componentName || 'Component'}`}
+    title="Erreur du module alimentation"
+    critical={false}
+    fallback={(error, errorId, retry) => (
+      <div className="min-h-64 flex items-center justify-center bg-green-50 rounded-xl m-4">
+        <div className="bg-white rounded-lg shadow-lg p-6 max-w-md w-full text-center">
+          <div className="text-4xl mb-3">🍽️</div>
+          <h2 className="text-xl font-bold mb-3 text-green-600">Erreur du module alimentation</h2>
+          <p className="mb-4 text-gray-600 text-sm leading-relaxed">
+            Une erreur s'est produite lors du chargement des recettes et suggestions.
+            Vos favoris et données sont sauvegardés.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-2 justify-center">
+            <button
+              onClick={retry}
+              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-sm font-medium"
+            >
+              Recharger les recettes
+            </button>
+            <button
+              onClick={() => window.location.href = '/alimentation'}
+              className="px-4 py-2 border border-green-500 text-green-500 rounded-lg hover:bg-green-50 transition-colors text-sm font-medium"
+            >
+              Retour à l'alimentation
             </button>
           </div>
           {errorId && <p className="mt-3 text-xs text-gray-400 font-mono">ID: {errorId}</p>}

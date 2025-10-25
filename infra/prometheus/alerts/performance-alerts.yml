@@ -1,0 +1,157 @@
+groups:
+  - name: web_vitals_alerts
+    interval: 30s
+    rules:
+      # LCP (Largest Contentful Paint) - Cible: < 2.5s
+      - alert: HighLCP
+        expr: histogram_quantile(0.75, sum(rate(web_vitals_lcp_milliseconds_bucket[5m])) by (le)) > 2500
+        for: 5m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "High Largest Contentful Paint detected"
+          description: "LCP P75 is {{ $value }}ms (threshold: 2500ms). Users are experiencing slow page loads."
+
+      - alert: CriticalLCP
+        expr: histogram_quantile(0.75, sum(rate(web_vitals_lcp_milliseconds_bucket[5m])) by (le)) > 4000
+        for: 3m
+        labels:
+          severity: critical
+          category: performance
+        annotations:
+          summary: "CRITICAL: Very High Largest Contentful Paint"
+          description: "LCP P75 is {{ $value }}ms (threshold: 4000ms). Page load performance is severely degraded!"
+
+      # CLS (Cumulative Layout Shift) - Cible: < 0.1
+      - alert: HighCLS
+        expr: histogram_quantile(0.75, sum(rate(web_vitals_cls_score_bucket[5m])) by (le)) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "High Cumulative Layout Shift detected"
+          description: "CLS P75 is {{ $value }} (threshold: 0.1). Users are experiencing visual instability."
+
+      - alert: CriticalCLS
+        expr: histogram_quantile(0.75, sum(rate(web_vitals_cls_score_bucket[5m])) by (le)) > 0.25
+        for: 3m
+        labels:
+          severity: critical
+          category: performance
+        annotations:
+          summary: "CRITICAL: Very High Layout Shift"
+          description: "CLS P75 is {{ $value }} (threshold: 0.25). Severe visual instability!"
+
+      # FCP (First Contentful Paint) - Cible: < 1.8s
+      - alert: HighFCP
+        expr: histogram_quantile(0.75, sum(rate(web_vitals_fcp_milliseconds_bucket[5m])) by (le)) > 1800
+        for: 5m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "High First Contentful Paint detected"
+          description: "FCP P75 is {{ $value }}ms (threshold: 1800ms). Initial page rendering is slow."
+
+      # TTFB (Time to First Byte) - Cible: < 600ms
+      - alert: HighTTFB
+        expr: histogram_quantile(0.75, sum(rate(web_vitals_ttfb_milliseconds_bucket[5m])) by (le)) > 600
+        for: 5m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "High Time to First Byte detected"
+          description: "TTFB P75 is {{ $value }}ms (threshold: 600ms). Server response time is slow."
+
+      - alert: CriticalTTFB
+        expr: histogram_quantile(0.75, sum(rate(web_vitals_ttfb_milliseconds_bucket[5m])) by (le)) > 1500
+        for: 3m
+        labels:
+          severity: critical
+          category: performance
+        annotations:
+          summary: "CRITICAL: Very High Server Response Time"
+          description: "TTFB P75 is {{ $value }}ms (threshold: 1500ms). Server is severely degraded!"
+
+      # Rating Distribution - Alert if too many "poor" ratings
+      - alert: HighPoorWebVitalsRate
+        expr: sum(rate(web_vitals_by_rating_total{rating="poor"}[5m])) / sum(rate(web_vitals_by_rating_total[5m])) > 0.25
+        for: 10m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "High rate of poor Web Vitals ratings"
+          description: "{{ $value | humanizePercentage }} of Web Vitals measurements are rated 'poor'. Target: < 25%"
+
+  - name: http_performance_alerts
+    interval: 30s
+    rules:
+      # API Latency
+      - alert: HighAPILatency
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, route)) > 1
+        for: 5m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "High API latency on {{ $labels.route }}"
+          description: "P95 latency is {{ $value }}s (threshold: 1s)"
+
+      - alert: CriticalAPILatency
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, route)) > 5
+        for: 2m
+        labels:
+          severity: critical
+          category: performance
+        annotations:
+          summary: "CRITICAL: Very high API latency on {{ $labels.route }}"
+          description: "P95 latency is {{ $value }}s (threshold: 5s). API is severely degraded!"
+
+      # Error Rate
+      - alert: HighErrorRate
+        expr: sum(rate(http_requests_total{status_code=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          category: reliability
+        annotations:
+          summary: "High HTTP error rate detected"
+          description: "{{ $value | humanizePercentage }} of requests are failing (threshold: 1%)"
+
+      - alert: CriticalErrorRate
+        expr: sum(rate(http_requests_total{status_code=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) > 0.05
+        for: 2m
+        labels:
+          severity: critical
+          category: reliability
+        annotations:
+          summary: "CRITICAL: Very high error rate"
+          description: "{{ $value | humanizePercentage }} of requests are failing! (threshold: 5%)"
+
+  - name: database_alerts
+    interval: 30s
+    rules:
+      # Database Query Latency
+      - alert: SlowDatabaseQueries
+        expr: histogram_quantile(0.95, sum(rate(db_query_duration_seconds_bucket[5m])) by (le)) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          category: database
+        annotations:
+          summary: "Slow database queries detected"
+          description: "P95 query duration is {{ $value }}s (threshold: 0.5s)"
+
+      - alert: CriticalDatabaseQueries
+        expr: histogram_quantile(0.95, sum(rate(db_query_duration_seconds_bucket[5m])) by (le)) > 2
+        for: 2m
+        labels:
+          severity: critical
+          category: database
+        annotations:
+          summary: "CRITICAL: Very slow database queries"
+          description: "P95 query duration is {{ $value }}s (threshold: 2s). Database is severely degraded!"

@@ -1,11 +1,15 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { useNavigation } from '../../contexts/NavigationContext';
 import Header from '../common/Header';
 import DashboardWidget from './DashboardWidget';
 import CategoryGrid from './CategoryGrid';
-import QuickActions from './QuickActions';
-import RecommendedCard from './RecommendedCard';
 import Navigation from '../common/Navigation';
+
+/**
+ * Phase 2B Enhanced HomeScreen
+ * Staggered section animations + Pluqla identity throughout
+ */
 
 const HomeScreen = ({
   userData,
@@ -30,8 +34,32 @@ const HomeScreen = ({
     return "Maître";
   };
 
+  // Phase 2B: Animation variants pour sections staggerées
+  const sectionVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        type: "spring",
+        stiffness: 300,
+        damping: 25
+      }
+    }
+  };
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.15
+      }
+    }
+  };
+
   return (
-    <div className={`min-h-screen flex flex-col transition-all duration-300 ${
+    <div className={`h-screen flex flex-col overflow-hidden transition-all duration-300 ${
       darkMode
         ? 'pluqla-bg-dark'
         : 'bg-gradient-to-b from-[#FAFAFA] via-[#F9F9F9] to-[#F5F5F5]'
@@ -51,12 +79,17 @@ const HomeScreen = ({
         todaysSavings={todaysSavings}
       />
 
-      {/* Contenu principal - Transformation Premium avec sections */}
-      <div className="flex-1 flex flex-col px-4 pb-20 pt-6 space-y-6">
+      {/* Contenu principal - Optimisé pour tenir sur une page */}
+      <motion.div
+        className="flex-1 flex flex-col justify-between px-4 pb-20 pt-4 overflow-hidden"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
 
         {/* Section 1: Votre Progression */}
-        <section>
-          <h2 className={`text-center text-xs font-semibold uppercase tracking-wide mb-3 ${
+        <motion.section variants={sectionVariants} className="flex-shrink-0">
+          <h2 className={`text-center text-xs font-semibold uppercase tracking-wide mb-2 ${
             darkMode ? 'text-gray-400' : 'text-gray-500'
           }`}>
             Votre Progression
@@ -65,22 +98,13 @@ const HomeScreen = ({
             userData={userData}
             progress={progress}
             darkMode={darkMode}
+            transactions={transactions}
           />
-        </section>
+        </motion.section>
 
-        {/* Section 2: Actions Rapides */}
-        <section>
-          <h2 className={`text-center text-xs font-semibold uppercase tracking-wide mb-3 ${
-            darkMode ? 'text-gray-400' : 'text-gray-500'
-          }`}>
-            Actions Rapides
-          </h2>
-          <QuickActions darkMode={darkMode} />
-        </section>
-
-        {/* Section 3: Vos Modules */}
-        <section>
-          <h2 className={`text-center text-xs font-semibold uppercase tracking-wide mb-3 ${
+        {/* Section 2: Vos Modules */}
+        <motion.section variants={sectionVariants} className="flex-1 flex flex-col justify-center min-h-0">
+          <h2 className={`text-center text-xs font-semibold uppercase tracking-wide mb-2 ${
             darkMode ? 'text-gray-400' : 'text-gray-500'
           }`}>
             Vos Modules
@@ -93,18 +117,8 @@ const HomeScreen = ({
               getLevelTitle={getLevelTitle}
             />
           </div>
-        </section>
-
-        {/* Section 4: Conseillé pour vous */}
-        <section>
-          <h2 className={`text-center text-xs font-semibold uppercase tracking-wide mb-3 ${
-            darkMode ? 'text-gray-400' : 'text-gray-500'
-          }`}>
-            Conseillé pour vous
-          </h2>
-          <RecommendedCard darkMode={darkMode} userData={userData} />
-        </section>
-      </div>
+        </motion.section>
+      </motion.div>
 
       {/* Navigation bottom */}
       <Navigation darkMode={darkMode} userData={userData} currentScreen={currentScreen} />

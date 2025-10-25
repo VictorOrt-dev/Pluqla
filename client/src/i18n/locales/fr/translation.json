@@ -768,5 +768,260 @@
       "stats": "Statistiques",
       "recommendations": "Recommandations"
     }
+  },
+  "alimentation": {
+    "title": "Alimentation",
+    "subtitle": "Découvrez des recettes adaptées à votre budget",
+    "tabs": {
+      "recipes": "Recettes",
+      "shopping": "Courses",
+      "nutrition": "Nutrition",
+      "planning": "Planning"
+    },
+    "search": {
+      "placeholder": "Rechercher une recette...",
+      "filters": "Filtres",
+      "results": "{{count}} recette{{count, plural, =0 {} =1 {} other {s}}} trouvée{{count, plural, =0 {} =1 {} other {s}}}",
+      "noResults": "Aucune recette trouvée",
+      "tryDifferent": "Essayez avec des critères différents",
+      "loading": "Recherche en cours...",
+      "error": "Erreur lors de la recherche",
+      "retry": "Réessayer"
+    },
+    "filters": {
+      "all": "Toutes",
+      "maxCookingTime": "Temps max",
+      "maxPrice": "Prix max",
+      "difficulty": "Difficulté",
+      "cuisine": "Cuisine",
+      "dietary": "Régime alimentaire",
+      "difficulty_levels": {
+        "easy": "Facile",
+        "medium": "Moyen",
+        "hard": "Difficile"
+      },
+      "cuisines": {
+        "french": "Française",
+        "italian": "Italienne",
+        "asian": "Asiatique",
+        "mediterranean": "Méditerranéenne",
+        "mexican": "Mexicaine",
+        "american": "Américaine",
+        "indian": "Indienne",
+        "japanese": "Japonaise"
+      },
+      "dietary_restrictions": {
+        "vegetarian": "Végétarien",
+        "vegan": "Végan",
+        "glutenFree": "Sans gluten",
+        "dairyFree": "Sans lactose",
+        "nutFree": "Sans fruits à coque",
+        "lowCarb": "Pauvre en glucides",
+        "lowFat": "Pauvre en graisses",
+        "highProtein": "Riche en protéines"
+      },
+      "apply": "Appliquer",
+      "reset": "Réinitialiser",
+      "close": "Fermer"
+    },
+    "recipe": {
+      "details": "Détails de la recette",
+      "servings": "{{count}} portion{{count, plural, =0 {} =1 {} other {s}}}",
+      "cookingTime": "{{minutes}} min",
+      "difficulty": "Difficulté",
+      "cost": "Coût estimé",
+      "perServing": "par portion",
+      "ingredients": "Ingrédients",
+      "instructions": "Préparation",
+      "nutrition": "Informations nutritionnelles",
+      "calories": "Calories",
+      "protein": "Protéines",
+      "carbs": "Glucides",
+      "fat": "Lipides",
+      "addToFavorites": "Ajouter aux favoris",
+      "removeFromFavorites": "Retirer des favoris",
+      "addToBudget": "Ajouter au budget",
+      "addToShoppingList": "Ajouter aux courses",
+      "share": "Partager",
+      "close": "Fermer",
+      "ecoScore": "Score écologique"
+    },
+    "favorites": {
+      "title": "Mes Favoris",
+      "empty": "Aucun favori",
+      "emptyDescription": "Les recettes que vous aimez apparaîtront ici",
+      "added": "Ajouté aux favoris",
+      "removed": "Retiré des favoris",
+      "count": "{{count}} recette{{count, plural, =0 {} =1 {} other {s}}} favorite{{count, plural, =0 {} =1 {} other {s}}}"
+    },
+    "budget": {
+      "title": "Budget Alimentation",
+      "quickLog": "Ajout rapide",
+      "forecast": "Prévu vs Réel",
+      "thisMonth": "Ce mois",
+      "thisWeek": "Cette semaine",
+      "planned": "Prévu",
+      "actual": "Réel",
+      "difference": "Écart",
+      "addExpense": "Ajouter une dépense",
+      "addForecast": "Ajouter une prévision",
+      "save": "Enregistrer",
+      "cancel": "Annuler"
+    },
+    "forecast": {
+      "title": "Prévu vs Réalité",
+      "empty": "Aucune prévision",
+      "emptyDescription": "Ajoutez des recettes à votre budget pour commencer",
+      "matchAccuracy": "Précision des prévisions",
+      "totalPlanned": "Total prévu",
+      "totalActual": "Total réel",
+      "variance": "Écart",
+      "matched": "Associé",
+      "unmatched": "Non associé",
+      "pending": "En attente",
+      "archived": "Archivé",
+      "viewDetails": "Voir les détails",
+      "matchTransaction": "Associer une transaction",
+      "noMatch": "Aucune correspondance trouvée"
+    },
+    "mealPlanning": {
+      "title": "Planning de repas",
+      "weeklyPlan": "Plan hebdomadaire",
+      "generate": "Générer un plan",
+      "generating": "Génération en cours...",
+      "regenerate": "Régénérer",
+      "preferences": "Mes préférences",
+      "householdSize": "Nombre de personnes",
+      "skillLevel": "Niveau de cuisine",
+      "weeklyBudget": "Budget hebdomadaire",
+      "mealTypes": "Types de repas",
+      "breakfast": "Petit-déjeuner",
+      "lunch": "Déjeuner",
+      "dinner": "Dîner",
+      "snack": "Collation",
+      "skillLevels": {
+        "beginner": "Débutant",
+        "intermediate": "Intermédiaire",
+        "advanced": "Avancé"
+      },
+      "days": {
+        "monday": "Lundi",
+        "tuesday": "Mardi",
+        "wednesday": "Mercredi",
+        "thursday": "Jeudi",
+        "friday": "Vendredi",
+        "saturday": "Samedi",
+        "sunday": "Dimanche"
+      },
+      "empty": "Aucun plan de repas",
+      "emptyDescription": "Générez un plan hebdomadaire personnalisé",
+      "mealsCount": "{{count}} repas",
+      "totalCost": "Coût total",
+      "viewPlan": "Voir le plan",
+      "deletePlan": "Supprimer le plan"
+    },
+    "groceryList": {
+      "title": "Liste de courses",
+      "generate": "Générer la liste",
+      "generating": "Génération en cours...",
+      "empty": "Liste vide",
+      "emptyDescription": "Générez un plan de repas pour créer votre liste",
+      "categories": {
+        "produce": "Fruits & Légumes",
+        "dairy": "Produits laitiers",
+        "meat": "Viande & Poisson",
+        "pantry": "Épicerie",
+        "spices": "Épices & Condiments",
+        "other": "Autres"
+      },
+      "itemsCount": "{{count}} article{{count, plural, =0 {} =1 {} other {s}}}",
+      "totalCost": "Coût total estimé",
+      "check": "Cocher",
+      "uncheck": "Décocher",
+      "remove": "Supprimer",
+      "addItem": "Ajouter un article",
+      "clearChecked": "Effacer les articles cochés",
+      "share": "Partager la liste",
+      "print": "Imprimer"
+    },
+    "suggestions": {
+      "title": "Suggestions Intelligentes",
+      "smart": "Suggestions IA",
+      "basedOnBudget": "Selon votre budget",
+      "basedOnPreferences": "Selon vos goûts",
+      "seasonal": "De saison",
+      "quickMeals": "Repas rapides",
+      "loading": "Chargement des suggestions...",
+      "error": "Erreur lors du chargement",
+      "refresh": "Actualiser",
+      "noSuggestions": "Aucune suggestion disponible",
+      "tryAgain": "Réessayer",
+      "viewRecipe": "Voir la recette",
+      "suggestedFor": "Suggéré pour {{reason}}"
+    },
+    "nutrition": {
+      "title": "Informations nutritionnelles",
+      "perServing": "Par portion",
+      "calories": "Calories",
+      "totalFat": "Lipides totaux",
+      "saturatedFat": "Graisses saturées",
+      "cholesterol": "Cholestérol",
+      "sodium": "Sodium",
+      "carbohydrates": "Glucides",
+      "fiber": "Fibres",
+      "sugar": "Sucres",
+      "protein": "Protéines",
+      "vitamins": "Vitamines",
+      "minerals": "Minéraux",
+      "notAvailable": "Non disponible"
+    },
+    "ecoScore": {
+      "title": "Score Écologique",
+      "description": "Impact environnemental de cette recette",
+      "grades": {
+        "A": "Excellent",
+        "B": "Bon",
+        "C": "Moyen",
+        "D": "Faible",
+        "E": "Très faible"
+      },
+      "factors": {
+        "local": "Ingrédients locaux",
+        "seasonal": "De saison",
+        "organic": "Bio",
+        "lowWaste": "Peu de gaspillage",
+        "energyEfficient": "Économe en énergie"
+      }
+    },
+    "quickLog": {
+      "title": "Ajout rapide de dépense",
+      "amount": "Montant",
+      "description": "Description",
+      "category": "Catégorie",
+      "date": "Date",
+      "add": "Ajouter",
+      "success": "Dépense ajoutée",
+      "error": "Erreur lors de l'ajout"
+    },
+    "notifications": {
+      "recipeAdded": "Recette ajoutée aux favoris",
+      "recipeRemoved": "Recette retirée des favoris",
+      "planGenerated": "Plan de repas généré",
+      "listGenerated": "Liste de courses générée",
+      "expenseAdded": "Dépense ajoutée",
+      "error": "Une erreur est survenue",
+      "networkError": "Vérifiez votre connexion",
+      "tryAgain": "Veuillez réessayer"
+    },
+    "errors": {
+      "loadingFailed": "Échec du chargement",
+      "searchFailed": "Échec de la recherche",
+      "saveFailed": "Échec de la sauvegarde",
+      "networkError": "Erreur réseau",
+      "serverError": "Erreur serveur",
+      "unknownError": "Erreur inconnue",
+      "retry": "Réessayer",
+      "dismiss": "Ignorer"
+    }
   }
 }

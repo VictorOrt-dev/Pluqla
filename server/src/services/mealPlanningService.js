@@ -18,6 +18,8 @@ const crypto = require('crypto');
 const { generateMealSuggestions } = require('./aiMealService');
 const { getRedisClient } = require('../lib/redisClient');
 const analyticsService = require('./analyticsService');
+// ✨ Phase 8 - Prometheus metrics for monitoring
+const { alimentationAiSuggestionDuration } = require('../config/prometheus');
 
 // Cache TTL constants (in seconds)
 const CACHE_TTL = {
@@ -215,12 +217,26 @@ function generatePlanHash(userId, weekStartDate, preferences) {
   return crypto.createHash('sha256').update(hashInput).digest('hex');
 }
 
+// ============================================================================
+// ✨ Phase 8 - Refactored Weekly Meal Plan Functions
+// Split from monolithic generateWeeklyMealPlan (300 lines) into 5 focused functions
+// Each function has single responsibility and Prometheus monitoring
+// ============================================================================
+
 /**
- * Generate weekly meal plan using AI
+ * ✨ Phase 8 - Function 1/5: Get or create user meal preferences
+ * Retrieves existing preferences or creates default ones
+ *
+ * @param {string} userId - User ID
+ * @returns {Promise<Object>} User meal preferences
  */
-async function generateWeeklyMealPlan(userId, options = {}) {
+async function getOrCreateMealPreferences(userId) {
+  const timer = alimentationAiSuggestionDuration.startTimer({
+    type: 'get_preferences',
+    status: 'pending'
+  });
+
   try {
-    // 1. Get user preferences
     let preferences = await getUserMealPreferences(userId);
 
     if (!preferences) {
@@ -238,9 +254,34 @@ async function generateWeeklyMealPlan(userId, options = {}) {
         cookingTimeLimit: null,
         eatingHabits: {}
       };
+
+      logger.info('Using default meal preferences', { userId });
     }
 
-    // 2. Determine week dates
+    timer({ status: 'success' });
+    return preferences;
+  } catch (error) {
+    timer({ status: 'error' });
+    throw error;
+  }
+}
+
+/**
+ * ✨ Phase 8 - Function 2/5: Determine week dates and plan hash
+ * Calculates week start/end dates and generates unique plan hash
+ *
+ * @param {Object} options - Options with optional weekStartDate
+ * @param {string} userId - User ID for hash
+ * @param {Object} preferences - User preferences for hash
+ * @returns {Promise<Object>} { weekStartDate, weekEndDate, planHash }
+ */
+async function determineWeekConfiguration(options, userId, preferences) {
+  const timer = alimentationAiSuggestionDuration.startTimer({
+    type: 'determine_week',
+    status: 'pending'
+  });
+
+  try {
     const weekStartDate = options.weekStartDate
       ? new Date(options.weekStartDate)
       : getNextMonday();
@@ -248,39 +289,33 @@ async function generateWeeklyMealPlan(userId, options = {}) {
     const weekEndDate = new Date(weekStartDate);
     weekEndDate.setDate(weekEndDate.getDate() + 6);
 
-    // 3. Generate plan hash
     const planHash = generatePlanHash(userId, weekStartDate, preferences);
 
-    // 4. Check for existing plan
-    const existingPlan = await prisma.weeklyMealPlan.findFirst({
-      where: {
-        userId,
-        weekStartDate,
-        status: { in: ['active', 'draft'] }
-      },
-      include: {
-        meals: true,
-        groceryLists: true
-      }
-    });
+    timer({ status: 'success' });
+    return { weekStartDate, weekEndDate, planHash };
+  } catch (error) {
+    timer({ status: 'error' });
+    throw error;
+  }
+}
 
-    if (existingPlan && options.allowDuplicate !== true) {
-      logger.info('Existing weekly meal plan found', {
-        userId,
-        planId: existingPlan.id,
-        weekStartDate
-      });
-      return formatWeeklyMealPlan(existingPlan);
-    }
+/**
+ * ✨ Phase 8 - Function 3/5: Generate meals in parallel batches
+ * Generates all meals for the week using AI, processing 5 at a time
+ *
+ * @param {string} userId - User ID
+ * @param {Array} mealsPerDay - Meal structure for each day
+ * @param {Object} preferences - User meal preferences
+ * @param {number} budgetPerMeal - Budget allocated per meal
+ * @returns {Promise<Object>} { generatedMeals, failedMeals }
+ */
+async function generateMealsInParallelBatches(userId, mealsPerDay, preferences, budgetPerMeal) {
+  const timer = alimentationAiSuggestionDuration.startTimer({
+    type: 'meal_generation',
+    status: 'pending'
+  });
 
-    // 5. Determine meals to generate
-    const mealsPerDay = determineMealsPerDay(preferences);
-    const totalMeals = mealsPerDay.reduce((sum, day) => sum + day.meals.length, 0);
-    const budgetPerMeal = preferences.weeklyBudget
-      ? preferences.weeklyBudget / totalMeals
-      : 15;
-
-    // 6. Generate meals using AI with fallback strategies (batch parallel mode)
+  try {
     const generatedMeals = [];
     const failedMeals = [];
 
@@ -339,9 +374,6 @@ async function generateWeeklyMealPlan(userId, options = {}) {
       });
     }
 
-    // ✨ Phase 7 - Cleaned up old sequential code
-    // Now using parallel batch processing (5 meals at a time) for better performance
-
     // Log failure summary if any meals used fallback
     if (failedMeals.length > 0) {
       logger.warn('Weekly plan generated with fallback meals', {
@@ -353,10 +385,38 @@ async function generateWeeklyMealPlan(userId, options = {}) {
     }
 
     if (generatedMeals.length === 0) {
+      timer({ status: 'error' });
       throw new Error('Failed to generate any meals for the weekly plan');
     }
 
-    // 7. Create weekly meal plan
+    timer({ status: 'success' });
+    return { generatedMeals, failedMeals };
+  } catch (error) {
+    timer({ status: 'error' });
+    throw error;
+  }
+}
+
+/**
+ * ✨ Phase 8 - Function 4/5: Create meal plan in database
+ * Creates WeeklyMealPlan and PlannedMeal records, calculates costs
+ *
+ * @param {string} userId - User ID
+ * @param {Date} weekStartDate - Week start date
+ * @param {Date} weekEndDate - Week end date
+ * @param {Object} preferences - User preferences
+ * @param {Array} generatedMeals - Generated meals array
+ * @param {string} planHash - Unique plan hash
+ * @returns {Promise<Object>} { weeklyPlan, plannedMeals, totalCost }
+ */
+async function createWeeklyPlanInDatabase(userId, weekStartDate, weekEndDate, preferences, generatedMeals, planHash) {
+  const timer = alimentationAiSuggestionDuration.startTimer({
+    type: 'database_creation',
+    status: 'pending'
+  });
+
+  try {
+    // Create weekly meal plan
     const weeklyPlan = await prisma.weeklyMealPlan.create({
       data: {
         userId,
@@ -372,7 +432,7 @@ async function generateWeeklyMealPlan(userId, options = {}) {
       }
     });
 
-    // 8. Create planned meals
+    // Create planned meals
     const plannedMeals = await Promise.all(
       generatedMeals.map(({ dayOfWeek, mealType, meal }) =>
         prisma.plannedMeal.create({
@@ -397,18 +457,91 @@ async function generateWeeklyMealPlan(userId, options = {}) {
       )
     );
 
-    // 9. Calculate actual cost
+    // Calculate actual cost
     const totalCost = plannedMeals.reduce(
       (sum, meal) => sum + meal.totalCostEur,
       0
     );
 
+    // Update plan with actual cost
     await prisma.weeklyMealPlan.update({
       where: { id: weeklyPlan.id },
       data: { actualCost: totalCost }
     });
 
-    // 10. Generate grocery list
+    timer({ status: 'success' });
+    return { weeklyPlan, plannedMeals, totalCost };
+  } catch (error) {
+    timer({ status: 'error' });
+    throw error;
+  }
+}
+
+// ============================================================================
+// ✨ Phase 8 - Main Weekly Meal Plan Function (Refactored)
+// Now orchestrates 5 smaller, focused functions instead of doing everything
+// ============================================================================
+
+/**
+ * Generate weekly meal plan using AI
+ * ✨ Phase 8 - Refactored to use 5 smaller functions with Prometheus metrics
+ */
+async function generateWeeklyMealPlan(userId, options = {}) {
+  try {
+    // ✨ Phase 8 - Step 1: Get or create user preferences
+    const preferences = await getOrCreateMealPreferences(userId);
+
+    // ✨ Phase 8 - Step 2: Determine week configuration (dates + hash)
+    const { weekStartDate, weekEndDate, planHash } = await determineWeekConfiguration(options, userId, preferences);
+
+    // 4. Check for existing plan
+    const existingPlan = await prisma.weeklyMealPlan.findFirst({
+      where: {
+        userId,
+        weekStartDate,
+        status: { in: ['active', 'draft'] }
+      },
+      include: {
+        meals: true,
+        groceryLists: true
+      }
+    });
+
+    if (existingPlan && options.allowDuplicate !== true) {
+      logger.info('Existing weekly meal plan found', {
+        userId,
+        planId: existingPlan.id,
+        weekStartDate
+      });
+      return formatWeeklyMealPlan(existingPlan);
+    }
+
+    // ✨ Phase 8 - Step 3: Determine meals to generate and budget
+    const mealsPerDay = determineMealsPerDay(preferences);
+    const totalMeals = mealsPerDay.reduce((sum, day) => sum + day.meals.length, 0);
+    const budgetPerMeal = preferences.weeklyBudget
+      ? preferences.weeklyBudget / totalMeals
+      : 15;
+
+    // ✨ Phase 8 - Step 4: Generate all meals in parallel batches
+    const { generatedMeals, failedMeals } = await generateMealsInParallelBatches(
+      userId,
+      mealsPerDay,
+      preferences,
+      budgetPerMeal
+    );
+
+    // ✨ Phase 8 - Step 5: Create meal plan and meals in database
+    const { weeklyPlan, plannedMeals, totalCost } = await createWeeklyPlanInDatabase(
+      userId,
+      weekStartDate,
+      weekEndDate,
+      preferences,
+      generatedMeals,
+      planHash
+    );
+
+    // ✨ Phase 8 - Step 6 (Function 5/5): Generate grocery list
     const groceryList = await generateGroceryList(weeklyPlan.id, plannedMeals);
 
     logger.info('Weekly meal plan generated successfully', {

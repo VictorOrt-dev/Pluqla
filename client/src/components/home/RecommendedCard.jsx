@@ -1,22 +1,30 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import { useNavigation } from '../../contexts/NavigationContext';
+import { PluqiMascot } from '../common';
+import { ArrowRight } from 'lucide-react';
+
+/**
+ * Phase 2B Enhanced RecommendedCard
+ * Pluqi mascot + Premium animations + Glassmorphism
+ */
 
 const RecommendedCard = ({ darkMode, userData }) => {
   const { setCurrentScreen } = useNavigation();
 
-  // Logique intelligente de recommandation basée sur userData
+  // Logique intelligente de recommandation basée sur userData (Phase 2B: avec mood Pluqi)
   const getRecommendation = () => {
     const savedAmount = userData?.savedAmount || 0;
     const monthlyGoal = userData?.monthlyGoal || 1000;
     const progress = monthlyGoal > 0 ? (savedAmount / monthlyGoal) * 100 : 0;
     const isPremium = userData?.isPremium || userData?.subscriptionTier === 'PREMIUM';
 
-    // Recommandations contextuelles selon progression
+    // Recommandations contextuelles selon progression (avec mood Pluqi)
     if (progress >= 80) {
       return {
-        icon: '🎉',
+        mood: 'celebrate',
         title: 'Félicitations !',
-        description: 'Vous avez atteint 80% de votre objectif mensuel',
+        description: 'Vous avez atteint 80% de votre objectif mensuel. Continue comme ça!',
         action: 'Voir mes économies',
         target: 'finance',
         gradient: 'from-green-500 to-emerald-600',
@@ -24,9 +32,9 @@ const RecommendedCard = ({ darkMode, userData }) => {
       };
     } else if (progress < 20 && new Date().getDate() > 10) {
       return {
-        icon: '💡',
+        mood: 'encourage',
         title: 'Boostez vos économies',
-        description: 'Découvrez 3 astuces IA pour économiser cette semaine',
+        description: 'Découvrez 3 astuces IA personnalisées pour économiser cette semaine',
         action: 'Voir les conseils',
         target: 'finance',
         gradient: 'from-[#F14545] to-[#FF6B6B]',
@@ -34,9 +42,9 @@ const RecommendedCard = ({ darkMode, userData }) => {
       };
     } else if (!isPremium) {
       return {
-        icon: '⭐',
+        mood: 'thinking',
         title: 'Passez Premium',
-        description: 'Débloquez les analyses IA illimitées et conseils personnalisés',
+        description: 'Débloquez les analyses IA illimitées et conseils personnalisés pour économiser plus',
         action: 'Découvrir Premium',
         target: 'profile',
         gradient: 'from-purple-500 to-pink-600',
@@ -44,9 +52,9 @@ const RecommendedCard = ({ darkMode, userData }) => {
       };
     } else {
       return {
-        icon: '🍽️',
+        mood: 'neutral',
         title: 'Planifiez vos repas',
-        description: 'Économisez jusqu\'à 150€/mois avec des repas optimisés',
+        description: 'Économisez jusqu\'à 150€/mois avec des recettes optimisées',
         action: 'Découvrir',
         target: 'alimentation',
         gradient: 'from-orange-500 to-amber-600',
@@ -59,46 +67,69 @@ const RecommendedCard = ({ darkMode, userData }) => {
 
   return (
     <div className="w-full max-w-sm mx-auto">
-      <button
+      <motion.button
         onClick={() => setCurrentScreen(recommendation.target)}
-        className={`relative w-full p-4 rounded-xl transition-all duration-300 overflow-hidden group text-left ${
-          darkMode
-            ? 'bg-gradient-to-br from-gray-800/80 to-gray-900/80 border border-white/10 hover:border-white/20'
-            : 'bg-gradient-to-br from-white/95 to-gray-50/95 border border-gray-200 hover:border-gray-300 shadow-md hover:shadow-lg'
-        } backdrop-blur-sm`}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4, duration: 0.4 }}
+        whileHover={{ scale: 1.02, y: -2 }}
+        whileTap={{ scale: 0.98 }}
+        className={`
+          relative w-full p-4 rounded-xl overflow-hidden group text-left
+          pluqla-card pluqla-card-glass pluqla-card-highlight
+          hover:pluqla-shadow-glow
+          transition-all duration-300
+        `}
       >
         {/* Animated gradient background */}
         <div className={`absolute inset-0 opacity-5 group-hover:opacity-10 transition-opacity duration-300 bg-gradient-to-br ${recommendation.gradient}`}></div>
 
         {/* Content */}
-        <div className="relative z-10 flex items-center space-x-4">
-          {/* Icon */}
-          <div className={`flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center bg-gradient-to-br ${recommendation.gradient} shadow-lg transition-transform duration-300 group-hover:scale-110`}>
-            <span className="text-2xl">{recommendation.icon}</span>
+        <div className="relative z-10 flex items-start space-x-4">
+          {/* Pluqi Mascot (Phase 2B) */}
+          <div className="flex-shrink-0">
+            <PluqiMascot mood={recommendation.mood} size="md" />
           </div>
 
           {/* Text content */}
           <div className="flex-1 min-w-0">
-            <h4 className={`text-sm font-bold mb-0.5 ${
+            {/* Badge "Conseil Pluqi" */}
+            <div className="flex items-center gap-2 mb-2">
+              <span className={`text-xs font-bold uppercase tracking-wide ${
+                darkMode ? 'text-gray-400' : 'text-gray-500'
+              }`}>
+                Conseil Pluqi
+              </span>
+              <div className="w-2 h-2 rounded-full bg-pluqla-red animate-pulse"></div>
+            </div>
+
+            <h4 className={`text-sm font-bold mb-1 ${
               darkMode ? 'text-white' : 'text-[#121212]'
             }`}>
               {recommendation.title}
             </h4>
-            <p className={`text-xs leading-relaxed mb-1.5 ${
+            <p className={`text-xs leading-relaxed mb-3 ${
               darkMode ? 'text-gray-300' : 'text-gray-600'
             }`}>
               {recommendation.description}
             </p>
-            <div className={`text-xs font-semibold flex items-center space-x-1 ${recommendation.accentColor}`}>
+
+            {/* CTA avec flèche */}
+            <div className={`
+              text-xs font-semibold flex items-center gap-1
+              ${recommendation.accentColor}
+              group-hover:gap-2
+              transition-all duration-300
+            `}>
               <span>{recommendation.action}</span>
-              <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+              <ArrowRight className="w-3 h-3" />
             </div>
           </div>
         </div>
 
         {/* Corner decoration */}
-        <div className={`absolute top-0 right-0 w-20 h-20 opacity-10 bg-gradient-to-bl ${recommendation.gradient} rounded-bl-full`}></div>
-      </button>
+        <div className={`absolute top-0 right-0 w-24 h-24 opacity-10 bg-gradient-to-bl ${recommendation.gradient} rounded-bl-full`}></div>
+      </motion.button>
     </div>
   );
 };

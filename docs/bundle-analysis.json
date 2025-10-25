@@ -1,0 +1,34 @@
+{
+  "file": "main.4f7c078c.js",
+  "size": 419233,
+  "sizeKB": "409.41",
+  "detectedLibraries": [
+    {
+      "name": "i18next",
+      "occurrences": 24
+    },
+    {
+      "name": "react-i18next",
+      "occurrences": 2
+    },
+    {
+      "name": "moment",
+      "occurrences": 3
+    }
+  ],
+  "suggestions": [
+    {
+      "priority": "HIGH",
+      "lib": "moment",
+      "estimated": "60-100 KB",
+      "action": "Replace with date-fns or dayjs (much lighter)"
+    },
+    {
+      "priority": "MEDIUM",
+      "lib": "i18next/react-i18next",
+      "estimated": "15-30 KB",
+      "action": "Lazy load language files, use dynamic imports"
+    }
+  ],
+  "timestamp": "2025-10-16T16:50:53.667Z"
+}

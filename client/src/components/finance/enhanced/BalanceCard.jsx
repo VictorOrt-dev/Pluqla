@@ -1,9 +1,10 @@
 /**
- * Enhanced Balance Card - Pluqla Finance
- * Adapted to match HomeScreen DA
+ * Phase 2C Enhanced Balance Card - Pluqla Finance
+ * Framer Motion animated balance + Premium interactions
  */
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { motion, useSpring, useTransform, animate } from 'framer-motion';
 import PropTypes from 'prop-types';
 import { Eye, EyeOff, TrendingUp, TrendingDown } from 'lucide-react';
 
@@ -63,8 +64,24 @@ const BalanceCard = ({ darkMode = false, transactions = [] }) => {
 
   const isPositiveChange = monthChange >= 0;
 
+  // Phase 2C: Animated balance counter
+  const [displayBalance, setDisplayBalance] = useState(balance);
+  const balanceSpring = useSpring(displayBalance, { stiffness: 100, damping: 20 });
+
+  useEffect(() => {
+    animate(balanceSpring, balance, {
+      duration: 0.8,
+      onUpdate: (latest) => setDisplayBalance(latest)
+    });
+  }, [balance, balanceSpring]);
+
   return (
-    <div className="relative pluqla-scale-in">
+    <motion.div
+      className="relative"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+    >
       {/* Premium hover glow overlay - HomeScreen pattern */}
       <div className={`absolute inset-0 rounded-2xl opacity-0 hover:opacity-100 transition-opacity duration-300 ${
         darkMode
@@ -73,59 +90,82 @@ const BalanceCard = ({ darkMode = false, transactions = [] }) => {
       }`}></div>
 
       {/* Main card - matching HomeScreen DA */}
-      <div
+      <motion.div
         className={`relative rounded-2xl p-4 sm:p-6 backdrop-blur-sm border transition-all duration-300 shadow-lg hover:shadow-xl group ${
           darkMode
             ? 'bg-gradient-to-b from-gray-900/90 to-gray-800/90 border-white/10 hover:border-[#F14545]/50 hover:shadow-[0_12px_40px_rgba(241,69,69,0.3)]'
             : 'bg-gradient-to-b from-white/98 to-[#FAFAFA]/95 border-gray-200 hover:border-[#F14545]/40 hover:shadow-[0_8px_32px_rgba(241,69,69,0.15)]'
         }`}
+        whileHover={{ scale: 1.01, y: -2 }}
+        transition={{ type: "spring", stiffness: 400, damping: 25 }}
       >
-        {/* Header with toggle */}
+        {/* Header with toggle - Phase 2C Enhanced */}
         <div className="flex items-center justify-between mb-4">
           <h3 className={`text-xs sm:text-sm font-bold uppercase tracking-wider ${
             darkMode ? 'text-white/60' : 'text-gray-500'
           }`}>
             Solde disponible
           </h3>
-          <button
+          <motion.button
             onClick={() => setIsHidden(!isHidden)}
-            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 backdrop-blur-sm border ${
+            className={`w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-sm border ${
               darkMode
                 ? 'bg-black/40 hover:bg-[#F14545]/50 hover:shadow-[0_0_12px_rgba(241,69,69,0.6)] border-white/10 text-white/80'
                 : 'bg-black/10 hover:bg-[#F14545] border-gray-200/50 shadow-sm hover:shadow-md text-gray-600 hover:text-white'
             }`}
+            whileHover={{ scale: 1.1 }}
+            whileTap={{ scale: 0.9 }}
             aria-label={isHidden ? 'Afficher le solde' : 'Masquer le solde'}
           >
             {isHidden ? <EyeOff size={16} /> : <Eye size={16} />}
-          </button>
+          </motion.button>
         </div>
 
-        {/* Balance amount */}
+        {/* Balance amount - Phase 2C Animated Counter */}
         <div className="mb-4">
           {isHidden ? (
-            <div className="flex items-center space-x-2">
-              <div className={`w-24 h-12 rounded-lg ${
-                darkMode ? 'bg-gray-700/50' : 'bg-gray-300/50'
-              }`} />
-              <div className={`w-12 h-12 rounded-lg ${
-                darkMode ? 'bg-gray-700/50' : 'bg-gray-300/50'
-              }`} />
-            </div>
+            <motion.div
+              className="flex items-center space-x-2"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+            >
+              <motion.div
+                className={`w-24 h-12 rounded-lg ${darkMode ? 'bg-gray-700/50' : 'bg-gray-300/50'}`}
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              />
+              <motion.div
+                className={`w-12 h-12 rounded-lg ${darkMode ? 'bg-gray-700/50' : 'bg-gray-300/50'}`}
+                animate={{ opacity: [0.5, 1, 0.5] }}
+                transition={{ duration: 1.5, repeat: Infinity, delay: 0.2 }}
+              />
+            </motion.div>
           ) : (
-            <h2 className={`text-4xl sm:text-5xl font-bold transition-all duration-300 ${
-              darkMode
-                ? 'text-white group-hover:text-[#FF6B6B]'
-                : 'text-[#121212] group-hover:text-[#F14545] drop-shadow-[0_1px_2px_rgba(0,0,0,0.1)]'
-            }`}>
-              {formatCurrency(balance)}
-            </h2>
+            <motion.h2
+              className={`text-4xl sm:text-5xl font-bold transition-all duration-300 ${
+                darkMode
+                  ? 'text-white group-hover:text-[#FF6B6B]'
+                  : 'text-[#121212] group-hover:text-[#F14545] drop-shadow-[0_1px_2px_rgba(0,0,0,0.1)]'
+              }`}
+              key={balance}
+              initial={{ scale: 1.1, opacity: 0.5 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            >
+              {formatCurrency(displayBalance)}
+            </motion.h2>
           )}
         </div>
 
-        {/* Month change indicator */}
-        <div className="flex items-center space-x-2 mb-4">
-          <div
-            className={`flex items-center space-x-1 px-3 py-1 rounded-full transition-all duration-200 backdrop-blur-sm border ${
+        {/* Month change indicator - Phase 2C Enhanced */}
+        <motion.div
+          className="flex items-center space-x-2 mb-4"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <motion.div
+            className={`flex items-center space-x-1 px-3 py-1 rounded-full backdrop-blur-sm border ${
               isPositiveChange
                 ? darkMode
                   ? 'bg-black/40 border-white/10 text-emerald-400'
@@ -134,6 +174,7 @@ const BalanceCard = ({ darkMode = false, transactions = [] }) => {
                   ? 'bg-black/40 border-white/10 text-red-400'
                   : 'bg-black/10 border-gray-200/50 text-red-600'
             }`}
+            whileHover={{ scale: 1.05 }}
           >
             {isPositiveChange ? (
               <TrendingUp size={14} className="flex-shrink-0" />
@@ -141,18 +182,23 @@ const BalanceCard = ({ darkMode = false, transactions = [] }) => {
               <TrendingDown size={14} className="flex-shrink-0" />
             )}
             <span className="text-xs sm:text-sm font-bold">
-              {isPositiveChange ? '+' : ''}{monthChange}%
+              {isPositiveChange ? '+' : ''}{Math.abs(monthChange).toFixed(1)}%
             </span>
-          </div>
+          </motion.div>
           <span className={`text-xs sm:text-sm font-medium ${
             darkMode ? 'text-white/80' : 'text-gray-700'
           }`}>
             ce mois-ci
           </span>
-        </div>
+        </motion.div>
 
-        {/* Month progress bar */}
-        <div className="space-y-2">
+        {/* Month progress bar - Phase 2C Enhanced with shimmer */}
+        <motion.div
+          className="space-y-2"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.3 }}
+        >
           <div className="flex items-center justify-between text-xs">
             <span className={`font-medium ${
               darkMode ? 'text-white/60' : 'text-gray-500'
@@ -165,17 +211,32 @@ const BalanceCard = ({ darkMode = false, transactions = [] }) => {
               {Math.round(monthProgress)}%
             </span>
           </div>
-          <div className={`h-2 rounded-full overflow-hidden ${
+          <div className={`h-2 rounded-full overflow-hidden relative ${
             darkMode ? 'bg-gray-700/50' : 'bg-gray-200'
           }`}>
-            <div
-              className="h-full bg-gradient-to-r from-[#F14545] to-[#FF6B6B] transition-all duration-500 ease-out"
-              style={{ width: `${monthProgress}%` }}
-            />
+            <motion.div
+              className="h-full bg-gradient-to-r from-[#F14545] to-[#FF6B6B] relative overflow-hidden"
+              initial={{ width: 0 }}
+              animate={{ width: `${monthProgress}%` }}
+              transition={{ duration: 0.8, ease: "easeOut" }}
+            >
+              {/* Shimmer effect Phase 2C */}
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                animate={{
+                  x: ['-100%', '200%']
+                }}
+                transition={{
+                  duration: 1.5,
+                  repeat: Infinity,
+                  ease: "linear"
+                }}
+              />
+            </motion.div>
           </div>
-        </div>
-      </div>
-    </div>
+        </motion.div>
+      </motion.div>
+    </motion.div>
   );
 };
 

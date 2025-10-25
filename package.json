@@ -16,6 +16,10 @@
     "test": "concurrently \"npm run test:client\" \"npm run test:server\"",
     "test:client": "cd client && npm test",
     "test:server": "cd server && npm test",
+    "test:e2e": "cd client && npm run test:e2e",
+    "test:e2e:ui": "cd client && npm run test:e2e:ui",
+    "test:e2e:debug": "cd client && npm run test:e2e:debug",
+    "test:e2e:coverage": "cd client && npm run test:e2e:coverage",
     "install:all": "npm install && npm run install:client && npm run install:server",
     "install:client": "cd client && npm install",
     "install:server": "cd server && npm install",
@@ -26,7 +30,17 @@
     "db:seed": "cd server && npm run db:seed",
     "lint": "concurrently \"npm run lint:client\" \"npm run lint:server\"",
     "lint:client": "cd client && npm run lint",
-    "lint:server": "cd server && npm run lint"
+    "lint:server": "cd server && npm run lint",
+    "health:staging": "node scripts/health-check.js staging",
+    "health:production": "node scripts/health-check.js production",
+    "rollback:staging": "bash scripts/rollback.sh staging",
+    "rollback:production": "bash scripts/rollback.sh production",
+    "deploy:staging": "echo 'Staging deployment triggered via CI/CD'",
+    "deploy:production": "echo 'Production deployment requires manual approval in GitHub Actions'",
+    "security:audit": "node scripts/security-audit.js",
+    "security:audit:client": "cd client && npm audit",
+    "security:audit:server": "cd server && npm audit",
+    "security:fix": "cd client && npm audit fix && cd ../server && npm audit fix"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

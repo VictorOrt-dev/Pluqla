@@ -24,7 +24,9 @@ module.exports = {
   // Test match patterns
   testMatch: [
     '**/tests/**/*.test.js',
-    '**/tests/**/*.spec.js'
+    '**/tests/**/*.spec.js',
+    '**/__tests__/**/*.test.js',
+    '**/__tests__/**/*.spec.js'
   ],
 
   // Files to ignore

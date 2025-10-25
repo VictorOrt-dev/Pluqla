@@ -1,0 +1,328 @@
+groups:
+  - name: web_vitals_alerts_tuned
+    interval: 30s
+    rules:
+      # ============================================================================
+      # LCP (Largest Contentful Paint) - TUNED THRESHOLDS
+      # ============================================================================
+
+      # Warning: P75 > 2.5s (Google threshold) OR P95 > 3.5s
+      - alert: HighLCP_P75
+        expr: histogram_quantile(0.75, sum(rate(web_vitals_lcp_milliseconds_bucket[5m])) by (le)) > 2500
+        for: 10m  # Increased from 5m to reduce false positives
+        labels:
+          severity: warning
+          category: performance
+          metric: lcp
+        annotations:
+          summary: "LCP P75 exceeds 2.5s threshold"
+          description: "LCP P75 is {{ $value | humanizeDuration }} (threshold: 2.5s). 25% of users experiencing slow loads."
+          runbook: "https://web.dev/optimize-lcp/"
+
+      - alert: HighLCP_P95
+        expr: histogram_quantile(0.95, sum(rate(web_vitals_lcp_milliseconds_bucket[5m])) by (le)) > 3500
+        for: 10m
+        labels:
+          severity: warning
+          category: performance
+          metric: lcp
+        annotations:
+          summary: "LCP P95 exceeds 3.5s"
+          description: "LCP P95 is {{ $value | humanizeDuration }}. 5% of users experiencing very slow loads."
+
+      # Critical: P75 > 4s (Google "poor" threshold)
+      - alert: CriticalLCP
+        expr: histogram_quantile(0.75, sum(rate(web_vitals_lcp_milliseconds_bucket[5m])) by (le)) > 4000
+        for: 5m  # Faster response for critical issues
+        labels:
+          severity: critical
+          category: performance
+          metric: lcp
+          page: alert
+        annotations:
+          summary: "🔴 CRITICAL: LCP P75 > 4s"
+          description: "LCP P75 is {{ $value | humanizeDuration }}. This is in the 'poor' range. Immediate action required!"
+          action: "Check server logs, CDN status, and recent deployments"
+
+      # ============================================================================
+      # CLS (Cumulative Layout Shift) - TUNED THRESHOLDS
+      # ============================================================================
+
+      - alert: HighCLS_P75
+        expr: histogram_quantile(0.75, sum(rate(web_vitals_cls_score_bucket[5m])) by (le)) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+          category: performance
+          metric: cls
+        annotations:
+          summary: "CLS P75 exceeds 0.1 threshold"
+          description: "CLS P75 is {{ $value }} (threshold: 0.1). Users experiencing visual instability."
+          runbook: "https://web.dev/optimize-cls/"
+
+      - alert: CriticalCLS
+        expr: histogram_quantile(0.75, sum(rate(web_vitals_cls_score_bucket[5m])) by (le)) > 0.25
+        for: 5m
+        labels:
+          severity: critical
+          category: performance
+          metric: cls
+        annotations:
+          summary: "🔴 CRITICAL: CLS P75 > 0.25"
+          description: "CLS P75 is {{ $value }}. Severe visual instability!"
+
+      # ============================================================================
+      # FCP (First Contentful Paint) - TUNED THRESHOLDS
+      # ============================================================================
+
+      - alert: HighFCP_P75
+        expr: histogram_quantile(0.75, sum(rate(web_vitals_fcp_milliseconds_bucket[5m])) by (le)) > 1800
+        for: 10m
+        labels:
+          severity: warning
+          category: performance
+          metric: fcp
+        annotations:
+          summary: "FCP P75 exceeds 1.8s threshold"
+          description: "FCP P75 is {{ $value | humanizeDuration }}. Slow initial rendering."
+
+      - alert: HighFCP_P95
+        expr: histogram_quantile(0.95, sum(rate(web_vitals_fcp_milliseconds_bucket[5m])) by (le)) > 3000
+        for: 10m
+        labels:
+          severity: warning
+          category: performance
+          metric: fcp
+        annotations:
+          summary: "FCP P95 exceeds 3s"
+          description: "FCP P95 is {{ $value | humanizeDuration }}. 5% of users see very slow rendering."
+
+      # ============================================================================
+      # TTFB (Time to First Byte) - TUNED THRESHOLDS
+      # ============================================================================
+
+      - alert: HighTTFB_P75
+        expr: histogram_quantile(0.75, sum(rate(web_vitals_ttfb_milliseconds_bucket[5m])) by (le)) > 600
+        for: 10m
+        labels:
+          severity: warning
+          category: performance
+          metric: ttfb
+        annotations:
+          summary: "TTFB P75 exceeds 600ms threshold"
+          description: "TTFB P75 is {{ $value | humanizeDuration }}. Slow server response."
+          action: "Check backend logs, database performance, and CDN status"
+
+      - alert: CriticalTTFB
+        expr: histogram_quantile(0.75, sum(rate(web_vitals_ttfb_milliseconds_bucket[5m])) by (le)) > 1500
+        for: 5m
+        labels:
+          severity: critical
+          category: performance
+          metric: ttfb
+        annotations:
+          summary: "🔴 CRITICAL: TTFB P75 > 1.5s"
+          description: "TTFB P75 is {{ $value | humanizeDuration }}. Server severely degraded!"
+
+      # ============================================================================
+      # RATING DISTRIBUTION - TUNED THRESHOLDS
+      # ============================================================================
+
+      # Alert if > 25% of metrics are rated "poor"
+      - alert: HighPoorWebVitalsRate
+        expr: |
+          sum(rate(web_vitals_by_rating_total{rating="poor"}[10m]))
+          /
+          sum(rate(web_vitals_by_rating_total[10m])) > 0.25
+        for: 15m  # Longer window to avoid noise
+        labels:
+          severity: warning
+          category: user_experience
+        annotations:
+          summary: "High rate of poor Web Vitals ratings"
+          description: "{{ $value | humanizePercentage }} of Web Vitals are rated 'poor'. Target: < 25%"
+
+      # Alert if < 75% of metrics are rated "good" (Google recommendation)
+      - alert: LowGoodWebVitalsRate
+        expr: |
+          sum(rate(web_vitals_by_rating_total{rating="good"}[10m]))
+          /
+          sum(rate(web_vitals_by_rating_total[10m])) < 0.75
+        for: 20m  # Even longer window for strategic alert
+        labels:
+          severity: info
+          category: user_experience
+        annotations:
+          summary: "Low rate of good Web Vitals ratings"
+          description: "Only {{ $value | humanizePercentage }} of Web Vitals are rated 'good'. Target: > 75%"
+
+  - name: http_performance_alerts_tuned
+    interval: 30s
+    rules:
+      # ============================================================================
+      # API LATENCY - TUNED THRESHOLDS
+      # ============================================================================
+
+      # Warning: P95 > 1s
+      - alert: HighAPILatency_P95
+        expr: |
+          histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{route!~"/metrics|/health"}[5m])) by (le, route)) > 1
+        for: 10m
+        labels:
+          severity: warning
+          category: performance
+        annotations:
+          summary: "API P95 latency > 1s on {{ $labels.route }}"
+          description: "P95 latency is {{ $value }}s (threshold: 1s)"
+
+      # Critical: P95 > 5s
+      - alert: CriticalAPILatency
+        expr: |
+          histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{route!~"/metrics|/health"}[5m])) by (le, route)) > 5
+        for: 3m  # Fast response for critical
+        labels:
+          severity: critical
+          category: performance
+          page: alert
+        annotations:
+          summary: "🔴 CRITICAL: API P95 latency > 5s on {{ $labels.route }}"
+          description: "P95 latency is {{ $value }}s. API severely degraded!"
+
+      # ============================================================================
+      # ERROR RATE - TUNED THRESHOLDS
+      # ============================================================================
+
+      # Warning: Error rate > 1% (5xx errors)
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(http_requests_total{status_code=~"5.."}[5m])) by (route)
+          /
+          sum(rate(http_requests_total[5m])) by (route) > 0.01
+        for: 10m
+        labels:
+          severity: warning
+          category: reliability
+        annotations:
+          summary: "HTTP error rate > 1% on {{ $labels.route }}"
+          description: "{{ $value | humanizePercentage }} of requests failing"
+
+      # Critical: Error rate > 5%
+      - alert: CriticalErrorRate
+        expr: |
+          sum(rate(http_requests_total{status_code=~"5.."}[5m])) by (route)
+          /
+          sum(rate(http_requests_total[5m])) by (route) > 0.05
+        for: 3m
+        labels:
+          severity: critical
+          category: reliability
+          page: alert
+        annotations:
+          summary: "🔴 CRITICAL: Error rate > 5% on {{ $labels.route }}"
+          description: "{{ $value | humanizePercentage }} of requests failing!"
+
+      # ============================================================================
+      # THROUGHPUT - TUNED THRESHOLDS
+      # ============================================================================
+
+      # Alert on sudden traffic spike (> 200% of normal)
+      - alert: TrafficSpike
+        expr: |
+          sum(rate(http_requests_total[5m]))
+          /
+          sum(rate(http_requests_total[1h] offset 1h)) > 2
+        for: 5m
+        labels:
+          severity: info
+          category: capacity
+        annotations:
+          summary: "Traffic spike detected"
+          description: "Request rate is {{ $value }}x higher than usual"
+
+      # Alert on traffic drop (< 50% of normal) - potential outage
+      - alert: TrafficDrop
+        expr: |
+          sum(rate(http_requests_total[5m]))
+          /
+          sum(rate(http_requests_total[1h] offset 1h)) < 0.5
+        for: 10m
+        labels:
+          severity: warning
+          category: availability
+        annotations:
+          summary: "Significant traffic drop detected"
+          description: "Request rate is only {{ $value }}x of normal. Possible outage?"
+
+  - name: database_alerts_tuned
+    interval: 30s
+    rules:
+      # ============================================================================
+      # DATABASE QUERY PERFORMANCE - TUNED THRESHOLDS
+      # ============================================================================
+
+      # Warning: P95 > 500ms
+      - alert: SlowDatabaseQueries_P95
+        expr: histogram_quantile(0.95, sum(rate(db_query_duration_seconds_bucket[5m])) by (le)) > 0.5
+        for: 10m
+        labels:
+          severity: warning
+          category: database
+        annotations:
+          summary: "Database P95 query latency > 500ms"
+          description: "P95 query duration is {{ $value }}s"
+          action: "Review slow query log, check indexes, consider query optimization"
+
+      # Critical: P95 > 2s
+      - alert: CriticalDatabaseQueries
+        expr: histogram_quantile(0.95, sum(rate(db_query_duration_seconds_bucket[5m])) by (le)) > 2
+        for: 3m
+        labels:
+          severity: critical
+          category: database
+          page: alert
+        annotations:
+          summary: "🔴 CRITICAL: Database P95 latency > 2s"
+          description: "P95 query duration is {{ $value }}s. Database severely degraded!"
+
+      # Alert on high query rate (potential N+1 queries)
+      - alert: HighDatabaseQueryRate
+        expr: rate(db_queries_total[5m]) > 1000
+        for: 10m
+        labels:
+          severity: warning
+          category: database
+        annotations:
+          summary: "High database query rate"
+          description: "{{ $value }} queries/sec. Check for N+1 queries or inefficient data fetching."
+
+  - name: redis_alerts_tuned
+    interval: 30s
+    rules:
+      # ============================================================================
+      # REDIS PERFORMANCE - TUNED THRESHOLDS
+      # ============================================================================
+
+      # Warning: P95 > 100ms (Redis should be fast)
+      - alert: SlowRedisOperations
+        expr: histogram_quantile(0.95, sum(rate(redis_operations_duration_seconds_bucket[5m])) by (le, operation)) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+          category: cache
+        annotations:
+          summary: "Redis P95 latency > 100ms for {{ $labels.operation }}"
+          description: "P95 operation time is {{ $value }}s. Redis should be sub-100ms."
+
+      # Alert on low cache hit rate (< 80%)
+      - alert: LowCacheHitRate
+        expr: |
+          sum(rate(redis_operations_total{operation="get",status="hit"}[10m]))
+          /
+          sum(rate(redis_operations_total{operation="get"}[10m])) < 0.8
+        for: 15m
+        labels:
+          severity: info
+          category: cache
+        annotations:
+          summary: "Cache hit rate < 80%"
+          description: "Cache hit rate is {{ $value | humanizePercentage }}. Consider reviewing cache strategy."

@@ -1120,13 +1120,13 @@ const financialController = {
   }),
 
   /**
-   * Get budget plans
+   * Get budget plans with real spending data
    * @route GET /api/financial/budget
    * @access Private
    */
   getBudgetPlans: asyncHandler(async (req, res) => {
     const userId = req.user.id;
-    const { type, includeInactive = false } = req.query;
+    const { type, includeInactive = false, period = 'month' } = req.query;
 
     const where = { userId };
     if (type) where.type = type;
@@ -1137,7 +1137,75 @@ const financialController = {
       orderBy: { createdAt: 'desc' }
     });
 
-    return sendSuccess(res, budgets, 'Budget plans retrieved successfully');
+    // ✨ Calculate real spending per category for the period
+    const now = new Date();
+    let startDate;
+
+    switch (period) {
+    case 'week':
+      startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      break;
+    case 'month':
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      break;
+    case 'year':
+      startDate = new Date(now.getFullYear(), 0, 1);
+      break;
+    default:
+      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    // Get transport spending from trips
+    const transportTrips = await prisma.transportTrip.aggregate({
+      where: {
+        userId,
+        createdAt: { gte: startDate, lte: now }
+      },
+      _sum: { actualCostEur: true }
+    });
+
+    // Get other expenses
+    const expensesByCategory = await prisma.expense.groupBy({
+      by: ['category'],
+      where: {
+        userId,
+        date: { gte: startDate, lte: now }
+      },
+      _sum: { amount: true }
+    });
+
+    // Build spending map
+    const spendingMap = {
+      transport: transportTrips._sum.actualCostEur || 0
+    };
+
+    expensesByCategory.forEach(cat => {
+      spendingMap[cat.category] = cat._sum.amount || 0;
+    });
+
+    // Attach spending to budgets
+    const budgetsWithSpending = budgets.map(budget => {
+      const categories = typeof budget.categories === 'string'
+        ? JSON.parse(budget.categories)
+        : budget.categories;
+
+      // Format as array of budget items with spending
+      const budgetItems = categories.map(cat => ({
+        id: cat.category || cat.name,
+        name: cat.name || cat.category,
+        budget: cat.amount || cat.budget || 0,
+        spent: spendingMap[cat.category || cat.name] || 0,
+        icon: cat.icon || getCategoryIcon(cat.category || cat.name)
+      }));
+
+      return {
+        ...budget,
+        categories: budgetItems,
+        spendingMap
+      };
+    });
+
+    return sendSuccess(res, budgetsWithSpending, 'Budget plans retrieved successfully');
   }),
 
   /**
@@ -1176,6 +1244,23 @@ const financialController = {
     return sendSuccess(res, budget, 'Budget plan created successfully', 201);
   })
 };
+
+/**
+ * Get category icon mapping
+ */
+function getCategoryIcon(categoryId) {
+  const icons = {
+    alimentation: '🍽️',
+    transport: '🚗',
+    loisirs: '🎬',
+    logement: '🏠',
+    sante: '💊',
+    shopping: '🛍️',
+    habits: '👕',
+    autres: '📦'
+  };
+  return icons[categoryId] || '📦';
+}
 
 /**
  * Generate new financial suggestions using AI

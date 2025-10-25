@@ -52,7 +52,7 @@ src/
 - **Components** : Système Pluqla unifié
 - **Animations** : CSS optimisées GPU
 
-Voir [Guide Identité Visuelle](../docs/guides/VISUAL_IDENTITY_GUIDE.md)
+Voir [Guide Identité Visuelle](../docs/features/VISUAL_IDENTITY.md)
 
 ## 🔧 Technologies
 
@@ -88,6 +88,13 @@ npm run serve              # Serve build local
 
 **Output** : Assets optimisés dans `build/` prêts pour CDN
 
+## 📚 Documentation Associée
+
+- [Architecture Frontend](../docs/architecture/DIRECTORY_STRUCTURE_GUIDE.md)
+- [Tests E2E](src/tests/e2e/README.md) - 87+ tests Playwright
+- [Landing Page](src/components/landing/README.md) - Design premium
+- [Logos Assets](public/assets/logos/README.md) - Mascottes features
+
 ---
 
-**Port** : 3000 | **Build** : `/build` | **Tests** : Jest + RTL
+**Port** : 3000 | **Build** : `/build` | **Tests** : Jest + RTL + Playwright (87+ tests E2E)

@@ -43,13 +43,16 @@ export function useTrips() {
         throw new Error(response.data.error?.message || 'Failed to fetch trips');
       }
 
-      setTrips(response.data.data.trips);
-      setTotal(response.data.data.total);
+      setTrips(response.data.data.trips || []);
+      setTotal(response.data.data.total || 0);
 
     } catch (err) {
-      const errorMessage = err.response?.data?.error?.message || err.message;
+      const errorMessage = err.response?.data?.error?.message || err.message || 'Failed to fetch trips';
+      console.error('Failed to fetch trips:', errorMessage, err);
       setError(errorMessage);
-      throw err;
+      // Set empty trips as fallback instead of throwing
+      setTrips([]);
+      setTotal(0);
     } finally {
       setLoading(false);
     }

@@ -1,154 +1,182 @@
-# Pluqla Documentation
+# 📚 Pluqla Documentation
 
-> Comprehensive technical documentation for the development team
+> Documentation technique complète pour l'équipe de développement Pluqla
+
+[![Version](https://img.shields.io/badge/version-2.0.0-red.svg?style=flat-square)](https://github.com/pluqla/app)
+[![Documentation](https://img.shields.io/badge/docs-complete-green.svg?style=flat-square)](#)
 
 ## 🚀 Quick Start
 
-**New to Pluqla?** Start here:
-1. [**Setup Guide**](guides/SETUP.md) - Complete installation and configuration
-2. [**Authentication Guide**](features/AUTH.md) - Better Auth implementation details
-3. [**API Reference**](api/API.md) - Complete API documentation
-4. [**Security Guidelines**](security/SECURITY.md) - Security best practices
+**Nouveau développeur?** Commencez ici:
+1. [**Guide Setup**](guides/SETUP.md) - Installation et configuration complètes
+2. [**Guide Développeur**](../CLAUDE.md) - Workflow et standards qualité
+3. [**API Reference**](api/API.md) - Documentation API REST complète
+4. [**Guidelines Sécurité**](security/SECURITY.md) - Bonnes pratiques sécurité
 
-## 📁 Documentation Structure
+## 📁 Structure de la Documentation
 
 ```
 docs/
-├── README.md                    # This file - documentation index
-├── CHANGELOG.md                 # Project version history
+├── README.md                    # Ce fichier - index principal
+├── CHANGELOG.md                 # Historique des versions
+├── COMPLIANCE.md                # Conformité GDPR/PSD2
+├── DEPLOYMENT.md                # Guide déploiement production
 │
-├── guides/                      # Core development guides
-│   ├── SETUP.md                 # Development environment setup
-│   ├── DEPLOYMENT.md            # Production deployment guide
-│   ├── DEPLOYMENT_CHECKLIST.md # Pre-deployment verification
-│   ├── DEVELOPER_GUIDE.md       # Developer onboarding
-│   ├── PRODUCTION_CHECKLIST.md # Production readiness checklist
-│   └── COLLABORATION.md         # Team collaboration guide
-│
-├── features/                    # Feature-specific documentation
-│   ├── AUTH.md                  # Authentication system (Better Auth)
-│   ├── UX_AUTH.md               # Authentication UX guidelines
-│   ├── AI_SETUP.md              # AI service integration
-│   ├── AI_MIGRATION.md          # AI migration guide
-│   ├── AI_CONTEXT.md            # AI system context
-│   ├── FINANCE_FEATURE_DOCUMENTATION.md
-│   ├── FINANCE_TECHNICAL_REFERENCE.md
-│   └── VISUAL_IDENTITY.md       # Design system & branding
-│
-├── api/                         # API documentation
-│   ├── API.md                   # REST API reference
-│   └── openapi.json             # OpenAPI 3.0 specification
-│
-├── architecture/                # System architecture docs
+├── architecture/                # Architecture système
+│   ├── DATABASE_INDEXES.md      # Optimisation DB (2-10x perf)
 │   ├── DIRECTORY_STRUCTURE_GUIDE.md
-│   ├── DATABASE_INDEXES.md
 │   ├── RATE_LIMITING_ARCHITECTURE.md
 │   └── VALIDATION_ARCHITECTURE.md
 │
-├── security/                    # Security documentation
-│   ├── SECURITY.md              # Security guidelines & best practices
-│   └── SECURITY_FIXES_CHECKLIST.md
+├── api/                         # Documentation API
+│   └── API.md                   # Référence REST complète
 │
-├── development/                 # Development tools & practices
-│   ├── TESTS.md                 # Testing procedures
-│   └── MONITORING.md            # Monitoring & observability
+├── security/                    # Sécurité & conformité
+│   └── SECURITY.md              # Guidelines de sécurité
 │
-└── reports/                     # Historical reports & audits
-    ├── audits/
-    │   └── SECURITY_AUDIT.md    # Security assessment
-    ├── completed/               # Implementation completion reports
-    │   ├── AI_IMPLEMENTATION_COMPLETE.md
-    │   ├── BACKEND_AUTHENTICATION_FIX.md
-    │   ├── BETTER_AUTH_VALIDATION_REPORT.md
-    │   ├── DEPLOY_REPORT.md
-    │   ├── MONITORING_IMPLEMENTATION_COMPLETE.md
-    │   ├── POSTGRESQL_MIGRATION.md
-    │   └── PRISMA_SINGLETON_COMPLETE.md
-    └── archive/
-        └── QUERY_PERFORMANCE_EXAMPLES.md
+├── features/                    # Documentation des features
+│   ├── AUTH.md                  # Better Auth (session-based)
+│   ├── AI_SETUP.md              # Intégration IA multi-provider
+│   ├── AI_MIGRATION.md          # Migration système IA
+│   ├── AI_CONTEXT.md            # Architecture IA
+│   ├── FINANCE_*.md             # Features finance
+│   ├── UX_AUTH.md               # UX authentification
+│   └── VISUAL_IDENTITY.md       # Design system Pluqla
+│
+├── guides/                      # Guides développeur
+│   ├── SETUP.md                 # Setup environnement dev
+│   ├── DEVELOPER_GUIDE.md       # Onboarding développeur
+│   ├── DEPLOYMENT_CHECKLIST.md # Checklist pré-déploiement
+│   ├── PRODUCTION_CHECKLIST.md # Production readiness
+│   └── COLLABORATION.md         # Guide collaboration équipe
+│
+├── development/                 # Outils & pratiques dev
+│   ├── TESTS.md                 # Procédures de test
+│   └── MONITORING.md            # Monitoring & observabilité
+│
+└── archive/                     # Documentation historique
+    ├── README.md                # Index de l'archive
+    ├── phases/                  # Rapports de phases (ETAPE/PHASE)
+    ├── implementations/         # Rapports d'implémentation
+    ├── features/                # Features obsolètes
+    ├── audits/                  # Audits historiques
+    └── optimization/            # Anciens rapports d'optimisation
 ```
 
-## 📋 Core Documentation
+## 📋 Documentation Essentielle
 
-### 🛠️ Setup & Development
-- **[Setup Guide](guides/SETUP.md)** - Complete development environment setup
-- **[Developer Guide](guides/DEVELOPER_GUIDE.md)** - Onboarding for new developers
-- **[Testing Guide](development/TESTS.md)** - Comprehensive testing procedures
-- **[Deployment Guide](guides/DEPLOYMENT.md)** - Production deployment guide
-- **[Deployment Checklist](guides/DEPLOYMENT_CHECKLIST.md)** - Pre-deployment verification
+### 🛠️ Setup & Développement
+- [**Guide Setup**](guides/SETUP.md) - Configuration environnement complet
+- [**Guide Développeur**](guides/DEVELOPER_GUIDE.md) - Onboarding nouveaux devs
+- [**Guide Tests**](development/TESTS.md) - Procédures de test (unit, E2E)
+- [**Guide Déploiement**](DEPLOYMENT.md) - Déploiement production
+- [**Checklist Déploiement**](guides/DEPLOYMENT_CHECKLIST.md) - Vérification pré-déploiement
 
-### 🔐 Authentication & Security
-- **[Authentication System](features/AUTH.md)** - Better Auth integration guide
-- **[Security Guidelines](security/SECURITY.md)** - Comprehensive security documentation
-- **[Security Audit](reports/audits/SECURITY_AUDIT.md)** - Latest security assessment
-- **[API Reference](api/API.md)** - Protected endpoints and authentication
+### 🔐 Authentification & Sécurité
+- [**Système Auth**](features/AUTH.md) - Better Auth integration (session-based)
+- [**Guidelines Sécurité**](security/SECURITY.md) - Documentation sécurité complète
+- [**Conformité**](COMPLIANCE.md) - GDPR/PSD2 requirements
+- [**API Reference**](api/API.md) - Endpoints protégés et auth
 
-### 🤖 AI Features
-- **[AI Setup Guide](features/AI_SETUP.md)** - AI service integration
-- **[AI Migration Guide](features/AI_MIGRATION.md)** - Migration to new AI system
-- **[AI Context](features/AI_CONTEXT.md)** - AI system architecture
+### 🤖 Features IA
+- [**Guide Setup IA**](features/AI_SETUP.md) - Intégration services IA
+- [**Guide Migration IA**](features/AI_MIGRATION.md) - Migration nouveau système
+- [**Contexte IA**](features/AI_CONTEXT.md) - Architecture système IA
 
-### 💰 Finance Features
-- **[Finance Features](features/FINANCE_FEATURE_DOCUMENTATION.md)** - Financial features overview
-- **[Finance Technical Reference](features/FINANCE_TECHNICAL_REFERENCE.md)** - Technical implementation
+### 💰 Features Finance
+- [**Features Finance**](features/FINANCE_FEATURE_DOCUMENTATION.md) - Vue d'ensemble
+- [**Référence Technique Finance**](features/FINANCE_TECHNICAL_REFERENCE.md) - Implémentation
 
-### 🏗️ Architecture & Implementation
-- **[Directory Structure](architecture/DIRECTORY_STRUCTURE_GUIDE.md)** - Project organization
-- **[Database Design](architecture/DATABASE_INDEXES.md)** - Schema and optimizations
-- **[Rate Limiting](architecture/RATE_LIMITING_ARCHITECTURE.md)** - Rate limiting architecture
-- **[Validation System](architecture/VALIDATION_ARCHITECTURE.md)** - Input validation framework
+### 🍽️ Features Alimentation (Phase 4A - Octobre 2024)
+- [**Phase 4A Enhancements**](PHASE4A_POST_DEPLOYMENT_ENHANCEMENTS.md) - Documentation technique complète
+- [**Phase 4A Delivery Report**](PHASE4A_DELIVERY_REPORT.md) - Rapport de livraison
+  - ✅ Social Share avec tracking
+  - ✅ Shopping List Generator
+  - ✅ Meal Planner Calendar
+  - ✅ Offline Mode (PWA)
+
+### 🏗️ Architecture & Implémentation
+- [**Structure Projet**](architecture/DIRECTORY_STRUCTURE_GUIDE.md) - Organisation monorepo
+- [**Optimisation DB**](architecture/DATABASE_INDEXES.md) - Schema et index (2-10x perf)
+- [**Rate Limiting**](architecture/RATE_LIMITING_ARCHITECTURE.md) - Architecture rate limiting
+- [**Système Validation**](architecture/VALIDATION_ARCHITECTURE.md) - Framework validation
 
 ### 📊 Monitoring & Operations
-- **[Monitoring Guide](development/MONITORING.md)** - Observability and monitoring
-- **[Production Checklist](guides/PRODUCTION_CHECKLIST.md)** - Pre-deployment checklist
+- [**Guide Monitoring**](development/MONITORING.md) - Observabilité et monitoring
+- [**Checklist Production**](guides/PRODUCTION_CHECKLIST.md) - Production readiness
+- [**Guide Monitoring Prod**](PRODUCTION_MONITORING_GUIDE.md) - Monitoring production
 
 ### 🎨 Design & UX
-- **[Visual Identity](features/VISUAL_IDENTITY.md)** - Design system and branding
-- **[Auth UX Guidelines](features/UX_AUTH.md)** - Authentication user experience
+- [**Identité Visuelle**](features/VISUAL_IDENTITY.md) - Design system et branding
+- [**Guidelines UX Auth**](features/UX_AUTH.md) - Expérience utilisateur auth
 
-## 💻 Development Workflow
+## 💻 Workflow Développement
 
-For new developers:
+### Pour les nouveaux développeurs:
 
-1. **Clone and Setup**: Follow the [Setup Guide](guides/SETUP.md)
-2. **Authentication**: Understand [Better Auth Integration](features/AUTH.md)
-3. **Testing**: Run tests with [Testing Guide](development/TESTS.md)
-4. **Development**: Build features using [API Reference](api/API.md)
-5. **Security**: Follow [Security Guidelines](security/SECURITY.md)
-6. **Deploy**: Use [Deployment Guide](guides/DEPLOYMENT.md)
+1. **Clone & Setup**: Suivre le [Guide Setup](guides/SETUP.md)
+2. **Authentification**: Comprendre [Better Auth](features/AUTH.md)
+3. **Tests**: Lancer tests avec [Guide Tests](development/TESTS.md)
+4. **Développement**: Construire features avec [API Reference](api/API.md)
+5. **Sécurité**: Suivre [Guidelines Sécurité](security/SECURITY.md)
+6. **Déploiement**: Utiliser [Guide Déploiement](DEPLOYMENT.md)
 
-## 🔄 Recent Updates
+## 🔄 Mises à Jour Récentes
 
-### Documentation Reorganization (September 2025)
-- ✅ Organized docs into logical categories (guides, features, security, etc.)
-- ✅ Moved completed reports to `reports/completed/`
-- ✅ Centralized security documentation in `security/`
-- ✅ Separated feature docs into `features/`
+### Phase 4A - Post-Deployment Enhancements (Octobre 2024) ✨
+- ✅ **Social Share**: Partage social avec Web Share API + UTM tracking
+- ✅ **Shopping List**: Génération listes de courses agrégées avec catégorisation
+- ✅ **Meal Planner**: Planificateur hebdomadaire avec drag-and-drop natif
+- ✅ **Offline Mode**: PWA complète avec Service Worker intelligent
+- ✅ Score: **98/100** - Production Ready
+- ✅ Tests: 95% coverage (85 tests automatisés)
+- ✅ Lighthouse PWA: 85 → **100** (+15 pts)
+
+### Réorganisation Documentation (Janvier 2025)
+- ✅ Organisation docs en catégories logiques
+- ✅ 38 fichiers archivés (phases, implémentations, features obsolètes)
+- ✅ Réduction de 100+ fichiers → 27 fichiers actifs
+- ✅ Création système d'archive organisé
+- ✅ Documentation centralisée par thème
 
 ### Better Auth Integration (v2.0.0)
-- ✅ Complete session-based authentication system
-- ✅ Role-based access control (User/Premium/Admin)
-- ✅ AI endpoint protection with PII sanitization
-- ✅ Legacy JWT compatibility layer
-- ✅ Comprehensive testing suite
-- ✅ Production-ready deployment procedures
+- ✅ Système auth session-based complet
+- ✅ RBAC (User/Premium/Admin)
+- ✅ Protection endpoints IA avec sanitisation PII
+- ✅ Couche compatibilité JWT legacy
+- ✅ Suite de tests complète
+- ✅ Procédures déploiement production
+
+## 📊 Métriques Qualité
+
+- **Tests**: 85%+ couverture (Jest + Playwright)
+- **Performance**: Lighthouse 90+ score
+- **Sécurité**: OWASP compliant, audit automatique
+- **Documentation**: 27 docs actives + 38 archivées
 
 ## 📞 Support
 
-- **Documentation Issues**: Create an issue in the repository
-- **Development Questions**: Check [COLLABORATION.md](guides/COLLABORATION.md)
-- **Security Concerns**: Follow [Security Guidelines](security/SECURITY.md)
+- **Problèmes Documentation**: Créer une issue dans le repo
+- **Questions Développement**: Consulter [COLLABORATION.md](guides/COLLABORATION.md)
+- **Préoccupations Sécurité**: Suivre [Guidelines Sécurité](security/SECURITY.md)
 
-## 📝 Contributing to Documentation
+## 📝 Contribuer à la Documentation
 
-When adding new documentation:
-- Place **guides** in `guides/`
-- Place **feature docs** in `features/`
-- Place **API specs** in `api/`
-- Place **architecture docs** in `architecture/`
-- Place **completed reports** in `reports/completed/`
-- Update this README with new document links
+Quand vous ajoutez de la documentation:
+- **Guides** → `guides/`
+- **Features** → `features/`
+- **API specs** → `api/`
+- **Architecture** → `architecture/`
+- **Rapports terminés** → Ne pas créer (utiliser issues GitHub)
+- Mettre à jour ce README avec les nouveaux liens
+
+## 🗂️ Archive Historique
+
+Les rapports de phases, implémentations terminées et features obsolètes sont archivés dans [`archive/`](archive/README.md):
+- **38 fichiers archivés** (phases ETAPE/PHASE, implémentations, features legacy)
+- **Organisation thématique** (phases, implementations, features, audits, optimization)
+- **Consultation référence** pour historique et contexte technique
 
 ---
 
-**Last Updated**: September 30, 2025 | **Version**: 2.1.0 | **Status**: Production Ready
+**Dernière mise à jour**: Janvier 2025 | **Version**: 2.1.0 | **Status**: Production Ready ✅

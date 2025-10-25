@@ -2,23 +2,53 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
 
-// Import des fichiers de traduction
+// ⚡ Performance: Import seulement la langue par défaut (FR)
+// Les autres langues seront chargées dynamiquement si nécessaire
 import translationFR from './locales/fr/translation.json';
-import translationEN from './locales/en/translation.json';
-import translationES from './locales/es/translation.json';
 
-// Configuration des ressources de traduction
+// Configuration des ressources de traduction (FR seulement au démarrage)
 const resources = {
   fr: {
     translation: translationFR
-  },
-  en: {
-    translation: translationEN
-  },
-  es: {
-    translation: translationES
   }
+  // EN et ES seront chargés via lazy loading
 };
+
+// Fonction pour charger une langue dynamiquement
+async function loadLanguage(lng) {
+  if (resources[lng]) {
+    // Déjà chargé
+    return resources[lng].translation;
+  }
+
+  try {
+    let translation;
+    switch (lng) {
+      case 'en':
+        translation = await import('./locales/en/translation.json');
+        break;
+      case 'es':
+        translation = await import('./locales/es/translation.json');
+        break;
+      default:
+        console.warn(`Language ${lng} not supported`);
+        return null;
+    }
+
+    // Ajouter aux ressources
+    resources[lng] = {
+      translation: translation.default || translation
+    };
+
+    // Ajouter à i18n
+    i18n.addResourceBundle(lng, 'translation', translation.default || translation);
+
+    return translation.default || translation;
+  } catch (error) {
+    console.error(`Failed to load language ${lng}:`, error);
+    return null;
+  }
+}
 
 // Configuration personnalisée du détecteur de langue
 const languageDetectorOptions = {
@@ -109,8 +139,12 @@ i18n
     }
   });
 
-// Fonction utilitaire pour changer la langue
-export const changeLanguage = (lng) => {
+// Fonction utilitaire pour changer la langue avec lazy loading
+export const changeLanguage = async (lng) => {
+  // Charger la langue si pas encore chargée
+  await loadLanguage(lng);
+
+  // Changer la langue
   return i18n.changeLanguage(lng);
 };
 

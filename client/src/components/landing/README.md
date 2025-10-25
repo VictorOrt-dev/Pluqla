@@ -177,8 +177,12 @@ Modify media queries:
 - Web Animations API for advanced effects
 - Service Worker for offline support
 
+## 📚 Related Documentation
+
+- [Client README](../../../../README.md) - Client setup and overview
+- [Visual Identity Guide](../../../../../docs/features/VISUAL_IDENTITY.md) - Design system
+- [Component Showcase](../../../pages/ComponentShowcase.jsx) - Test all components
+
 ---
 
-**Last Updated**: December 2024
-**Version**: 2.0.0
-**Maintainer**: Pluqla Development Team
+**Last Updated**: Janvier 2025 | **Version**: 2.0.0 | **Maintainer**: Pluqla Development Team

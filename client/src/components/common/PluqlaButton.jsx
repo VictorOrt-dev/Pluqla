@@ -1,16 +1,19 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import LoadingSpinner from './LoadingSpinner';
 
 /**
- * Unified Pluqla Button Component
- * Provides consistent branding and UX across the entire application
+ * Phase 2A Enhanced Pluqla Button Component
+ * Premium button system with Pluqla Design DNA
  *
  * Features:
- * - Primary/Secondary variants with Pluqla theme
+ * - Shimmer effect on hover (Phase 2A)
+ * - Framer Motion spring animations (Phase 2A)
+ * - Premium glow effect (Phase 2A)
+ * - Gradient rouge signature
  * - Built-in loading states with branded spinner
- * - Mobile-optimized touch targets (min 48px)
+ * - Mobile-optimized touch targets (min 44px)
  * - Accessibility support with ARIA labels
- * - Consistent hover/focus states
  * - Icon support for better UX
  */
 
@@ -21,6 +24,8 @@ const PluqlaButton = ({
   disabled = false,
   loading = false,
   fullWidth = false,
+  shimmer = true, // Phase 2A: Active par défaut
+  glow = false,   // Phase 2A: Effet glow optionnel
   icon = null,
   iconPosition = 'left',
   children,
@@ -29,63 +34,37 @@ const PluqlaButton = ({
   onClick,
   ...props
 }) => {
-  // Base classes for all buttons
+  // Base classes for all buttons (utilise les classes unified-theme.css)
   const baseClasses = `
-    relative inline-flex items-center justify-center
-    font-semibold rounded-xl
-    transition-all duration-300
-    focus:outline-none focus:ring-4 focus:ring-red-500/20
-    disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none
+    pluqla-btn
     ${fullWidth ? 'w-full' : ''}
+    ${glow ? 'hover:pluqla-shadow-glow' : ''}
   `;
 
-  // Size variations with mobile-first approach
+  // Size variations with mobile-first approach (44px min touch target)
   const sizeClasses = {
-    small: 'px-4 py-2 text-sm min-h-[40px]',
-    medium: 'px-6 py-3 text-base min-h-[48px]', // 48px min for touch targets
-    large: 'px-8 py-4 text-lg min-h-[56px]'
+    small: 'text-sm px-4 py-2 min-h-[40px]',
+    medium: '', // Utilise le défaut de pluqla-btn (44px)
+    large: 'text-lg px-8 py-4 min-h-[52px]',
+    xl: 'text-xl px-10 py-5 min-h-[60px]'
   };
 
-  // Variant styles using Pluqla theme
+  // Variant styles using Pluqla theme (utilise unified-theme.css)
   const variantClasses = {
-    primary: `
-      pluqla-btn-primary text-white
-      hover:pluqla-hover-lift hover:shadow-lg
-      active:scale-95 active:shadow-sm
-    `,
-    secondary: `
-      pluqla-btn-secondary
-      hover:bg-red-500 hover:text-white hover:border-red-500
-      hover:shadow-md hover:-translate-y-0.5
-      active:scale-95
-    `,
-    outline: `
-      bg-transparent border-2 border-red-500 text-red-500
-      hover:bg-red-500 hover:text-white
-      hover:shadow-md hover:-translate-y-0.5
-      active:scale-95
-    `,
-    ghost: `
-      bg-transparent text-red-500
-      hover:bg-red-50 dark:hover:bg-red-900/20
-      hover:text-red-600 dark:hover:text-red-400
-      active:scale-95
-    `,
-    danger: `
-      bg-red-600 text-white border-2 border-red-600
-      hover:bg-red-700 hover:border-red-700
-      hover:shadow-lg hover:-translate-y-0.5
-      active:scale-95
-    `
+    primary: 'pluqla-btn-primary',
+    secondary: 'pluqla-btn-secondary',
+    ghost: 'pluqla-btn-ghost',
+    success: 'pluqla-btn-success',
+    danger: 'bg-red-600 text-white border-2 border-red-600 hover:bg-red-700 shadow-md hover:shadow-lg'
   };
 
   // Combine all classes
   const buttonClasses = `
     ${baseClasses}
-    ${sizeClasses[size]}
-    ${variantClasses[variant]}
+    ${sizeClasses[size] || ''}
+    ${variantClasses[variant] || variantClasses.primary}
     ${className}
-  `;
+  `.trim().replace(/\s+/g, ' ');
 
   // Handle click with loading protection
   const handleClick = (e) => {
@@ -123,13 +102,21 @@ const PluqlaButton = ({
   };
 
   return (
-    <button
+    <motion.button
       type={type}
       disabled={disabled || loading}
       className={buttonClasses}
       onClick={handleClick}
       aria-label={ariaLabel || (typeof children === 'string' ? children : undefined)}
       aria-busy={loading}
+      // Phase 2A: Spring animations fluides 60fps
+      whileHover={!disabled && !loading ? { scale: 1.02, y: -1 } : {}}
+      whileTap={!disabled && !loading ? { scale: 0.98 } : {}}
+      transition={{
+        type: "spring",
+        stiffness: 400,
+        damping: 17
+      }}
       {...props}
     >
       {/* Loading overlay */}
@@ -141,7 +128,7 @@ const PluqlaButton = ({
         <span className="flex-1">{children}</span>
         {iconPosition === 'right' && renderIcon()}
       </span>
-    </button>
+    </motion.button>
   );
 };
 

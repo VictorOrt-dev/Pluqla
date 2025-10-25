@@ -19,6 +19,7 @@ import TransactionsList from './TransactionsList';
 import FinancialHealthScore from './FinancialHealthScore';
 import BudgetTracking from './BudgetTracking';
 import SmartNotifications from './SmartNotifications';
+import FoodBudgetWidget from './FoodBudgetWidget';
 import LoadingSpinner from '../common/LoadingSpinner';
 import ConfirmModal from '../common/ConfirmModal';
 import SkeletonLoader from '../common/SkeletonLoader';
@@ -44,6 +45,7 @@ const EnhancedDashboard = ({ darkMode }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [financialData, setFinancialData] = useState(null);
   const [transactions, setTransactions] = useState([]);
+  const [budgets, setBudgets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -65,25 +67,38 @@ const EnhancedDashboard = ({ darkMode }) => {
       setLoading(true);
       setError(null);
 
-      // Fetch summary data
-      const summaryEndpoint = `/financial/summary?lang=${i18n.language}&period=month`;
-      const summaryResult = await apiCall(summaryEndpoint);
+      // Fetch data in parallel
+      const [summaryResult, transactionsResult, budgetsResult] = await Promise.all([
+        apiCall(`/financial/summary?lang=${i18n.language}&period=month`),
+        apiCall(`/financial/transactions?lang=${i18n.language}&period=month&limit=100`),
+        apiCall(`/financial/budget?period=month&includeInactive=false`)
+      ]);
+
+      // Set summary data
       const summaryData = summaryResult.data || summaryResult;
       setFinancialData(summaryData);
 
-      // ✅ FIX: Fetch real transactions from API instead of using mock data
-      const transactionsEndpoint = `/financial/transactions?lang=${i18n.language}&period=month&limit=100`;
-      const transactionsResult = await apiCall(transactionsEndpoint);
+      // Set transactions
       const transactionsData = transactionsResult.data || transactionsResult;
-
-      // Ensure transactions is always an array
       setTransactions(Array.isArray(transactionsData) ? transactionsData : []);
+
+      // ✨ Set real budgets from API
+      const budgetsData = budgetsResult.data || budgetsResult;
+      if (Array.isArray(budgetsData) && budgetsData.length > 0) {
+        // Use the first active budget plan's categories
+        const activeBudget = budgetsData.find(b => b.isActive) || budgetsData[0];
+        setBudgets(activeBudget.categories || []);
+      } else {
+        // Fallback to empty array if no budgets exist
+        setBudgets([]);
+      }
 
     } catch (err) {
       // ✅ FIX: Removed console.error, use proper error handling
       setError(err.message || t('common.error'));
-      // Set empty array on error instead of mock data
+      // Set empty arrays on error
       setTransactions([]);
+      setBudgets([]);
     } finally {
       setLoading(false);
     }
@@ -321,18 +336,18 @@ const EnhancedDashboard = ({ darkMode }) => {
             {/* Smart Notifications */}
             <SmartNotifications
               financialData={{
-                balance: 3540,
-                income: { total: 4750 },
-                expenses: { total: 1210 },
-                savingsRate: 25.3,
-                savings: 10000,
+                balance: financialData?.totals?.netSavings || 3540,
+                income: { total: financialData?.income?.total || 4750 },
+                expenses: { total: financialData?.expenses?.total || 1210 },
+                savingsRate: financialData?.totals?.savingsRate || 25.3,
+                savings: financialData?.totals?.currentSavings || 10000,
               }}
-              budgets={[
-                { category: 'alimentation', amount: 500, spent: 420 },
-                { category: 'transport', amount: 200, spent: 280 },
-              ]}
+              budgets={budgets}
               darkMode={darkMode}
             />
+
+            {/* Food Budget Widget - Alimentation Feature Integration */}
+            <FoodBudgetWidget className="w-full" />
 
             {/* ⚡ PERFORMANCE: Lazy-loaded Charts wrapped in Suspense */}
             <Suspense fallback={
@@ -454,7 +469,11 @@ const EnhancedDashboard = ({ darkMode }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
           >
-            <BudgetTracking darkMode={darkMode} />
+            <BudgetTracking
+              budgets={budgets}
+              expenses={{}}
+              darkMode={darkMode}
+            />
           </motion.div>
         )}
 

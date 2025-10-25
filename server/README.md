@@ -98,23 +98,35 @@ DATABASE_URL="postgresql://..."
 npm start
 ```
 
-Voir [Checklist Déploiement](../docs/setup/DEPLOYMENT_CHECKLIST.md)
+Voir [Checklist Déploiement](../docs/guides/DEPLOYMENT_CHECKLIST.md)
 
 ## 📡 API
 
 - **Base URL** : `http://localhost:3004/api`
-- **Documentation** : [OpenAPI Spec](../docs/api/openapi.json)
-- **Auth** : Bearer JWT tokens
+- **Documentation** : [API Reference](../docs/api/API.md)
+- **Auth** : Better Auth (session-based) + JWT legacy
 
 ### Endpoints Principaux
 
 | Route | Description |
 |-------|-------------|
-| `POST /auth/login` | Authentification |
-| `GET /users/profile` | Profil utilisateur |
-| `GET /transactions` | Transactions financières |
-| `POST /ai/suggestions` | Suggestions IA |
+| `POST /api/auth/sign-in/email` | Authentification Better Auth |
+| `POST /api/auth/sign-up/email` | Inscription utilisateur |
+| `GET /api/users/profile` | Profil utilisateur |
+| `GET /api/transactions` | Transactions financières |
+| `POST /api/ai/suggestions` | Suggestions IA |
+
+Voir [API Reference complète](../docs/api/API.md)
+
+## 📚 Documentation Associée
+
+- [Architecture Backend](../docs/architecture/DIRECTORY_STRUCTURE_GUIDE.md)
+- [Better Auth Integration](../docs/features/AUTH.md)
+- [Security Guidelines](../docs/security/SECURITY.md)
+- [Database Optimization](../docs/architecture/DATABASE_INDEXES.md)
+- [Rate Limiting](../docs/architecture/RATE_LIMITING_ARCHITECTURE.md)
+- [Tests Guide](../docs/development/TESTS.md)
 
 ---
 
-**Port** : 3004 | **DB** : PostgreSQL | **Auth** : JWT | **Tests** : 90%+
+**Port** : 3004 | **DB** : PostgreSQL | **Auth** : Better Auth + JWT | **Tests** : 90%+

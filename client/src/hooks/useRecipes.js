@@ -1,11 +1,32 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { getRecipes, getRecipeById, searchRecipes, filterRecipesByPrice } from '../utils/recipeData';
+
+const STORAGE_KEY = 'alimentation_favorites';
 
 export const useRecipes = () => {
   const [selectedRecipe, setSelectedRecipe] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [maxPrice, setMaxPrice] = useState(15);
-  const [favorites, setFavorites] = useState([]);
+
+  // Load favorites from localStorage on mount
+  const [favorites, setFavorites] = useState(() => {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      return stored ? JSON.parse(stored) : [];
+    } catch (error) {
+      console.error('Failed to load favorites:', error);
+      return [];
+    }
+  });
+
+  // Save favorites to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(favorites));
+    } catch (error) {
+      console.error('Failed to save favorites:', error);
+    }
+  }, [favorites]);
   
   const allRecipes = useMemo(() => getRecipes(), []);
   

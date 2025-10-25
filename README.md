@@ -99,11 +99,12 @@ npm run db:seed        # Données de test
 
 | Ressource | Description |
 |-----------|-------------|
-| [**🔐 SECURITY.md**](SECURITY.md) | **Guide sécurité GDPR/PSD2 (OBLIGATOIRE)** |
+| [**📖 Documentation Hub**](docs/README.md) | Index complet de toute la documentation |
+| [**🔐 SECURITY.md**](docs/security/SECURITY.md) | Guide sécurité GDPR/PSD2 (OBLIGATOIRE) |
 | [**Guide Développeur**](CLAUDE.md) | Workflow complet, standards qualité |
-| [**API Reference**](docs/api/) | Documentation REST complète |
-| [**Design System**](docs/guides/VISUAL_IDENTITY_GUIDE.md) | Identité visuelle Pluqla |
-| [**Déploiement**](docs/setup/DEPLOYMENT_CHECKLIST.md) | Production ready guide |
+| [**API Reference**](docs/api/API.md) | Documentation REST complète |
+| [**Architecture**](docs/architecture/) | Design système, DB, rate limiting, validation |
+| [**Déploiement**](docs/DEPLOYMENT.md) | Production ready guide |
 
 ## 🎯 Roadmap 2024
 
@@ -126,6 +127,6 @@ MIT License - voir [LICENSE](LICENSE) pour plus de détails.
 
 **🚀 Pluqla Team** • Version 2.0.0 • **Production Ready** ✅
 
-[Website](https://pluqla.com) • [Documentation](docs/) • [Support](mailto:dev@pluqla.com)
+[Documentation Hub](docs/README.md) • [Client](client/README.md) • [Server](server/README.md) • [Infrastructure](infra/README.md)
 
 </div>

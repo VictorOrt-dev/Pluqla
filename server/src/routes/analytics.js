@@ -268,4 +268,126 @@ router.post(
   analyticsController.subscribeToAlert
 );
 
+// ⚡ Web Vitals Routes (Performance Monitoring)
+// Store vitals in memory (in production, use Redis or database)
+const vitalsStore = [];
+const MAX_VITALS_STORED = 10000;
+const logger = require('../utils/logger');
+const {
+  webVitalsLCP,
+  webVitalsFID,
+  webVitalsCLS,
+  webVitalsFCP,
+  webVitalsTTFB,
+  webVitalsByRating
+} = require('../config/prometheus');
+
+// POST /api/analytics/web-vitals - Receive Web Vitals from frontend
+router.post('/web-vitals', (req, res) => {
+  try {
+    const { name, value, rating, delta, id, navigationType, url, timestamp, userAgent, connection, deviceMemory } = req.body;
+
+    if (!name || value === undefined) {
+      return res.status(400).json({ success: false, error: 'Missing required fields: name, value' });
+    }
+
+    const vitalEntry = {
+      name,
+      value: Math.round(value),
+      rating,
+      delta: Math.round(delta || 0),
+      id,
+      navigationType,
+      url,
+      timestamp: timestamp || Date.now(),
+      userAgent,
+      connection,
+      deviceMemory,
+      ip: req.ip || req.connection.remoteAddress,
+    };
+
+    vitalsStore.push(vitalEntry);
+    if (vitalsStore.length > MAX_VITALS_STORED) {
+      vitalsStore.shift();
+    }
+
+    // Record to Prometheus metrics
+    switch (name) {
+      case 'LCP':
+        webVitalsLCP.observe(value);
+        break;
+      case 'FID':
+        webVitalsFID.observe(value);
+        break;
+      case 'CLS':
+        webVitalsCLS.observe(value);
+        break;
+      case 'FCP':
+        webVitalsFCP.observe(value);
+        break;
+      case 'TTFB':
+        webVitalsTTFB.observe(value);
+        break;
+    }
+
+    // Record rating counter
+    if (rating) {
+      webVitalsByRating.inc({ metric: name, rating });
+    }
+
+    const emoji = rating === 'good' ? '✅' : rating === 'needs-improvement' ? '⚠️' : '❌';
+    logger.info(`${emoji} [Web Vitals] ${name}: ${value.toFixed(0)}ms (${rating})`, { metric: name, value, rating, url });
+
+    res.status(200).json({ success: true, message: 'Vital recorded' });
+  } catch (error) {
+    logger.error('[Analytics] Failed to record web vital:', error);
+    res.status(500).json({ success: false, error: 'Failed to record vital' });
+  }
+});
+
+// GET /api/analytics/web-vitals/summary - Get Web Vitals summary
+router.get('/web-vitals/summary', (req, res) => {
+  try {
+    const { metric, timeRange = '1h' } = req.query;
+    const now = Date.now();
+    const timeRanges = { '1h': 3600000, '24h': 86400000, '7d': 604800000 };
+    const cutoff = now - (timeRanges[timeRange] || 3600000);
+
+    let filteredVitals = vitalsStore.filter(v => v.timestamp >= cutoff);
+    if (metric) filteredVitals = filteredVitals.filter(v => v.name === metric);
+
+    const metricNames = ['LCP', 'FID', 'CLS', 'FCP', 'TTFB', 'INP'];
+    const summary = {};
+
+    metricNames.forEach(name => {
+      const values = filteredVitals.filter(v => v.name === name).map(v => v.value);
+      if (values.length === 0) {
+        summary[name] = null;
+        return;
+      }
+
+      const sortedValues = values.sort((a, b) => a - b);
+      summary[name] = {
+        count: values.length,
+        min: Math.min(...values),
+        max: Math.max(...values),
+        avg: values.reduce((a, b) => a + b, 0) / values.length,
+        median: sortedValues[Math.floor(sortedValues.length / 2)],
+        p75: sortedValues[Math.floor(sortedValues.length * 0.75)],
+        p90: sortedValues[Math.floor(sortedValues.length * 0.90)],
+        p95: sortedValues[Math.floor(sortedValues.length * 0.95)],
+        p99: sortedValues[Math.floor(sortedValues.length * 0.99)],
+        good: filteredVitals.filter(v => v.name === name && v.rating === 'good').length,
+        needsImprovement: filteredVitals.filter(v => v.name === name && v.rating === 'needs-improvement').length,
+        poor: filteredVitals.filter(v => v.name === name && v.rating === 'poor').length,
+      };
+    });
+
+    res.json({ success: true, data: { timeRange, totalEntries: filteredVitals.length, summary, timestamp: now } });
+  } catch (error) {
+    logger.error('[Analytics] Failed to get summary:', error);
+    res.status(500).json({ success: false, error: 'Failed to get summary' });
+  }
+});
+
 module.exports = router;

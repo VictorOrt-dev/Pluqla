@@ -629,4 +629,5 @@ const ProfileScreen = ({ userData, setUserData, darkMode, showNotification }) =>
   );
 };
 
-export default ProfileScreen;
+// Wrap with React.memo to prevent unnecessary re-renders
+export default React.memo(ProfileScreen);

@@ -25,7 +25,8 @@ const transportOptimizationRoutes = require('./transportOptimization'); // 🚗 
 const transportTripRoutes = require('./transportTrips'); // 🚗 NEW: User Transport Trip CRUD
 const mealSuggestionsRoutes = require('./mealSuggestions'); // 🍽️ NEW: AI-powered Meal Suggestions feature
 const mealPlanningRoutes = require('./mealPlanning'); // 🍽️ NEW: Jow-inspired Weekly Meal Planning feature
-const recipeRoutes = require('./recipes'); // 🍽️ NEW: Recipe CRUD and favorites management
+const recipesAPIRoutes = require('./recipesAPI'); // 🍽️ NEW: API-based Recipe Search (Spoonacular, Edamam, TheMealDB)
+const foodSpendingRoutes = require('./foodSpending'); // 💰 NEW: Food Spending Tracking & Budget Management
 const bankAccountsRoutes = require('./bankAccounts'); // 🏦 NEW: Nordigen Bank Account Connections
 // const performanceRoutes = require('./performance'); // ❌ TEMPORARILY DISABLED for setup
 
@@ -66,7 +67,8 @@ router.use('/transport-optimize', transportOptimizationRoutes); // 🚗 NEW: Tra
 router.use('/trips', transportTripRoutes); // 🚗 NEW: User Transport Trip CRUD
 router.use('/meal-suggestions', mealSuggestionsRoutes); // 🍽️ NEW: AI-powered Meal Suggestions feature
 router.use('/meal-planning', mealPlanningRoutes); // 🍽️ NEW: Jow-inspired Weekly Meal Planning feature
-router.use('/recipes', recipeRoutes); // 🍽️ NEW: Recipe CRUD and favorites management
+router.use('/recipes', recipesAPIRoutes); // 🍽️ NEW: API-based Recipe Search (Spoonacular, Edamam, TheMealDB)
+router.use('/food-spending', foodSpendingRoutes); // 💰 NEW: Food Spending Tracking & Budget Management
 router.use('/bank-accounts', bankAccountsRoutes); // 🏦 NEW: Nordigen Bank Account Connections
 // router.use('/performance', performanceRoutes); // ❌ TEMPORARILY DISABLED for setup
 

@@ -4,13 +4,16 @@
  * Handles HTTP requests for meal planning features
  */
 
+const mealPlanningService = require('../services/mealPlanningService');
 const {
   saveUserMealPreferences,
   getUserMealPreferences,
   generateWeeklyMealPlan,
   getUserWeeklyMealPlans,
-  updateGroceryItem
-} = require('../services/mealPlanningService');
+  updateGroceryItem,
+  swapPlannedMeal,
+  generateGroceryList
+} = mealPlanningService;
 const prisma = require('../lib/prisma');
 const logger = require('../utils/logger');
 
@@ -252,7 +255,7 @@ async function swapMeal(req, res) {
     const { mealId } = req.params;
     const { preferredCuisine } = req.body;
 
-    const result = await mealPlanningService.swapPlannedMeal(userId, mealId, {
+    const result = await swapPlannedMeal(userId, mealId, {
       preferredCuisine
     });
 
@@ -319,7 +322,7 @@ async function regenerateGroceryList(req, res) {
     }
 
     // Generate new grocery list
-    const groceryList = await mealPlanningService.generateGroceryList(planId, plan.meals);
+    const groceryList = await generateGroceryList(planId, plan.meals);
 
     logger.info('Grocery list regenerated', {
       userId,

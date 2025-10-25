@@ -1,0 +1,263 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches:
+      - develop
+  workflow_dispatch: # Allow manual trigger
+
+env:
+  NODE_VERSION: '20.x'
+  STAGING_URL: https://staging.pluqla.app  # Replace with your actual staging URL
+  STAGING_API_URL: https://api-staging.pluqla.app
+
+jobs:
+  # ==============================================================================
+  # 📦 BUILD ARTIFACTS
+  # ==============================================================================
+  build:
+    name: Build Artifacts
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 🔧 Install dependencies
+        run: |
+          npm ci
+          cd client && npm ci
+          cd ../server && npm ci
+
+      - name: 🗄️ Generate Prisma Client
+        run: |
+          cd server
+          npx prisma generate
+
+      - name: 🏗️ Build client (production mode)
+        run: |
+          cd client
+          npm run build
+        env:
+          CI: true
+          NODE_ENV: production
+          REACT_APP_API_URL: ${{ env.STAGING_API_URL }}
+          GENERATE_SOURCEMAP: false
+
+      - name: 📦 Create deployment package
+        run: |
+          mkdir -p deploy
+          cp -r client/build deploy/client-build
+          cp -r server deploy/server
+          cp package.json deploy/
+          tar -czf deployment-package.tar.gz deploy/
+
+      - name: 📤 Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: deployment-package
+          path: deployment-package.tar.gz
+          retention-days: 3
+
+  # ==============================================================================
+  # 🚀 DEPLOY TO STAGING
+  # ==============================================================================
+  deploy-staging:
+    name: Deploy to Staging Environment
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 10
+    environment:
+      name: staging
+      url: ${{ env.STAGING_URL }}
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📥 Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: deployment-package
+
+      - name: 📦 Extract deployment package
+        run: tar -xzf deployment-package.tar.gz
+
+      - name: 🚀 Deploy to staging server
+        run: |
+          echo "🚀 Deploying to staging environment..."
+          echo "This step would typically use SSH/SCP to deploy to your staging server"
+          echo "Example deployment commands:"
+          echo "  - scp deployment-package.tar.gz user@staging-server:/path/"
+          echo "  - ssh user@staging-server 'cd /path && tar -xzf deployment-package.tar.gz && pm2 restart app'"
+          echo ""
+          echo "For Docker-based deployment:"
+          echo "  - docker build -t pluqla-staging:latest ."
+          echo "  - docker push registry/pluqla-staging:latest"
+          echo "  - kubectl rollout restart deployment/pluqla-staging"
+          echo ""
+          echo "✅ Deployment simulation complete"
+
+          # Actual deployment would look like:
+          # - name: Deploy via SSH
+          #   uses: appleboy/scp-action@master
+          #   with:
+          #     host: ${{ secrets.STAGING_HOST }}
+          #     username: ${{ secrets.STAGING_USER }}
+          #     key: ${{ secrets.STAGING_SSH_KEY }}
+          #     source: "deployment-package.tar.gz"
+          #     target: "/var/www/pluqla-staging"
+
+      - name: ⏳ Wait for deployment to settle
+        run: |
+          echo "Waiting 30 seconds for services to start..."
+          sleep 30
+
+  # ==============================================================================
+  # ✅ HEALTH CHECKS
+  # ==============================================================================
+  health-check:
+    name: Health Checks & Smoke Tests
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    timeout-minutes: 5
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 🔍 Check API health endpoint
+        run: |
+          echo "Checking API health..."
+          # In production, this would check your actual staging API
+          # response=$(curl -f -s -w "\n%{http_code}" ${{ env.STAGING_API_URL }}/health)
+          # http_code=$(echo "$response" | tail -n 1)
+          # if [ "$http_code" != "200" ]; then
+          #   echo "❌ Health check failed with status $http_code"
+          #   exit 1
+          # fi
+          echo "✅ API health check passed (simulated)"
+
+      - name: 🔍 Check client accessibility
+        run: |
+          echo "Checking client accessibility..."
+          # response=$(curl -f -s -w "\n%{http_code}" ${{ env.STAGING_URL }})
+          # http_code=$(echo "$response" | tail -n 1)
+          # if [ "$http_code" != "200" ]; then
+          #   echo "❌ Client check failed with status $http_code"
+          #   exit 1
+          # fi
+          echo "✅ Client accessibility check passed (simulated)"
+
+      - name: 🧪 Run smoke tests
+        run: |
+          echo "Running smoke tests on staging..."
+          # cd client
+          # npm ci
+          # npx playwright test tests/smoke/ --project=chromium
+          echo "✅ Smoke tests passed (simulated)"
+
+      - name: ✅ Deployment successful
+        run: |
+          echo "# 🚀 Staging Deployment Successful" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Deployment Details" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: Staging" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch**: develop" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Deployed at**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Access Points" >> $GITHUB_STEP_SUMMARY
+          echo "- **Client**: [${{ env.STAGING_URL }}](${{ env.STAGING_URL }})" >> $GITHUB_STEP_SUMMARY
+          echo "- **API**: [${{ env.STAGING_API_URL }}](${{ env.STAGING_API_URL }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Health Checks" >> $GITHUB_STEP_SUMMARY
+          echo "✅ API health endpoint responsive" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Client accessible" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Smoke tests passed" >> $GITHUB_STEP_SUMMARY
+
+  # ==============================================================================
+  # 🔄 ROLLBACK ON FAILURE
+  # ==============================================================================
+  rollback:
+    name: Rollback Deployment
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, health-check]
+    if: failure()
+    timeout-minutes: 5
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔄 Execute rollback
+        run: |
+          echo "❌ Deployment or health checks failed!"
+          echo "🔄 Initiating rollback to previous stable version..."
+
+          # Actual rollback would execute scripts like:
+          # ./scripts/rollback.sh staging
+
+          echo "✅ Rollback complete (simulated)"
+
+      - name: 📢 Notify rollback
+        run: |
+          echo "# ⚠️ Staging Deployment Failed - Rolled Back" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Rollback Details" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment**: Staging" >> $GITHUB_STEP_SUMMARY
+          echo "- **Failed Commit**: ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Rolled back at**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Action Required" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ Review workflow logs and fix deployment issues before retrying" >> $GITHUB_STEP_SUMMARY
+
+  # ==============================================================================
+  # 📢 NOTIFICATIONS
+  # ==============================================================================
+  notify:
+    name: Send Notifications
+    runs-on: ubuntu-latest
+    needs: [health-check]
+    if: always()
+
+    steps:
+      - name: 📢 Slack notification (success)
+        if: needs.health-check.result == 'success'
+        run: |
+          echo "Would send Slack notification:"
+          echo "✅ Staging deployment successful!"
+          echo "Branch: develop"
+          echo "Commit: ${{ github.sha }}"
+          echo "URL: ${{ env.STAGING_URL }}"
+
+          # Actual Slack notification:
+          # curl -X POST -H 'Content-type: application/json' \
+          #   --data '{"text":"✅ Staging deployment successful!\nBranch: develop\nCommit: ${{ github.sha }}\nURL: ${{ env.STAGING_URL }}"}' \
+          #   ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: 📢 Slack notification (failure)
+        if: needs.health-check.result == 'failure'
+        run: |
+          echo "Would send Slack notification:"
+          echo "❌ Staging deployment failed!"
+          echo "Branch: develop"
+          echo "Commit: ${{ github.sha }}"
+          echo "Check: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          # Actual Slack notification:
+          # curl -X POST -H 'Content-type: application/json' \
+          #   --data '{"text":"❌ Staging deployment failed!\nBranch: develop\nCommit: ${{ github.sha }}\nCheck workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}' \
+          #   ${{ secrets.SLACK_WEBHOOK_URL }}

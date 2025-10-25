@@ -133,11 +133,22 @@ Follow the same process as above, but update the corresponding category entry:
 
 ## 📚 Related Documentation
 
-- [HomeScreen Component](../../src/components/home/HomeScreen.jsx)
-- [CategoryGrid Component](../../src/components/home/CategoryGrid.jsx)
-- [Pluqla Design System](../../../docs/DESIGN.md)
+- [Client README](../../../README.md) - Client setup
+- [HomeScreen Component](../../src/components/home/HomeScreen.jsx) - Main dashboard
+- [CategoryGrid Component](../../src/components/home/CategoryGrid.jsx) - Categories using logos
+- [Visual Identity](../../../../docs/features/VISUAL_IDENTITY.md) - Pluqla design system
+
+## 🎨 Logo Specifications
+
+Current logo files sizes:
+- `logo_economies.png` - 167KB (Finance mascot)
+- `logo_food.png` - 649KB (Food mascot)
+- `logo_transport.png` - 568KB (Transport mascot)
+- `logo_mode.png` - 687KB (Fashion mascot)
+- `logo_lifestyle.png` - 756KB (Activity mascot)
+
+**Note**: Consider optimizing large files (>500KB) using tools like ImageOptim or TinyPNG.
 
 ---
 
-**Last Updated:** 2025-09-30
-**Maintained by:** Pluqla Dev Team
+**Last Updated:** Janvier 2025 | **Maintained by:** Pluqla Dev Team

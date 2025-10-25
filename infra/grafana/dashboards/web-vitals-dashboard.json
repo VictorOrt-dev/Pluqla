@@ -1,0 +1,174 @@
+{
+  "dashboard": {
+    "title": "Pluqla - Web Vitals & Performance",
+    "tags": ["web-vitals", "performance", "user-experience"],
+    "timezone": "browser",
+    "schemaVersion": 27,
+    "version": 1,
+    "refresh": "30s",
+    "panels": [
+      {
+        "id": 1,
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "type": "graph",
+        "title": "Largest Contentful Paint (LCP)",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.75, sum(rate(web_vitals_lcp_milliseconds_bucket[5m])) by (le))",
+            "legendFormat": "P75",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(web_vitals_lcp_milliseconds_bucket[5m])) by (le))",
+            "legendFormat": "P95",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(web_vitals_lcp_milliseconds_bucket[5m])) by (le))",
+            "legendFormat": "P99",
+            "refId": "C"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "ms",
+            "label": "Milliseconds",
+            "logBase": 1,
+            "show": true
+          }
+        ],
+        "thresholds": [
+          {
+            "value": 2500,
+            "colorMode": "critical",
+            "op": "gt",
+            "fill": true,
+            "line": true
+          }
+        ]
+      },
+      {
+        "id": 2,
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "type": "graph",
+        "title": "Cumulative Layout Shift (CLS)",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.75, sum(rate(web_vitals_cls_score_bucket[5m])) by (le))",
+            "legendFormat": "P75",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(web_vitals_cls_score_bucket[5m])) by (le))",
+            "legendFormat": "P95",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "short",
+            "label": "Score",
+            "logBase": 1,
+            "show": true
+          }
+        ],
+        "thresholds": [
+          {
+            "value": 0.1,
+            "colorMode": "critical",
+            "op": "gt"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "type": "graph",
+        "title": "First Contentful Paint (FCP)",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.75, sum(rate(web_vitals_fcp_milliseconds_bucket[5m])) by (le))",
+            "legendFormat": "P75",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(web_vitals_fcp_milliseconds_bucket[5m])) by (le))",
+            "legendFormat": "P95",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "ms",
+            "label": "Milliseconds"
+          }
+        ],
+        "thresholds": [
+          {
+            "value": 1800,
+            "colorMode": "critical",
+            "op": "gt"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "type": "graph",
+        "title": "Time to First Byte (TTFB)",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.75, sum(rate(web_vitals_ttfb_milliseconds_bucket[5m])) by (le))",
+            "legendFormat": "P75",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(web_vitals_ttfb_milliseconds_bucket[5m])) by (le))",
+            "legendFormat": "P95",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "ms",
+            "label": "Milliseconds"
+          }
+        ],
+        "thresholds": [
+          {
+            "value": 600,
+            "colorMode": "critical",
+            "op": "gt"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "gridPos": {"h": 6, "w": 24, "x": 0, "y": 16},
+        "type": "stat",
+        "title": "Web Vitals by Rating",
+        "targets": [
+          {
+            "expr": "sum(rate(web_vitals_by_rating_total{rating=\"good\"}[5m])) by (metric)",
+            "legendFormat": "{{metric}} - Good",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(web_vitals_by_rating_total{rating=\"needs-improvement\"}[5m])) by (metric)",
+            "legendFormat": "{{metric}} - Needs Improvement",
+            "refId": "B"
+          },
+          {
+            "expr": "sum(rate(web_vitals_by_rating_total{rating=\"poor\"}[5m])) by (metric)",
+            "legendFormat": "{{metric}} - Poor",
+            "refId": "C"
+          }
+        ],
+        "options": {
+          "graphMode": "area",
+          "colorMode": "value"
+        }
+      }
+    ]
+  }
+}

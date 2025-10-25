@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import TransportTracker from '../components/features/transport/TransportTracker';
 import RouteOptimizer from '../components/features/transport/RouteOptimizer';
 import TripHistory from '../components/features/transport/TripHistory';
+import AddTripModal from '../components/features/transport/AddTripModal';
 import ActivityRecommendations from '../components/features/activity/ActivityRecommendations';
 import { useAISuggestions } from '../hooks/useAISuggestions';
 import { useNavigation } from '../contexts/NavigationContext';
@@ -13,6 +14,7 @@ const DeplacementScreen = ({ userData, setUserData, usePlan, showNotification, a
   const { navigateToHome } = useNavigation();
   const [activeCategory, setActiveCategory] = useState('suivi');
   const [isVisible, setIsVisible] = useState(false);
+  const [isAddTripModalOpen, setIsAddTripModalOpen] = useState(false);
 
   const { getAISuggestions, isLoading: isLoadingAI } = useAISuggestions();
   const [aiSuggestions, setAiSuggestions] = useState([]);
@@ -73,7 +75,7 @@ const DeplacementScreen = ({ userData, setUserData, usePlan, showNotification, a
           <div className="space-y-8">
             {/* Suivi Transport */}
             <div className="animate-fade-in animation-delay-100">
-              <TransportTracker darkMode={darkMode} />
+              <TransportTracker darkMode={darkMode} showNotification={showNotification} />
             </div>
 
             {/* Historique */}
@@ -100,12 +102,7 @@ const DeplacementScreen = ({ userData, setUserData, usePlan, showNotification, a
               <div className={`glass-effect p-6 rounded-2xl ${
                 darkMode ? 'glass-effect-dark' : ''
               }`}>
-                <h3 className={`text-lg font-semibold mb-4 ${
-                  darkMode ? 'text-white' : 'text-gray-900'
-                }`}>
-                  🗺️ Optimiseur de Routes
-                </h3>
-                <RouteOptimizer darkMode={darkMode} />
+                <RouteOptimizer darkMode={darkMode} showNotification={showNotification} />
               </div>
             </div>
 
@@ -189,15 +186,18 @@ const DeplacementScreen = ({ userData, setUserData, usePlan, showNotification, a
               </div>
             </div>
 
-            {/* Loading Indicator */}
-            {isLoadingAI && (
+            {/* Add Trip Button */}
+            <button
+              onClick={() => setIsAddTripModalOpen(true)}
+              className="group px-4 py-2 rounded-2xl bg-gradient-to-r from-red-500 to-red-600 text-white font-medium shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+            >
               <div className="flex items-center space-x-2">
-                <div className="w-4 h-4 rounded-full bg-gradient-to-r from-red-500 to-red-600 animate-pulse"></div>
-                <span className={`text-xs font-medium ${
-                  darkMode ? 'text-red-400' : 'text-red-600'
-                }`}>IA en cours...</span>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                </svg>
+                <span>Nouveau trajet</span>
               </div>
-            )}
+            </button>
           </div>
 
           {/* Category Filter Navigation */}
@@ -291,6 +291,17 @@ const DeplacementScreen = ({ userData, setUserData, usePlan, showNotification, a
           darkMode ? 'bg-red-500/5' : 'bg-red-500/3'
         } blur-3xl animate-pulse delay-1000`}></div>
       </div>
+
+      {/* Add Trip Modal */}
+      <AddTripModal
+        isOpen={isAddTripModalOpen}
+        onClose={() => setIsAddTripModalOpen(false)}
+        onSuccess={() => {
+          // Modal will handle the success notification and refresh
+        }}
+        darkMode={darkMode}
+        showNotification={showNotification}
+      />
     </div>
   );
 };

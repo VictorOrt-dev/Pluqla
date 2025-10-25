@@ -1,0 +1,171 @@
+{
+  "alerts": [
+    {
+      "name": "High Error Rate",
+      "conditions": [
+        {
+          "interval": "1m",
+          "metric": "event.count",
+          "comparison": "gt",
+          "value": 100
+        }
+      ],
+      "actionMatch": "all",
+      "frequency": 30,
+      "actions": [
+        {
+          "targetType": "email",
+          "targetIdentifier": "dev-team@pluqla.com"
+        },
+        {
+          "targetType": "slack",
+          "targetIdentifier": "#alerts-critical"
+        }
+      ]
+    },
+    {
+      "name": "Critical Errors - DatabaseError",
+      "conditions": [
+        {
+          "id": "sentry.rules.conditions.event_attribute.EventAttributeCondition",
+          "attribute": "exception.type",
+          "match": "contains",
+          "value": "DatabaseError"
+        }
+      ],
+      "actionMatch": "all",
+      "frequency": 5,
+      "actions": [
+        {
+          "targetType": "email",
+          "targetIdentifier": "backend-team@pluqla.com"
+        },
+        {
+          "targetType": "pagerduty",
+          "targetIdentifier": "backend-oncall"
+        }
+      ]
+    },
+    {
+      "name": "Performance Degradation",
+      "conditions": [
+        {
+          "metric": "transaction.duration",
+          "comparison": "gt",
+          "value": 3000,
+          "interval": "5m"
+        }
+      ],
+      "actionMatch": "all",
+      "frequency": 30,
+      "actions": [
+        {
+          "targetType": "slack",
+          "targetIdentifier": "#alerts-performance"
+        }
+      ]
+    },
+    {
+      "name": "Spike in Unique Errors",
+      "conditions": [
+        {
+          "metric": "unique.errors",
+          "comparison": "gt",
+          "value": 10,
+          "interval": "1h"
+        }
+      ],
+      "actionMatch": "all",
+      "frequency": 60,
+      "actions": [
+        {
+          "targetType": "email",
+          "targetIdentifier": "dev-team@pluqla.com"
+        }
+      ]
+    },
+    {
+      "name": "Frontend - Unhandled Promise Rejection",
+      "conditions": [
+        {
+          "attribute": "message",
+          "match": "contains",
+          "value": "UnhandledPromiseRejection"
+        },
+        {
+          "attribute": "platform",
+          "match": "eq",
+          "value": "javascript"
+        }
+      ],
+      "actionMatch": "all",
+      "frequency": 10,
+      "actions": [
+        {
+          "targetType": "slack",
+          "targetIdentifier": "#frontend-errors"
+        }
+      ]
+    },
+    {
+      "name": "Backend - 500 Internal Server Error Spike",
+      "conditions": [
+        {
+          "attribute": "http.status_code",
+          "match": "eq",
+          "value": "500"
+        },
+        {
+          "metric": "event.count",
+          "comparison": "gt",
+          "value": 20,
+          "interval": "5m"
+        }
+      ],
+      "actionMatch": "all",
+      "frequency": 5,
+      "actions": [
+        {
+          "targetType": "pagerduty",
+          "targetIdentifier": "backend-oncall"
+        },
+        {
+          "targetType": "slack",
+          "targetIdentifier": "#alerts-critical"
+        }
+      ]
+    }
+  ],
+  "metricAlerts": [
+    {
+      "name": "High Apdex Score Degradation",
+      "metric": "apdex",
+      "threshold": 0.7,
+      "comparisonType": "lt",
+      "timeWindow": "1h",
+      "actions": [
+        {
+          "type": "slack",
+          "channel": "#alerts-performance"
+        }
+      ]
+    },
+    {
+      "name": "High Crash Rate",
+      "metric": "crash_free_rate",
+      "threshold": 0.95,
+      "comparisonType": "lt",
+      "timeWindow": "1h",
+      "actions": [
+        {
+          "type": "email",
+          "recipients": ["mobile-team@pluqla.com"]
+        },
+        {
+          "type": "slack",
+          "channel": "#alerts-mobile"
+        }
+      ]
+    }
+  ]
+}

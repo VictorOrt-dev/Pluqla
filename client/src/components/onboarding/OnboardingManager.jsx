@@ -1,11 +1,14 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { useOnboarding } from '../../hooks/useOnboarding';
-import AuthScreen from './enhanced/AuthScreen';
-import PersonalizationScreen from './enhanced/PersonalizationScreen';
-import GoalsScreen from './enhanced/GoalsScreen';
-import QuickWinsScreen from './enhanced/QuickWinsScreen';
-import EmailVerificationScreen from './enhanced/EmailVerificationScreen';
-import CompletionScreen from './enhanced/CompletionScreen';
+import SuspenseFallback from '../common/SuspenseFallback';
+
+// Lazy loading des écrans d'onboarding pour optimiser le bundle principal
+const AuthScreen = React.lazy(() => import('./enhanced/AuthScreen'));
+const PersonalizationScreen = React.lazy(() => import('./enhanced/PersonalizationScreen'));
+const GoalsScreen = React.lazy(() => import('./enhanced/GoalsScreen'));
+const QuickWinsScreen = React.lazy(() => import('./enhanced/QuickWinsScreen'));
+const EmailVerificationScreen = React.lazy(() => import('./enhanced/EmailVerificationScreen'));
+const CompletionScreen = React.lazy(() => import('./enhanced/CompletionScreen'));
 
 const STEP_COMPONENTS = {
   auth: AuthScreen,
@@ -57,24 +60,26 @@ const OnboardingManager = ({
     }
 
     return (
-      <StepComponent
-        onNext={nextStep}
-        onPrevious={previousStep}
-        onSkip={skipStep}
-        onRestart={restartOnboarding}
-        darkMode={darkMode}
-        isLoading={isLoading}
-        userData={userData}
-        setUserData={setUserData}
-        onboardingData={onboardingData}
-        updateOnboardingData={updateOnboardingData}
-        showNotification={showNotification}
-        currentStep={currentStep}
-        totalSteps={totalSteps}
-        progressPercentage={getProgressPercentage()}
-        canGoBack={canGoBack}
-        onStartOnboarding={() => setHasStarted(true)}
-      />
+      <Suspense fallback={<SuspenseFallback component="l'étape d'onboarding" fullScreen={true} />}>
+        <StepComponent
+          onNext={nextStep}
+          onPrevious={previousStep}
+          onSkip={skipStep}
+          onRestart={restartOnboarding}
+          darkMode={darkMode}
+          isLoading={isLoading}
+          userData={userData}
+          setUserData={setUserData}
+          onboardingData={onboardingData}
+          updateOnboardingData={updateOnboardingData}
+          showNotification={showNotification}
+          currentStep={currentStep}
+          totalSteps={totalSteps}
+          progressPercentage={getProgressPercentage()}
+          canGoBack={canGoBack}
+          onStartOnboarding={() => setHasStarted(true)}
+        />
+      </Suspense>
     );
   };
 
