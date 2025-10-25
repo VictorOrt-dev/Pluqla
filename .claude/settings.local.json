@@ -79,7 +79,9 @@
       "Bash(redis-cli:*)",
       "Bash(where:*)",
       "Bash(tee:*)",
-      "Bash(git mv:*)"
+      "Bash(git mv:*)",
+      "Bash(GIT_SEQUENCE_EDITOR=\"sed -i ''s/^pick bcbbb05/edit bcbbb05/''\" git rebase -i bcbbb05^)",
+      "Bash(git stash:*)"
     ],
     "deny": [],
     "ask": []

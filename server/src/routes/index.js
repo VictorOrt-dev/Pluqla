@@ -29,6 +29,7 @@ const recipesAPIRoutes = require('./recipesAPI'); // 🍽️ NEW: API-based Reci
 const foodSpendingRoutes = require('./foodSpending'); // 💰 NEW: Food Spending Tracking & Budget Management
 const bankAccountsRoutes = require('./bankAccounts'); // 🏦 NEW: Nordigen Bank Account Connections
 // const performanceRoutes = require('./performance'); // ❌ TEMPORARILY DISABLED for setup
+const mlRecommendationsRoutes = require('./mlRecommendations'); // 🤖 Phase 9A: ML-powered Recipe Recommendations
 
 // ✨ Phase 1B - Security & Compliance Routes
 const gdprRoutes = require('./gdpr'); // 🔒 Phase 1B: GDPR compliance (export, delete, audit)
@@ -71,6 +72,7 @@ router.use('/recipes', recipesAPIRoutes); // 🍽️ NEW: API-based Recipe Searc
 router.use('/food-spending', foodSpendingRoutes); // 💰 NEW: Food Spending Tracking & Budget Management
 router.use('/bank-accounts', bankAccountsRoutes); // 🏦 NEW: Nordigen Bank Account Connections
 // router.use('/performance', performanceRoutes); // ❌ TEMPORARILY DISABLED for setup
+router.use('/ml', mlRecommendationsRoutes); // 🤖 Phase 9A: ML-powered Recipe Recommendations
 
 // ✨ Phase 1B - Security & Compliance Routes
 router.use('/gdpr', gdprRoutes); // 🔒 Phase 1B: GDPR compliance endpoints

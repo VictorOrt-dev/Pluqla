@@ -11,9 +11,13 @@ import secureLogger from '../utils/secureLogger';
 import { useToast } from '../components/common/PluqlaToast';
 import PropTypes from 'prop-types';
 import './ActivityScreen.css';
+import '../styles/recommended-recipes.css'; // ✨ Phase 9A: ML Recommendations styles
 
 // ✨ Phase 2: Lazy load MealSuggestions (only loaded when nutrition tab is active)
 const MealSuggestions = lazy(() => import('../components/features/food/MealSuggestions'));
+
+// ✨ Phase 9A: ML-powered Recipe Recommendations
+const RecommendedRecipes = lazy(() => import('../components/features/food/RecommendedRecipes'));
 
 const AlimentationScreen = ({ showNotification, darkMode }) => {
   const { t } = useTranslation();
@@ -297,6 +301,25 @@ const AlimentationScreen = ({ showNotification, darkMode }) => {
                 />
               </motion.div>
             )}
+
+            {/* ✨ Phase 9A - ML Recommended Recipes Section */}
+            <Suspense fallback={
+              <div className="flex justify-center items-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
+              </div>
+            }>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <RecommendedRecipes
+                  budgetMax={maxPrice > 0 ? maxPrice : undefined}
+                  excludeRecipeIds={favorites}
+                  limit={8}
+                />
+              </motion.div>
+            </Suspense>
 
             {/* Liste complète des recettes */}
             <div>

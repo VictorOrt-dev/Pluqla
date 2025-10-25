@@ -163,6 +163,66 @@ const alimentationApiErrorRate = new client.Gauge({
 });
 
 // ============================================================================
+// ✨ PHASE 9A - ML RECOMMENDATION METRICS
+// ============================================================================
+
+/**
+ * Histogram de la durée des recommandations ML
+ * Track performance of ML recommendation generation
+ */
+const mlRecommendationDuration = new client.Histogram({
+  name: 'ml_recommendation_duration_seconds',
+  help: 'Duration of ML recommendation generation',
+  labelNames: ['source'], // 'ml' | 'fallback'
+  buckets: [0.1, 0.5, 1, 2, 5, 10, 30], // seconds
+  registers: [register]
+});
+
+/**
+ * Counter de la source des recommandations
+ * Track whether ML or fallback is being used
+ */
+const mlRecommendationSource = new client.Counter({
+  name: 'ml_recommendation_source_total',
+  help: 'Total number of recommendations by source',
+  labelNames: ['source'], // 'ml' | 'fallback'
+  registers: [register]
+});
+
+/**
+ * Histogram des scores de recommandation
+ * Track distribution of recommendation scores
+ */
+const mlRecommendationScore = new client.Histogram({
+  name: 'ml_recommendation_score',
+  help: 'Distribution of ML recommendation scores',
+  labelNames: ['source'],
+  buckets: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0],
+  registers: [register]
+});
+
+/**
+ * Counter du feedback utilisateur
+ * Track user engagement with recommendations
+ */
+const mlRecommendationFeedback = new client.Counter({
+  name: 'ml_recommendation_feedback_total',
+  help: 'Total user feedback on recommendations',
+  labelNames: ['action'], // 'like' | 'dislike' | 'view' | 'favorite'
+  registers: [register]
+});
+
+/**
+ * Gauge du taux de modèle entraîné
+ * Track if ML model is available
+ */
+const mlModelStatus = new client.Gauge({
+  name: 'ml_model_available',
+  help: 'Whether ML model is trained and available (1=yes, 0=no)',
+  registers: [register]
+});
+
+// ============================================================================
 // MÉTRIQUES FRAUDE (Phase 1B)
 // ============================================================================
 
@@ -477,6 +537,13 @@ module.exports = {
   alimentationFavoritesTotal,
   alimentationForecastMatchAccuracy,
   alimentationApiErrorRate,
+
+  // ✨ Phase 9A - Métriques ML
+  mlRecommendationDuration,
+  mlRecommendationSource,
+  mlRecommendationScore,
+  mlRecommendationFeedback,
+  mlModelStatus,
 
   // Métriques Fraude
   fraudDetectionsTotal,
